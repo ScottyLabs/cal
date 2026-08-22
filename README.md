@@ -81,10 +81,12 @@ These are tracked as part of the migration and are not yet done:
 
 - [x] ~~`api/uv.lock`~~ — generated, 132 packages locked.
 - [x] ~~`npmDepsHash`~~ — resolved.
-- [ ] **`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is empty** in
-      `web/.env.production`. Copy it from the Clerk dashboard or the Vercel
-      project settings. Until it is set, every page except `/api/health`
-      returns 500.
+- [ ] **Clerk is on its `pk_test_` instance**, not production. The test key
+      is committed in `web/.env.production` (publishable keys are public by
+      design) so the staged cutover to `cal.scottylabs.org` works. Before
+      `cmucal.com` goes live this needs the `pk_live_` key **and** the new
+      domain added to the production Clerk instance's allowed origins —
+      neither of which carries over automatically.
 - [ ] **`nix build .#api` is unverified.** It fails on macOS with
       `mkdir: command not found` inside pyproject hook derivations — a
       Determinate Nix 3.22.2 structured-attrs bug on darwin, not a packaging
@@ -97,8 +99,12 @@ These are tracked as part of the migration and are not yet done:
       zone ID to `modules/hosts/deploy-01/kennel.nix`.
 - [ ] **`api/Dockerfile` is dead.** Railway used it; kennel does not. Delete
       once the deployment is green.
-- [ ] **Supabase is still the database.** Migrating into kennel's provisioned
-      Postgres (`scottylabs.postgres.enable`, read `DATABASE_URL`) is the
-      follow-up that unblocks preview deployments.
+- [ ] **Supabase is still the database.** Both projects (`cmucal`,
+      `cmucal-dev`) idled into a paused state and were restored on
+      2026-08-22; the data survived intact. Migrating into kennel's
+      provisioned Postgres (`scottylabs.postgres.enable`, read
+      `DATABASE_URL`) is the follow-up that unblocks preview deployments and
+      removes the free-tier pause risk that took production down for four
+      months.
 - [ ] **Clerk is still the auth provider**, not the Keycloak `oidc_client` that
       governance provisions for this repo. Deliberate for the lift-and-shift.
