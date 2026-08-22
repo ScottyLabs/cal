@@ -27,3 +27,6 @@ tsconfig.tsbuildinfo
 
 # OS
 .DS_Store
+
+# Local Claude Code state
+.claude/settings.local.json
