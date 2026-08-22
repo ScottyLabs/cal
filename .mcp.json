@@ -3,6 +3,14 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp"
+    },
+    "supabase-prod": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=fdqvatnksvmycqnwljqm"
+    },
+    "supabase-dev": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=riacgqvnvczpnwbkzuqy"
     }
   }
 }
