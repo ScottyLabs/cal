@@ -1,5 +1,5 @@
 {
-  description = "CMU Cal — a unified web calendar for all CMU academic events";
+  description = "CMU Cal - a unified web calendar for all CMU academic events";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -38,7 +38,7 @@
           };
 
           # Next.js server. Clerk's middleware needs a Node runtime, so this is
-          # a kennel service rather than a static site — which also means it
+          # a kennel service rather than a static site - which also means it
           # cannot use a shared build helper, since kennel ships none for npm.
           web = pkgs.buildNpmPackage {
             pname = "cal-web";

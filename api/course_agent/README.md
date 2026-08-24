@@ -33,7 +33,7 @@ This task requires:
 - Tool orchestration
 - Graceful failure handling
 
-A single script is brittle, while an agent can **observe → decide → act → record**.
+A single script is brittle, while an agent can **observe -> decide -> act -> record**.
 
 ---
 

@@ -29,7 +29,7 @@ curl -X POST http://localhost:5001/api/users/create_schedule_category \
 curl -X POST http://localhost:5001/api/events/create_event \
   -H "Content-Type: application/json" \
   -d '{"title": "Preparing for Careers in an AI-Driven World with Tina Huang",
-    "description": "Ever wondered how AI goes from buzzword to real-world impact? Now’s your chance to find out—by building with it. Join YouTuber Tina Huang and IBM SkillsBuild for a free, live 90-minute workshop where you’ll roll up your sleeves and explore how to create practical AI solutions using IBM Granite and watsonx — no prior experience needed.",
+    "description": "Ever wondered how AI goes from buzzword to real-world impact? Now's your chance to find out-by building with it. Join YouTuber Tina Huang and IBM SkillsBuild for a free, live 90-minute workshop where you'll roll up your sleeves and explore how to create practical AI solutions using IBM Granite and watsonx - no prior experience needed.",
     "start_datetime": "2025-06-25T13:00:00-04:00",
     "end_datetime": "2025-06-25T14:30:00-04:00",
     "is_all_day": false,

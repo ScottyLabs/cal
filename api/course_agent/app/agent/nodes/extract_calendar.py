@@ -1,16 +1,22 @@
 # course-agent/app/agent/nodes/extract_calendar.py
-from course_agent.app.services.iframe_scanner import find_google_calendar_iframe, derive_ical_link
 # from course_agent.app.db.repositories import insert_calendar
 from course_agent.app.agent.state import CourseAgentState
 from course_agent.app.db.repositories import upsert_calendar_source
+from course_agent.app.services.iframe_scanner import (
+    derive_ical_link,
+    find_google_calendar_iframe,
+)
+
 
 def extract_calendar_node(state: CourseAgentState):
     html = state.get("verified_site_html")
     org_id = state.get("org_id")
-    category_id = state.get('category_id')
-    website_id = state.get('verified_site_id')
+    category_id = state.get("category_id")
+    website_id = state.get("verified_site_id")
 
-    print(f"Extracting calendar for course {state.get('course_number')} with org_id {org_id}, category_id {category_id}, website_id {website_id}, html length {len(html) if html else 'None'}")
+    print(
+        f"Extracting calendar for course {state.get('course_number')} with org_id {org_id}, category_id {category_id}, website_id {website_id}, html length {len(html) if html else 'None'}"
+    )
     if not html or not org_id or not category_id or not website_id:
         return {
             **state,
@@ -31,25 +37,25 @@ def extract_calendar_node(state: CourseAgentState):
     if not ical_link:
         return {
             **state,
-            'terminal_status': 'no_calendar',
-            'done': True,
+            "terminal_status": "no_calendar",
+            "done": True,
         }
-    
+
     # skip DB writes if already seen this ical_link
-    if state.get('ical_link') == ical_link:
+    if state.get("ical_link") == ical_link:
         print(f"Skipping DB write for already seen ical_link: {ical_link}")
         return {
             **state,
-            'terminal_status': 'success',
-            'done': True,
+            "terminal_status": "success",
+            "done": True,
         }
 
     upsert_calendar_source(
         org_id=org_id,
-        category_id=state['category_id'],
+        category_id=state["category_id"],
         url=ical_link,
-        notes='Detected from course website iframe',
-        default_event_type=state.get('event_type'),
+        notes="Detected from course website iframe",
+        default_event_type=state.get("event_type"),
     )
 
     return {

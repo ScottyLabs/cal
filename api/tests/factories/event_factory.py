@@ -1,10 +1,11 @@
+import uuid
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
+
 import pytest
-from datetime import datetime, timezone, timedelta
 
 from app.models.models import Event
 
-import uuid
 
 @pytest.fixture
 def event_factory(db, org_factory, category_factory):
@@ -27,23 +28,17 @@ def event_factory(db, org_factory, category_factory):
             title=kwargs.pop("title", "Test Event"),
             description=kwargs.pop("description", None),
             location=kwargs.pop("location", "Test Location"),
-
             start_datetime=start,
             end_datetime=kwargs.pop("end_datetime", start + timedelta(hours=2)),
             is_all_day=kwargs.pop("is_all_day", False),
             event_timezone=event_timezone,
             semester=kwargs.pop("semester", "Spring_26"),
-
             user_edited=kwargs.pop("user_edited", []),
             source_url=kwargs.pop("source_url", None),
             event_type=kwargs.pop("event_type", "CLUB"),
-            ical_uid=kwargs.pop(
-                "ical_uid",
-                f"test-{uuid.uuid4()}"
-            ),
+            ical_uid=kwargs.pop("ical_uid", f"test-{uuid.uuid4()}"),
             ical_sequence=kwargs.pop("ical_sequence", 0),
             ical_last_modified=kwargs.pop("ical_last_modified", None),
-
             last_updated_at=kwargs.pop("last_updated_at", datetime.now(timezone.utc)),
         )
 

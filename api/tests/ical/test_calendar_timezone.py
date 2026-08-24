@@ -1,13 +1,14 @@
-from icalendar import Calendar
-from zoneinfo import ZoneInfo
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
+from icalendar import Calendar
+
+from app.models.models import Event, EventOccurrence
 from app.services.ical import (
     get_calendar_timezone,
-    normalize_ics_datetime,
     import_ical_feed_using_helpers,
+    normalize_ics_datetime,
 )
-from app.models.models import Event, EventOccurrence
 
 
 def test_get_calendar_timezone_from_x_wr():
@@ -62,7 +63,7 @@ END:VCALENDAR
         ical_text_or_url=ics,
         org_id=org.id,
         category_id=category.id,
-        calendar_source_id=source.id,  # ✅ REQUIRED
+        calendar_source_id=source.id,  # [ok] REQUIRED
         default_event_type="CLUB",
         user_id=user.id,
     )
@@ -72,7 +73,7 @@ END:VCALENDAR
     event = db.query(Event).filter_by(ical_uid="test-gcal-1").one()
 
     assert event.event_timezone is not None
-    assert event.start_datetime.hour == 22  # 18 EDT → 22 UTC
+    assert event.start_datetime.hour == 22  # 18 EDT -> 22 UTC
 
     local = event.start_datetime.astimezone(ZoneInfo("America/New_York"))
     assert local.hour == 18
@@ -154,8 +155,7 @@ END:VCALENDAR
     occs = db.query(EventOccurrence).order_by(EventOccurrence.start_datetime).all()
 
     hours = [
-        occ.start_datetime.astimezone(ZoneInfo("America/New_York")).hour
-        for occ in occs
+        occ.start_datetime.astimezone(ZoneInfo("America/New_York")).hour for occ in occs
     ]
 
     assert hours == [18, 19]

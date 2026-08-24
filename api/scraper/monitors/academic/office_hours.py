@@ -1,17 +1,15 @@
-
+import datetime
 
 import requests
-import bs4
-from scraper.monitors.base_scraper import BaseScraper
+
 from scraper.models import CourseResource, ResourceEvent
-import time
-import re
-import datetime
+from scraper.monitors.base_scraper import BaseScraper
+
 
 class OfficeHoursScraper(BaseScraper):
     def __init__(self, db):
         super().__init__(db, "Office Hours", "15122 Office Hours")
-    
+
     def scrape(self):
         print("Running Office Hours scraper...")
         # URL to fetch the 15-122 office hours from Google Calendar API
@@ -25,9 +23,12 @@ class OfficeHoursScraper(BaseScraper):
             "maxResults": 250,
             "sanitizeHtml": "true",
             "timeMin": datetime.datetime.utcnow().isoformat() + "Z",
-            "timeMax": (datetime.datetime.utcnow() + datetime.timedelta(days=21)).isoformat() + "Z",
+            "timeMax": (
+                datetime.datetime.utcnow() + datetime.timedelta(days=21)
+            ).isoformat()
+            + "Z",
             "key": "AIzaSyBNlYH01_9Hc5S1J9vuFmu2nUqBZJNAXxs",
-            "$unique": "gc237"
+            "$unique": "gc237",
         }
 
         try:
@@ -58,7 +59,7 @@ class OfficeHoursScraper(BaseScraper):
             course_id = "15-122"
             course_name = "Principles of Imperative Computation"
             professor = "Iliano Cervesato"
-            instructor = item.get("location", "").lstrip('(').rstrip(')')
+            instructor = item.get("location", "").lstrip("(").rstrip(")")
             if not instructor:
                 instructor = "TAs"
             location = item.get("summary", "")
@@ -68,40 +69,42 @@ class OfficeHoursScraper(BaseScraper):
                 start_datetime=start_datetime,
                 end_datetime=end_datetime,
                 location=location,
-                recurrence=None
+                recurrence=None,
             )
 
             # Check if a resource for this instructor already exists
-            existing_resource = next((res for res in resources if res.instructor == instructor), None)
+            existing_resource = next(
+                (res for res in resources if res.instructor == instructor), None
+            )
             if existing_resource:
                 existing_resource.events.append(event)
             else:
                 resource = CourseResource(
                     resource_type="OH",
-                    resource_source = "15122 OH Calendar",
+                    resource_source="15122 OH Calendar",
                     course_id=course_id,
                     course_name=course_name,
                     professor=professor,
                     instructor=instructor,
-                    events=[event]
+                    events=[event],
                 )
                 resources.append(resource)
 
         # Update the database
         unique_keys = ["resource_type", "course_id", "instructor"]
         self.update_database(resources, "academic_events", unique_keys)
-    
+
     def scrape_data_only(self):
         """Return scraped resources without database operations."""
         # Call the existing scrape method but capture resources before database update
         original_update = self.update_database
         captured_resources = []
-        
+
         def capture_resources(resources, collection_name, unique_keys):
             captured_resources.extend(resources)
-        
+
         self.update_database = capture_resources
         self.scrape()
         self.update_database = original_update
-        
+
         return captured_resources

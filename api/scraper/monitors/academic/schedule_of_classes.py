@@ -1,10 +1,11 @@
-import datetime
+import re
+
 import bs4
 import requests
 import urllib3  # <-- 1. Import urllib3 to suppress warnings
+
 from scraper.helpers.semester import get_current_semester
 from scraper.monitors.base_scraper import BaseScraper
-import re
 
 
 class ScheduleOfClasses:
@@ -20,7 +21,7 @@ class ScheduleOfClasses:
         location,
         semester,
         sem_start,
-        sem_end
+        sem_end,
     ):
         self.id = id
         self.course_num = course_num
@@ -33,6 +34,7 @@ class ScheduleOfClasses:
         self.semester = semester
         self.sem_start = sem_start
         self.sem_end = sem_end
+
 
 class ScheduleOfClassesScraper(BaseScraper):
     def __init__(self, db, semester_label: str):
@@ -141,7 +143,11 @@ class ScheduleOfClassesScraper(BaseScraper):
             for row_idx, course in enumerate(rows):
                 cols = course.find_all("td")
                 last_course_num, last_course_name = self._process_row_columns(
-                    cols, last_course_num, last_course_name, self.semester_label, resources
+                    cols,
+                    last_course_num,
+                    last_course_name,
+                    self.semester_label,
+                    resources,
                 )
 
         print(f"Scraper found {len(resources)} lecture and recitation sessions.")
@@ -208,6 +214,7 @@ class ScheduleOfClassesScraper(BaseScraper):
         resources.append(resource)
 
         return last_course_num, last_course_name
+
     def is_real_course_row(self, course_num: str) -> bool:
         # if is digit, then yes
         return course_num.isdigit()

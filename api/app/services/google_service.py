@@ -1,19 +1,20 @@
 # # handles API logic (Google Calendar)
-from google_auth_oauthlib.flow import Flow
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-from flask import session
-from datetime import datetime, timedelta, timezone
-import requests
+from datetime import datetime, timedelta
 
+import requests
+from flask import session
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
 
 SCOPES = [
     "https://www.googleapis.com/auth/calendar.events",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/calendar",
     "openid",
-    "https://www.googleapis.com/auth/calendar.readonly"
+    "https://www.googleapis.com/auth/calendar.readonly",
 ]
+
 
 def create_google_flow(config, state=None):
     flow = Flow.from_client_config(
@@ -27,27 +28,29 @@ def create_google_flow(config, state=None):
             }
         },
         scopes=SCOPES,
-        state=state
+        state=state,
     )
     flow.redirect_uri = config["GOOGLE_REDIRECT_URI"]
     return flow
+
 
 def fetch_user_credentials():
     creds_data = session.get("credentials")
     return Credentials(**creds_data) if creds_data else None
 
+
 def build_calendar_service(credentials):
     return build("calendar", "v3", credentials=credentials)
+
 
 def list_user_calendars(credentials):
     service = build_calendar_service(credentials)
     return service.calendarList().list().execute()["items"]
 
 
-
 def fetch_events_for_calendars(credentials, calendar_ids):
     service = build_calendar_service(credentials)
-    now = datetime.utcnow() # don't change this, changing will cause error!
+    now = datetime.utcnow()  # don't change this, changing will cause error!
     time_min = (now - timedelta(days=90)).isoformat() + "Z"
     time_max = (now + timedelta(days=90)).isoformat() + "Z"
     all_events = []
@@ -57,14 +60,18 @@ def fetch_events_for_calendars(credentials, calendar_ids):
             events = []
             page_token = None
             while True:
-                res = service.events().list(
-                    calendarId=cal_id,
-                    timeMin=time_min,
-                    timeMax=time_max,
-                    singleEvents=True,
-                    orderBy="startTime",
-                    pageToken=page_token
-                ).execute()
+                res = (
+                    service.events()
+                    .list(
+                        calendarId=cal_id,
+                        timeMin=time_min,
+                        timeMax=time_max,
+                        singleEvents=True,
+                        orderBy="startTime",
+                        pageToken=page_token,
+                    )
+                    .execute()
+                )
                 events.extend(res.get("items", []))
                 page_token = res.get("nextPageToken")
                 if not page_token:
@@ -74,17 +81,20 @@ def fetch_events_for_calendars(credentials, calendar_ids):
                 start = event.get("start", {})
                 end = event.get("end", {})
                 is_all_day = "date" in start
-                all_events.append({
-                    "title": event.get("summary", "No Title"),
-                    "start": start.get("dateTime") or start.get("date"),
-                    "end": end.get("dateTime") or end.get("date"),
-                    "allDay": is_all_day,
-                    "calendarId": cal_id,
-                })
+                all_events.append(
+                    {
+                        "title": event.get("summary", "No Title"),
+                        "start": start.get("dateTime") or start.get("date"),
+                        "end": end.get("dateTime") or end.get("date"),
+                        "allDay": is_all_day,
+                        "calendarId": cal_id,
+                    }
+                )
         except Exception as e:
             print(f"Error fetching calendar {cal_id}: {e}")
             continue
     return all_events
+
 
 def add_event(credentials, data, calendar_id):
     service = build_calendar_service(credentials)
@@ -96,22 +106,22 @@ def add_event(credentials, data, calendar_id):
     # "primary"
     return service.events().insert(calendarId=calendar_id, body=event_data).execute()
 
+
 def delete_event(credentials, event_id, calendar_id):
     try:
         service = build_calendar_service(credentials)
         service.events().delete(calendarId=calendar_id, eventId=event_id).execute()
     except Exception as e:
-        print(f"❌ Google API error deleting event {event_id} from {calendar_id}:", e)
+        print(f"Google API error deleting event {event_id} from {calendar_id}:", e)
         raise
+
 
 def create_cmucal_calendar(credentials):
     service = build("calendar", "v3", credentials=credentials)
-    calendar = {
-        "summary": "CMUCal",
-        "timeZone": "America/New_York"
-    }
+    calendar = {"summary": "CMUCal", "timeZone": "America/New_York"}
     created_calendar = service.calendars().insert(body=calendar).execute()
     return created_calendar["id"]
+
 
 def credentials_to_dict(credentials):
     return {
@@ -123,6 +133,7 @@ def credentials_to_dict(credentials):
         "scopes": credentials.scopes,
     }
 
+
 def synced_event_to_dict(event):
     return {
         "id": event.id,
@@ -132,8 +143,9 @@ def synced_event_to_dict(event):
         "title": event.title,
         "start": event.start,
         "end": event.end,
-        "synced_at": event.synced_at.isoformat() if event.synced_at else None
+        "synced_at": event.synced_at.isoformat() if event.synced_at else None,
     }
+
 
 def revoke_user_google_credentials():
     creds = session.get("credentials")
@@ -143,13 +155,10 @@ def revoke_user_google_credentials():
     if token:
         # Revoke the token via Google's API
         requests.post(
-            'https://oauth2.googleapis.com/revoke',
-            params={'token': token},
-            headers={'content-type': 'application/x-www-form-urlencoded'}
+            "https://oauth2.googleapis.com/revoke",
+            params={"token": token},
+            headers={"content-type": "application/x-www-form-urlencoded"},
         )
 
     # Clear credentials from session
     session.pop("credentials", None)
-
-
-

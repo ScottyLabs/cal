@@ -1,6 +1,7 @@
 # scraper/persistence/supabase_writer.py
-from supabase import create_client, Client
 import os
+
+from supabase import Client, create_client
 
 _supabase: Client | None = None
 
@@ -24,6 +25,7 @@ def get_supabase() -> Client:
 
     return _supabase
 
+
 def chunked(iterable, size):
     for i in range(0, len(iterable), size):
-        yield iterable[i:i + size]
+        yield iterable[i : i + size]

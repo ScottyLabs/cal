@@ -1,6 +1,6 @@
 # course-agent/app/agent/nodes/search.py
-from course_agent.app.services.search import get_search_course_site
 from course_agent.app.agent.state import CourseAgentState
+from course_agent.app.services.search import get_search_course_site
 
 
 def search_node(state: CourseAgentState):
@@ -14,7 +14,7 @@ def search_node(state: CourseAgentState):
             **state,
             "candidate_urls": [],
             "done": True,
-            "terminal_status": "no_site_found"
+            "terminal_status": "no_site_found",
         }
     return {
         **state,

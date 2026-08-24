@@ -46,7 +46,7 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
   const [editingAdmin, setEditingAdmin] = useState<AdminInOrg | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; id?: number; name?: string } | null>(null);
 
-  // Unified loading state — true while initial org data loads
+  // Unified loading state - true while initial org data loads
   const [isOrgLoading, setIsOrgLoading] = useState(false);
 
   // Fetch admins (used after mutations)
@@ -128,7 +128,7 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
   // null = access to all categories; number = scoped to that category only
   const allowedCategoryId: number | null = myAdmin?.category_id ?? null;
 
-  // Filtered events (search only — all categories visible)
+  // Filtered events (search only - all categories visible)
   const filteredEvents = useMemo(() => {
     if (!eventSearch.trim()) return events;
     const term = eventSearch.toLowerCase();
@@ -220,7 +220,7 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
         onDelete={(event) => { setDeleteTarget({ type: "event", id: event.event_id, name: event.title }); setShowDeleteConfirm(true); }}
       />
 
-      {/* Danger zone — admin only */}
+      {/* Danger zone - admin only */}
       {isAdmin && (
         <button
           onClick={() => { setDeleteTarget({ type: "org", name: selectedOrg.name }); setShowDeleteConfirm(true); }}
@@ -546,7 +546,7 @@ function ICalSection({
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-500">
-                    {cs.category_id ? (categoryMap.get(cs.category_id) ?? "—") : "—"}
+                    {cs.category_id ? (categoryMap.get(cs.category_id) ?? "-") : "-"}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <Toggle
@@ -635,7 +635,7 @@ function EventsSection({
                   <td className="px-4 py-3">
                     {formatDateRange(event.start_datetime, event.end_datetime)}
                   </td>
-                  <td className="px-4 py-3">{event.location || "—"}</td>
+                  <td className="px-4 py-3">{event.location || "-"}</td>
                   <td className="px-4 py-3 text-right space-x-2">
                     <IconButton
                       onClick={() => onDelete(event)}

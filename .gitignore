@@ -5,7 +5,7 @@
 result
 result-*
 
-# Secrets — never commit real values
+# Secrets - never commit real values
 .env
 .env.*
 !.env.example

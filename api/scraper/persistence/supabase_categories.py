@@ -1,5 +1,6 @@
 from scraper.persistence.supabase_writer import chunked
 
+
 def ensure_lecture_category(db, org_id_by_key: dict) -> dict:
     CATEGORY_NAME = "Lecture and Recitations"
     org_ids = list(set(org_id_by_key.values()))

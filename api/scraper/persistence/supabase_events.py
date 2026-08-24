@@ -1,5 +1,6 @@
+from scraper.helpers.event import clean_row_for_insert
 from scraper.persistence.supabase_writer import chunked
-from scraper.helpers.event import clean_row_for_insert, event_identity
+
 
 def insert_events(db, events):
     """
@@ -12,7 +13,9 @@ def insert_events(db, events):
 
     for e in events:
         identity_by_row.append(e["_identity"])
-        rows.append(clean_row_for_insert({k: v for k, v in e.items() if k != "_identity"}))
+        rows.append(
+            clean_row_for_insert({k: v for k, v in e.items() if k != "_identity"})
+        )
 
     event_id_by_identity = {}
 

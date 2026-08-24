@@ -1,12 +1,10 @@
-import pytest
 from datetime import datetime
 
 from scraper.helpers.event import group_soc_rows
 from scraper.models import ScheduleOfClasses
 
-
 SEM_START = datetime(2026, 1, 12)
-SEM_END   = datetime(2026, 5, 5)
+SEM_END = datetime(2026, 5, 5)
 
 
 def make_soc(
@@ -34,6 +32,7 @@ def make_soc(
         sem_end=SEM_END,
     )
 
+
 def test_groups_identical_soc_rows():
     soc1 = make_soc()
     soc2 = make_soc()
@@ -43,6 +42,7 @@ def test_groups_identical_soc_rows():
     assert len(grouped) == 1
     assert len(next(iter(grouped.values()))) == 2
 
+
 def test_separates_by_location():
     soc1 = make_soc(location="DH 2210")
     soc2 = make_soc(location="GHC 4401")
@@ -50,6 +50,7 @@ def test_separates_by_location():
     grouped = group_soc_rows([soc1, soc2])
 
     assert len(grouped) == 2
+
 
 def test_separates_by_time():
     soc1 = make_soc(lecture_time_start="09:00AM")
@@ -59,6 +60,7 @@ def test_separates_by_time():
 
     assert len(grouped) == 2
 
+
 def test_separates_by_section():
     soc1 = make_soc(lecture_section="A")
     soc2 = make_soc(lecture_section="B")
@@ -67,6 +69,7 @@ def test_separates_by_section():
 
     assert len(grouped) == 2
 
+
 def test_separates_by_semester():
     soc1 = make_soc(semester="Spring_26")
     soc2 = make_soc(semester="Fall_26")
@@ -74,6 +77,7 @@ def test_separates_by_semester():
     grouped = group_soc_rows([soc1, soc2])
 
     assert len(grouped) == 2
+
 
 def test_preserves_all_rows():
     socs = [

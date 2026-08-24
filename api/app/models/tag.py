@@ -1,5 +1,6 @@
 from app.models.models import Tag
 
+
 def save_tag(db, name: str):
     """
     Save a new tag in the database.
@@ -13,9 +14,10 @@ def save_tag(db, name: str):
     """
     tag = Tag(name=name)
     db.add(tag)
-    db.flush() 
+    db.flush()
     db.refresh(tag)
     return tag
+
 
 def get_tag_by_name(db, name: str):
     """
@@ -28,13 +30,14 @@ def get_tag_by_name(db, name: str):
     """
     return db.query(Tag).filter(Tag.name == name).first()
 
+
 def get_all_tags(db):
     """
     Retrieve all tags from the database.
-    
+
     Args:
         db: Database session.
-    
+
     Returns:
         A list of all Tag objects.
     """

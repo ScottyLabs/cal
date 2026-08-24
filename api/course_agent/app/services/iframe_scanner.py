@@ -1,6 +1,8 @@
 # course_agent/app/services/iframe_scanner.py
+from urllib.parse import parse_qs, urlparse
+
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, parse_qs
+
 
 def derive_ical_link(iframe_url: str) -> str | None:
     parsed = urlparse(iframe_url)
@@ -12,10 +14,7 @@ def derive_ical_link(iframe_url: str) -> str | None:
 
     calendar_id = src[0]
 
-    return (
-        "https://calendar.google.com/calendar/ical/"
-        f"{calendar_id}/public/basic.ics"
-    )
+    return f"https://calendar.google.com/calendar/ical/{calendar_id}/public/basic.ics"
 
 
 def find_google_calendar_iframe(html: str) -> str | None:

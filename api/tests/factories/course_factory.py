@@ -9,7 +9,7 @@ def course_factory():
         org,
         course_number="15213",
         course_name="Intro to Computer Systems",
-        **kwargs
+        **kwargs,
     ):
         return {
             "id": id,
@@ -21,6 +21,7 @@ def course_factory():
 
     return create_course
 
+
 @pytest.fixture
 def course_batch_factory(course_factory, org_factory):
     def create_batch(n=3):
@@ -31,9 +32,9 @@ def course_batch_factory(course_factory, org_factory):
                 org=org,
                 course_number=f"15{200 + i}",
                 course_name=f"Course {i}",
-                agent_run_id='test-run',
+                agent_run_id="test-run",
             )
             for i in range(n)
         ]
-    return create_batch
 
+    return create_batch

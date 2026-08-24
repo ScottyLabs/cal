@@ -1,8 +1,8 @@
 # app/models/admin.py
-from app.models.models import Admin, Category
 from typing import List
-from sqlalchemy.orm import aliased
-from sqlalchemy import or_
+
+from app.models.models import Admin, Category
+
 
 def admin_to_dict(admin):
     return {
@@ -13,7 +13,10 @@ def admin_to_dict(admin):
         "created_at": admin.created_at.isoformat() if admin.created_at else None,
     }
 
-def create_admin(db, org_id: int, user_id: int, role: str = "admin", category_id: int = None):
+
+def create_admin(
+    db, org_id: int, user_id: int, role: str = "admin", category_id: int = None
+):
     """
     Create a new admin in the database.
 
@@ -29,6 +32,7 @@ def create_admin(db, org_id: int, user_id: int, role: str = "admin", category_id
     db.add(admin)
     return admin
 
+
 def get_admin_by_org_and_user(db, org_id: int, user_id: int):
     """
     Retrieve an admin by organization ID and user ID.
@@ -39,10 +43,10 @@ def get_admin_by_org_and_user(db, org_id: int, user_id: int):
     Returns:
         The Admin object if found, otherwise None.
     """
-    return db.query(Admin).filter(
-        Admin.org_id == org_id,
-        Admin.user_id == user_id
-    ).first()
+    return (
+        db.query(Admin).filter(Admin.org_id == org_id, Admin.user_id == user_id).first()
+    )
+
 
 def get_role(db, user_id: int):
     """
@@ -53,9 +57,7 @@ def get_role(db, user_id: int):
     Returns:
         is_manager (boolean), is_admin (boolean), and pairs of (role, org_id) if found.
     """
-    admin_data = db.query(Admin).filter(
-        Admin.user_id == user_id
-    )
+    admin_data = db.query(Admin).filter(Admin.user_id == user_id)
     is_manager = False
     is_admin = False
     role_orgs = []
@@ -68,6 +70,7 @@ def get_role(db, user_id: int):
             role_orgs.append((admin.role, admin.org_id))
     return is_manager, is_admin, role_orgs
 
+
 def delete_admin(db, org_id: int, user_id: int):
     """
     Delete an admin by organization ID and user ID.
@@ -78,17 +81,19 @@ def delete_admin(db, org_id: int, user_id: int):
     Returns:
         True if the admin was deleted, False if it was not found.
     """
-    admin = db.query(Admin).filter(
-        Admin.org_id == org_id,
-        Admin.user_id == user_id
-    ).first()
-    
+    admin = (
+        db.query(Admin).filter(Admin.org_id == org_id, Admin.user_id == user_id).first()
+    )
+
     if admin:
         db.delete(admin)
         return True
     return False
 
-def update_admin(db, org_id: int, user_id: int, role: str = None, category_id: int = None):
+
+def update_admin(
+    db, org_id: int, user_id: int, role: str = None, category_id: int = None
+):
     """
     Update an admin's role and/or category_id.
 
@@ -102,10 +107,9 @@ def update_admin(db, org_id: int, user_id: int, role: str = None, category_id: i
     Returns:
         The updated Admin object, or None if not found.
     """
-    admin = db.query(Admin).filter(
-        Admin.org_id == org_id,
-        Admin.user_id == user_id
-    ).first()
+    admin = (
+        db.query(Admin).filter(Admin.org_id == org_id, Admin.user_id == user_id).first()
+    )
 
     if not admin:
         return None
@@ -118,36 +122,39 @@ def update_admin(db, org_id: int, user_id: int, role: str = None, category_id: i
     db.add(admin)
     return admin
 
+
 def get_admins_by_org(db, org_id: int) -> List[Admin]:
     """
     Retrieve all admins for a specific organization.
-    
+
     Args:
         db: Database session.
-        org_id: ID of the organization. 
+        org_id: ID of the organization.
     """
     return db.query(Admin).filter(Admin.org_id == org_id).all()
+
 
 def get_categories_for_admin_user(db, user_id: int):
     """
     Retrieve all categories where the user is an admin or manager.
-    
+
     - 'manager': access to all categories in the org
     - 'admin': access to the specific category_id
-    
+
     Args:
         db: Database session
         user_id: ID of the user
-    
+
     Returns:
         A list of Category objects
     """
-    
+
     # Get all relevant admin entries
-    admin_entries = db.query(Admin).filter(
-        Admin.user_id == user_id,
-        Admin.role.in_(["admin", "manager"])
-    ).all()
+    admin_entries = (
+        db.query(Admin)
+        .filter(Admin.user_id == user_id, Admin.role.in_(["admin", "manager"]))
+        .all()
+    )
 
     # Collect category IDs
     category_ids = set()
@@ -155,7 +162,9 @@ def get_categories_for_admin_user(db, user_id: int):
     for admin in admin_entries:
         if admin.role == "manager":
             # Add all categories in the org
-            org_category_ids = db.query(Category.id).filter(Category.org_id == admin.org_id).all()
+            org_category_ids = (
+                db.query(Category.id).filter(Category.org_id == admin.org_id).all()
+            )
             category_ids.update(cid for (cid,) in org_category_ids)
         elif admin.role == "admin" and admin.category_id is not None:
             category_ids.add(admin.category_id)

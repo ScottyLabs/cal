@@ -132,7 +132,7 @@ export default function ModalEventLink({
       <div className="flex flex-col items-center py-8">
         <Spinner />
         <p className="mt-2 text-sm text-gray-500">
-          Importing calendar events…
+          Importing calendar events...
         </p>
       </div>
     );}   
@@ -141,7 +141,7 @@ export default function ModalEventLink({
   return (
     <Modal show={show} onClose={onClose}>
       <h2 className="mb-4 text-xl font-semibold">
-        Upload to {selectedCategory.organization_name} — {selectedCategory.name}
+        Upload to {selectedCategory.organization_name} - {selectedCategory.name}
       </h2>
 
       {/* Event Type */}
@@ -239,7 +239,7 @@ export default function ModalEventLink({
           {isSubmitting ? (
             <>
               <Spinner />
-              Uploading…
+              Uploading...
             </>
           ) : (
             "Continue"

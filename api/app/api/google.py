@@ -1,20 +1,24 @@
 # routes requests and coordinates services/models
-from flask import Blueprint, request, jsonify, redirect, current_app, session, g
-from app.utils.date import convert_to_iso8601
+from flask import Blueprint, current_app, g, jsonify, redirect, request, session
 
+from app.models.google_event import (
+    delete_google_event_by_local_id,
+    get_google_event_by_local_id,
+    save_google_event,
+)
+from app.models.user import get_user_by_clerk_id, update_user_calendar_id
 from app.services.google_service import (
+    add_event,
     create_cmucal_calendar,
     create_google_flow,
+    credentials_to_dict,
+    delete_event,
+    fetch_events_for_calendars,
     fetch_user_credentials,
     list_user_calendars,
-    fetch_events_for_calendars,
-    add_event,
-    delete_event,
-    credentials_to_dict,
-    revoke_user_google_credentials
+    revoke_user_google_credentials,
 )
-from app.models.google_event import save_google_event, get_google_event_by_local_id, delete_google_event_by_local_id
-from app.models.user import get_user_by_clerk_id, update_user_calendar_id
+from app.utils.date import convert_to_iso8601
 
 google_bp = Blueprint("google", __name__)
 
@@ -26,13 +30,12 @@ def authorize():
     print("---authorize redirect URL:", redirect_url)
     flow = create_google_flow(current_app.config)
     authorization_url, state = flow.authorization_url(
-        access_type="offline",
-        include_granted_scopes="true",
-        prompt="consent"
+        access_type="offline", include_granted_scopes="true", prompt="consent"
     )
     session["state"] = state
     session["post_auth_redirect"] = redirect_url
     return redirect(authorization_url)
+
 
 @google_bp.route("/unauthorize", methods=["DELETE", "OPTIONS"])
 def unauthorize_google():
@@ -43,6 +46,7 @@ def unauthorize_google():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+
 @google_bp.route("/oauth/callback")
 def oauth2callback():
     state = session["state"]
@@ -50,23 +54,29 @@ def oauth2callback():
     print("---oauth2callback redirect URL:", request.url)
     flow.fetch_token(authorization_response=request.url)
     session["credentials"] = credentials_to_dict(flow.credentials)
-    print("---oauth2callback frontend_redirect:", current_app.config["FRONTEND_REDIRECT_URI"])
-    return redirect(session.pop("post_auth_redirect", current_app.config["FRONTEND_REDIRECT_URI"]))
+    print(
+        "---oauth2callback frontend_redirect:",
+        current_app.config["FRONTEND_REDIRECT_URI"],
+    )
+    return redirect(
+        session.pop("post_auth_redirect", current_app.config["FRONTEND_REDIRECT_URI"])
+    )
+
 
 @google_bp.route("/calendar/status")
 def calendar_status():
-    return jsonify({ "authorized": "credentials" in session })
+    return jsonify({"authorized": "credentials" in session})
 
 
 @google_bp.route("/calendars/init", methods=["POST"])
 def ensure_calendar():
     db = g.db
     try:
-        clerk_id = request.headers.get('Clerk-User-Id')
+        clerk_id = request.headers.get("Clerk-User-Id")
         if not clerk_id:
-            print("❌ Missing Clerk-User-Id header")
+            print("Missing Clerk-User-Id header")
             return jsonify({"error": "Missing clerk_id"}), 400
-        
+
         user = get_user_by_clerk_id(db, clerk_id)
         if user is None:
             return jsonify({"error": "User not found"}), 404
@@ -79,22 +89,21 @@ def ensure_calendar():
             update_user_calendar_id(db, clerk_id, calendar_id)
             user = get_user_by_clerk_id(db, clerk_id)
             created = True
-            print("→ Created calendar for user:", calendar_id)
+            print("-> Created calendar for user:", calendar_id)
             db.commit()
-        return jsonify({
-                    "calendar_id": user.calendar_id,
-                    "created": created
-                }), 200
+        return jsonify({"calendar_id": user.calendar_id, "created": created}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @google_bp.route("/calendars", methods=["GET"])
 def list_calendars():
     creds = fetch_user_credentials()
     if not creds:
-        return jsonify({"error": "Unauthorized"}), 401    
+        return jsonify({"error": "Unauthorized"}), 401
     return jsonify(list_user_calendars(creds))
+
 
 @google_bp.route("/calendar/events/bulk", methods=["POST"])
 def bulk_events():
@@ -103,6 +112,7 @@ def bulk_events():
         return jsonify({"error": "Unauthorized"}), 401
     calendar_ids = request.get_json().get("calendarIds", [])
     return jsonify(fetch_events_for_calendars(creds, calendar_ids))
+
 
 @google_bp.route("/calendar/events/add", methods=["POST"])
 def add_event_route():
@@ -123,8 +133,8 @@ def add_event_route():
             return jsonify({"error": "User or calendar not found"}), 400
 
         calendar_id = user.calendar_id
-        data["start"] = convert_to_iso8601(data["start"]) # data["start"].isoformat()
-        data["end"] = convert_to_iso8601(data["end"]) # data["end"].isoformat()
+        data["start"] = convert_to_iso8601(data["start"])  # data["start"].isoformat()
+        data["end"] = convert_to_iso8601(data["end"])  # data["end"].isoformat()
 
         event = add_event(creds, data, calendar_id)
 
@@ -141,15 +151,16 @@ def add_event_route():
             google_event_id=event["id"],
             title=data["title"],
             start=data["start"],
-            end=data["end"]
+            end=data["end"],
         )
 
         db.commit()
 
-        return jsonify({ "googleEventId": event["id"] })
+        return jsonify({"googleEventId": event["id"]})
 
     except Exception as e:
-        return jsonify({ "error": str(e) }), 500
+        return jsonify({"error": str(e)}), 500
+
 
 @google_bp.route("/calendar/events/<local_event_id>", methods=["DELETE"])
 def delete_event_route(local_event_id):
@@ -163,14 +174,14 @@ def delete_event_route(local_event_id):
         user_id = data.get("user_id")
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
-        
+
         user = get_user_by_clerk_id(db, user_id)
         if not user or not user.calendar_id:
             return jsonify({"error": "User or calendar not found"}), 400
 
         record = get_google_event_by_local_id(db, user.id, local_event_id)
         if not record:
-            return jsonify({ "error": "No matching event found" }), 404
+            return jsonify({"error": "No matching event found"}), 404
 
         calendar_id = user.calendar_id
 
@@ -178,7 +189,7 @@ def delete_event_route(local_event_id):
         delete_google_event_by_local_id(db, user.id, local_event_id)
         db.commit()
 
-        return jsonify({ "status": "deleted" })
+        return jsonify({"status": "deleted"})
 
     except Exception as e:
-        return jsonify({ "error": str(e) }), 500
+        return jsonify({"error": str(e)}), 500

@@ -13,27 +13,26 @@ The current codebase handles mechanism (1) but NOT mechanism (2).
 These tests verify both paths and expose the STATUS:CANCELLED gap.
 """
 
-import pytest
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
+import pytest
+
+from app.models.event_occurrence import populate_event_occurrences
 from app.models.models import (
     Event,
     EventOccurrence,
-    RecurrenceRule,
-    RecurrenceExdate,
-    RecurrenceRdate,
     EventOverride,
+    RecurrenceExdate,
+    RecurrenceRule,
 )
-from app.models.calendar_source import create_calendar_source
 from app.services.ical import import_ical_feed_using_helpers
-from app.models.event_occurrence import populate_event_occurrences
-
 
 # ---------------------------------------------------------------------------
 # Helper to build ICS timestamps relative to "now" so tests don't go stale
 # ---------------------------------------------------------------------------
 ET = ZoneInfo("America/New_York")
+
 
 def _ts(dt: datetime) -> str:
     """Format a tz-aware datetime as an ICS DATETIME string (UTC)."""
@@ -176,7 +175,9 @@ END:VCALENDAR
         event_id = result["event_ids"][0]
 
         starts = _occurrence_starts(db, event_id)
-        assert len(starts) == 4, f"Expected 4 occurrences (5 - 1 EXDATE), got {len(starts)}"
+        assert len(starts) == 4, (
+            f"Expected 4 occurrences (5 - 1 EXDATE), got {len(starts)}"
+        )
 
         # The deleted date should not be present
         deleted_utc = self.DELETED_DT.astimezone(timezone.utc)
@@ -227,7 +228,9 @@ END:VCALENDAR
         event_id = result["event_ids"][0]
 
         starts = _occurrence_starts(db, event_id)
-        assert len(starts) == 3, f"Expected 3 occurrences (5 - 2 EXDATE), got {len(starts)}"
+        assert len(starts) == 3, (
+            f"Expected 3 occurrences (5 - 2 EXDATE), got {len(starts)}"
+        )
 
     def test_exdates_stored_correctly(self, scaffold):
         result = _import(scaffold, self.ICS)
@@ -239,7 +242,7 @@ END:VCALENDAR
 
 
 # ============================================================================
-# 4. STATUS:CANCELLED — Google's primary deletion mechanism for recurring events
+# 4. STATUS:CANCELLED - Google's primary deletion mechanism for recurring events
 #    THIS IS THE BUG: cancelled instances still appear as occurrences
 # ============================================================================
 class TestStatusCancelledSingleDeletion:
@@ -280,8 +283,8 @@ END:VCALENDAR
 """
 
     @pytest.mark.xfail(
-        reason="BUG: STATUS:CANCELLED on RECURRENCE-ID is not handled — "
-               "cancelled occurrence still appears as an EventOverride",
+        reason="BUG: STATUS:CANCELLED on RECURRENCE-ID is not handled - "
+        "cancelled occurrence still appears as an EventOverride",
         strict=True,
     )
     def test_cancelled_instance_excluded_from_occurrences(self, scaffold):
@@ -328,7 +331,7 @@ END:VCALENDAR
 
 
 # ============================================================================
-# 5. STATUS:CANCELLED — multiple deletions
+# 5. STATUS:CANCELLED - multiple deletions
 # ============================================================================
 class TestStatusCancelledMultipleDeletions:
     """Google cancels 2 of 5 instances via STATUS:CANCELLED."""
@@ -371,7 +374,7 @@ END:VCALENDAR
 """
 
     @pytest.mark.xfail(
-        reason="BUG: STATUS:CANCELLED not handled — both cancelled instances still appear",
+        reason="BUG: STATUS:CANCELLED not handled - both cancelled instances still appear",
         strict=True,
     )
     def test_two_cancelled_instances_excluded(self, scaffold):
@@ -404,8 +407,8 @@ class TestMixedExdateAndCancelled:
     - STATUS:CANCELLED for instances that were modified then deleted
     """
 
-    EXDATE_DT = _BASE + timedelta(weeks=1)   # week 2 deleted via EXDATE
-    CANCEL_DT = _BASE + timedelta(weeks=3)   # week 4 deleted via STATUS:CANCELLED
+    EXDATE_DT = _BASE + timedelta(weeks=1)  # week 2 deleted via EXDATE
+    CANCEL_DT = _BASE + timedelta(weeks=3)  # week 4 deleted via STATUS:CANCELLED
 
     ICS = f"""BEGIN:VCALENDAR
 VERSION:2.0
@@ -434,7 +437,7 @@ END:VCALENDAR
 """
 
     @pytest.mark.xfail(
-        reason="BUG: STATUS:CANCELLED portion not handled — only EXDATE deletion works",
+        reason="BUG: STATUS:CANCELLED portion not handled - only EXDATE deletion works",
         strict=True,
     )
     def test_both_deletion_types_honored(self, scaffold):
@@ -465,7 +468,7 @@ END:VCALENDAR
 class TestRecurrenceIdModifiedNotCancelled:
     """
     A RECURRENCE-ID VEVENT that is NOT cancelled (just modified) should still
-    appear in occurrences — with the updated title/time/location.
+    appear in occurrences - with the updated title/time/location.
     """
 
     MODIFIED_DT = _BASE + timedelta(weeks=2)
@@ -498,7 +501,7 @@ END:VCALENDAR
 """
 
     def test_modified_instance_still_appears(self, scaffold):
-        """All 5 occurrences should exist — one with modified data."""
+        """All 5 occurrences should exist - one with modified data."""
         result = _import(scaffold, self.ICS)
         assert result["success"]
         db = scaffold["db"]
@@ -609,7 +612,9 @@ END:VCALENDAR
     def test_reimport_does_not_create_duplicate_event(self, scaffold):
         result1 = _import(scaffold, self.ICS_BEFORE)
         result2 = _import(scaffold, self.ICS_AFTER)
-        assert result1["event_ids"] == result2["event_ids"], "Should reuse same event ID"
+        assert result1["event_ids"] == result2["event_ids"], (
+            "Should reuse same event ID"
+        )
 
 
 # ============================================================================
@@ -835,7 +840,7 @@ END:VEVENT
 END:VCALENDAR
 """
 
-    ICS_WITHOUT_EVENT = f"""BEGIN:VCALENDAR
+    ICS_WITHOUT_EVENT = """BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Google Inc//Google Calendar 70.9054//EN
 X-WR-TIMEZONE:America/New_York
@@ -908,11 +913,11 @@ class TestComplexRealWorldScenario:
     Expected: 4 occurrences (weeks 1, 3, 4-modified, 6)
     """
 
-    EXDATE_DT = _BASE + timedelta(weeks=1)      # week 2
-    MODIFIED_DT = _BASE + timedelta(weeks=3)     # week 4
+    EXDATE_DT = _BASE + timedelta(weeks=1)  # week 2
+    MODIFIED_DT = _BASE + timedelta(weeks=3)  # week 4
     MOD_NEW_START = MODIFIED_DT.replace(hour=15)
     MOD_NEW_END = MOD_NEW_START + timedelta(hours=1)
-    CANCEL_DT = _BASE + timedelta(weeks=4)       # week 5
+    CANCEL_DT = _BASE + timedelta(weeks=4)  # week 5
 
     ICS = f"""BEGIN:VCALENDAR
 VERSION:2.0
@@ -1017,9 +1022,7 @@ END:VCALENDAR
         assert len(exdates) == 1
 
         overrides = db.query(EventOverride).filter_by(rrule_id=rule.id).all()
-        assert len(overrides) == 2, (
-            "Should have 2 overrides: 1 modified + 1 cancelled"
-        )
+        assert len(overrides) == 2, "Should have 2 overrides: 1 modified + 1 cancelled"
 
 
 # ============================================================================
@@ -1031,9 +1034,7 @@ class TestPopulateOccurrencesWithExdates:
     populate_event_occurrences and verify the exclusion.
     """
 
-    def test_populate_skips_exdates(
-        self, db, event_factory, recurrence_rule_factory
-    ):
+    def test_populate_skips_exdates(self, db, event_factory, recurrence_rule_factory):
         event_tz = ZoneInfo("America/New_York")
         start = datetime(2026, 3, 2, 10, 0, tzinfo=event_tz)
         end = start + timedelta(hours=1)

@@ -359,7 +359,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
 
           if (res.status === 201) {
             alert("Event created successfully!");
-            onClose(); // ✅ only close modal if backend call succeeds
+            onClose(); // [ok] only close modal if backend call succeeds
           } else {
             alert("Something went wrong while submitting.");
           }
@@ -484,7 +484,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
           onClick={(e) => e.stopPropagation()}
         > */}
           <h2 className="text-xl font-semibold mb-4">
-            Upload to {selectedCategory.organization_name} — {selectedCategory.name}
+            Upload to {selectedCategory.organization_name} - {selectedCategory.name}
           </h2>
 
           {/* Event Type */}

@@ -1,16 +1,17 @@
 # scraper/scripts/export_supplemental_instruction.py
 
 from datetime import timedelta
-from dateutil.parser import isoparse
 from zoneinfo import ZoneInfo
 
-from app.env import load_env, get_api_base_url
+from dateutil.parser import isoparse
+
+from app.env import get_api_base_url, load_env
 from app.models.enums import FrequencyType
 from scraper.helpers.event import event_identity
 from scraper.monitors.academic import SupplementalInstructionScraper
-from scraper.persistence.supabase_writer import get_supabase
 from scraper.persistence.supabase_events import insert_events
 from scraper.persistence.supabase_recurrence import replace_recurrence_rules
+from scraper.persistence.supabase_writer import get_supabase
 
 ENV = load_env()
 API_BASE_URL = get_api_base_url()
@@ -31,7 +32,9 @@ def export_supplemental_instruction():
     rrules = []
 
     for resource in resources:
-        category = setup_sasc_category(db, org, resource.course_num, clear=CLEAR_CATEGORIES)
+        category = setup_sasc_category(
+            db, org, resource.course_num, clear=CLEAR_CATEGORIES
+        )
         for time_location in resource.time_locations:
             event, rrule = create_si_event(resource, org, category, time_location)
             events.append(event)
@@ -42,7 +45,14 @@ def export_supplemental_instruction():
         replace_recurrence_rules(db, rrules, event_id_by_identity)
 
 
-def create_si_event(resource, org: dict, category: dict, time_location: dict, *, semester: str = SI_SEMESTER):
+def create_si_event(
+    resource,
+    org: dict,
+    category: dict,
+    time_location: dict,
+    *,
+    semester: str = SI_SEMESTER,
+):
     location = time_location["location"]
     tz = SI_TIMEZONE
 
@@ -50,7 +60,6 @@ def create_si_event(resource, org: dict, category: dict, time_location: dict, *,
     start_dt = isoparse(time_location["start_datetime"])
     end_dt = isoparse(time_location["end_datetime"])
 
-    
     org_id = org["id"]
     category_id = category["id"]
     by_day = time_location["recurrence_by_day"]
@@ -96,13 +105,15 @@ def setup_sasc_org(db):
     res = db.table("organizations").select("id, name").eq("name", "SASC").execute()
     if res.data:
         return {"id": res.data[0]["id"], "name": res.data[0]["name"]}
-    
+
     # Create SASC organization if it doesn't exist
-    db.table("organizations").insert({
-        "name": "SASC",
-        "description": "Student Academic Success Center",
-        "type": "DEPARTMENT",
-    }).execute()
+    db.table("organizations").insert(
+        {
+            "name": "SASC",
+            "description": "Student Academic Success Center",
+            "type": "DEPARTMENT",
+        }
+    ).execute()
     res = db.table("organizations").select("id, name").eq("name", "SASC").execute()
     row = res.data[0]
     return {"id": row["id"], "name": row["name"]}
@@ -126,7 +137,9 @@ def setup_sasc_category(db, org: dict, course_num: str, clear: bool = False) -> 
         row = res.data[0]
         category_id = row["id"]
     else:
-        db.table("categories").insert({"org_id": org_id, "name": category_name}).execute()
+        db.table("categories").insert(
+            {"org_id": org_id, "name": category_name}
+        ).execute()
         res = (
             db.table("categories")
             .select("id, org_id, name")

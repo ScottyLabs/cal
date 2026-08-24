@@ -1,30 +1,50 @@
-from zoneinfo import ZoneInfo
-from flask import Blueprint, jsonify, request, g
-from app.models.user import get_user_by_clerk_id
-from app.models.event import save_event, get_event_by_id
-from app.models.admin import get_admin_by_org_and_user
-from app.models.tag import get_tag_by_name, save_tag, get_all_tags
-from app.models.event_tag import save_event_tag, get_tags_by_event, delete_event_tag
-from app.models.recurrence_rule import add_recurrence_rule
-from app.models.event_occurrence import populate_event_occurrences, regenerate_event_occurrences_by_event_ids, save_event_occurrence
-from app.models.category import category_to_dict, get_category_by_id
-from app.models.models import CalendarSource, Event, RecurrenceRule, UserSavedEvent, Organization, EventOccurrence, EventTag, Category, Tag, RecurrenceExdate, RecurrenceRdate, EventOverride, RecurrenceOverride
 import pprint
-from datetime import datetime, timezone
-from sqlalchemy import cast, Date, or_, delete, select
-
-from app.services.ical import delete_events_for_calendar_source, import_ical_feed_using_helpers
-from app.errors.ical import ICalFetchError
-from app.models.calendar_source import create_calendar_source
-from app.utils.date import _parse_iso_aware
-from app.services.db import get_session
 import threading
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
+from flask import Blueprint, g, jsonify, request
+from sqlalchemy import Date, cast, delete, or_, select
+from sqlalchemy.orm import joinedload
+
+from app.models.admin import get_admin_by_org_and_user
+from app.models.calendar_source import create_calendar_source
+from app.models.category import category_to_dict, get_category_by_id
+from app.models.event import get_event_by_id, save_event
+from app.models.event_occurrence import (
+    populate_event_occurrences,
+    regenerate_event_occurrences_by_event_ids,
+    save_event_occurrence,
+)
+from app.models.event_tag import delete_event_tag, get_tags_by_event, save_event_tag
+from app.models.models import (
+    CalendarSource,
+    Event,
+    EventOccurrence,
+    EventOverride,
+    EventTag,
+    Organization,
+    RecurrenceExdate,
+    RecurrenceOverride,
+    RecurrenceRdate,
+    RecurrenceRule,
+    UserSavedEvent,
+)
+from app.models.recurrence_rule import add_recurrence_rule
+from app.models.tag import get_all_tags, get_tag_by_name, save_tag
+from app.models.user import get_user_by_clerk_id
+from app.services.db import get_session
+from app.services.ical import (
+    import_ical_feed_using_helpers,
+)
+from app.utils.date import _parse_iso_aware
 
 events_bp = Blueprint("events", __name__)
 
 
-def _import_ical_background(source_id, gcal_link, org_id, category_id, semester, event_type, user_id):
+def _import_ical_background(
+    source_id, gcal_link, org_id, category_id, semester, event_type, user_id
+):
     """Run iCal import in a background thread with its own DB session."""
     db = get_session()
     try:
@@ -59,7 +79,8 @@ def _import_ical_background(source_id, gcal_link, org_id, category_id, semester,
             db.commit()
     except Exception:
         import traceback
-        print("❌ Background iCal import error:", traceback.format_exc())
+
+        print("Background iCal import error:", traceback.format_exc())
         try:
             cs = db.query(CalendarSource).filter(CalendarSource.id == source_id).first()
             if cs:
@@ -69,6 +90,7 @@ def _import_ical_background(source_id, gcal_link, org_id, category_id, semester,
             pass
     finally:
         db.close()
+
 
 @events_bp.route("/create_event", methods=["POST"])
 def create_event_record():
@@ -88,7 +110,7 @@ def create_event_record():
         location = data.get("location", None)
         semester = data.get("semester", None)
         source_url = data.get("source_url", None)
-        event_type= data.get("event_type", None)
+        event_type = data.get("event_type", None)
         user_edited = data.get("user_edited", [])
         org_id = data.get("org_id")
         category_id = data.get("category_id")
@@ -99,8 +121,18 @@ def create_event_record():
         if not org_id or not category_id or not clerk_id:
             return jsonify({"error": "Missing org_id or category_id or clerk_id"}), 400
 
-        if not title or not start_datetime or not end_datetime or not recurrence or not event_timezone:
-            return jsonify({"error": "Missing required fields: title, start_datetime, end_datetime, recurrence, event_timezone"}), 400
+        if (
+            not title
+            or not start_datetime
+            or not end_datetime
+            or not recurrence
+            or not event_timezone
+        ):
+            return jsonify(
+                {
+                    "error": "Missing required fields: title, start_datetime, end_datetime, recurrence, event_timezone"
+                }
+            ), 400
 
         user = get_user_by_clerk_id(db, clerk_id)
         if not user:
@@ -108,23 +140,26 @@ def create_event_record():
         user_edited.append(user.id)
 
         # Assuming you have a function to create an event
-        event = save_event(db, org_id=org_id, 
-                            category_id=category_id,
-                            title=title,
-                            description=description,
-                            start_datetime=start_datetime,
-                            end_datetime=end_datetime,
-                            is_all_day=is_all_day,
-                            location=location,
-                            semester=semester,
-                            source_url=source_url,
-                            event_type=event_type,
-                            user_edited=user_edited,
-                            event_timezone=event_timezone)
+        event = save_event(
+            db,
+            org_id=org_id,
+            category_id=category_id,
+            title=title,
+            description=description,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+            is_all_day=is_all_day,
+            location=location,
+            semester=semester,
+            source_url=source_url,
+            event_type=event_type,
+            user_edited=user_edited,
+            event_timezone=event_timezone,
+        )
 
         if not event:
             return jsonify({"error": "Event creation failed"}), 500
-        
+
         if event_tags:
             for tag_name in event_tags:
                 tag_name = tag_name.strip().lower()  # Normalize tag name to lowercase
@@ -137,50 +172,56 @@ def create_event_record():
                     save_event_tag(db, event_id=event.id, tag_id=tag.id)
                 else:
                     return jsonify({"error": f"Failed to save tag '{tag_name}'"}), 500
-        
+
         if recurrence and recurrence != "ONETIME":
             recurrence_data = data.get("recurrence_data", {})
             if not recurrence_data:
                 return jsonify({"error": "Missing recurrence data"}), 400
-            rule = add_recurrence_rule(db,  
-                                event_id=event.id, 
-                                frequency=recurrence_data.get("frequency"),
-                                interval=recurrence_data.get("interval"),
-                                start_datetime=recurrence_data.get("start_datetime"),
-                                count=recurrence_data.get("count", None),
-                                until=recurrence_data.get("until", None),
-                                by_day=recurrence_data.get("by_day", None),
-                                by_month_day=recurrence_data.get("by_month_day", None),
-                                by_month=recurrence_data.get("by_month", None))
+            rule = add_recurrence_rule(
+                db,
+                event_id=event.id,
+                frequency=recurrence_data.get("frequency"),
+                interval=recurrence_data.get("interval"),
+                start_datetime=recurrence_data.get("start_datetime"),
+                count=recurrence_data.get("count", None),
+                until=recurrence_data.get("until", None),
+                by_day=recurrence_data.get("by_day", None),
+                by_month_day=recurrence_data.get("by_month_day", None),
+                by_month=recurrence_data.get("by_month", None),
+            )
             occurrence_msg = populate_event_occurrences(db, event=event, rule=rule)
         else:
             if not recurrence == "EXCEPTION":
                 event_saved_at = event.last_updated_at
             else:
                 event_saved_at = datetime.now(timezone.utc)
-            
-            event_occurrence = save_event_occurrence(db, 
-                                                event_id=event.id, 
-                                                org_id=org_id, 
-                                                category_id=category_id, 
-                                                title=title,
-                                                start_datetime=start_datetime,
-                                                end_datetime=end_datetime,
-                                                recurrence=recurrence,
-                                                event_saved_at=event_saved_at,
-                                                is_all_day=is_all_day,
-                                                event_timezone=event.event_timezone,
-                                                user_edited=user_edited,
-                                                description=description,
-                                                location=location,
-                                                source_url=source_url)
+
+            event_occurrence = save_event_occurrence(
+                db,
+                event_id=event.id,
+                org_id=org_id,
+                category_id=category_id,
+                title=title,
+                start_datetime=start_datetime,
+                end_datetime=end_datetime,
+                recurrence=recurrence,
+                event_saved_at=event_saved_at,
+                is_all_day=is_all_day,
+                event_timezone=event.event_timezone,
+                user_edited=user_edited,
+                description=description,
+                location=location,
+                source_url=source_url,
+            )
         db.commit()  # Only commit if all succeeded
         return jsonify({"status": "event created", "event_id": event.id}), 201
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
 
         return jsonify({"error": str(e)}), 500
+
 
 @events_bp.route("/read_gcal_link", methods=["POST"])
 def read_gcal_link():
@@ -201,7 +242,7 @@ def read_gcal_link():
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        # Ensure CalendarSource exists — unique constraint is (category_id, url)
+        # Ensure CalendarSource exists - unique constraint is (category_id, url)
         calendar_source = (
             db.query(CalendarSource)
             .filter(
@@ -240,29 +281,43 @@ def read_gcal_link():
         db.commit()
         source_id = calendar_source.id
 
-        # Scrape events in the background — uses its own DB session
+        # Scrape events in the background - uses its own DB session
         thread = threading.Thread(
             target=_import_ical_background,
-            args=(source_id, gcal_link, org_id, category_id, semester, event_type, user.id),
+            args=(
+                source_id,
+                gcal_link,
+                org_id,
+                category_id,
+                semester,
+                event_type,
+                user.id,
+            ),
             daemon=True,
         )
         thread.start()
 
-        return jsonify({
-            "success": True,
-            "message": "Calendar source added. Events are being imported in the background.",
-            "calendar_source_id": source_id,
-        }), 201
+        return jsonify(
+            {
+                "success": True,
+                "message": "Calendar source added. Events are being imported in the background.",
+                "calendar_source_id": source_id,
+            }
+        ), 201
 
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
 
-        return jsonify({
-            "success": False,
-            "error": "INTERNAL_SERVER_ERROR",
-            "message": str(e),
-        }), 500
+        print("Exception:", traceback.format_exc())
+
+        return jsonify(
+            {
+                "success": False,
+                "error": "INTERNAL_SERVER_ERROR",
+                "message": str(e),
+            }
+        ), 500
+
 
 # @events_bp.route("/generate_more_occurrences", methods=["POST"])
 # def generate_more_occurrences():
@@ -272,6 +327,7 @@ def read_gcal_link():
 #             event_id = data.get("event_id")
 #             event = db.query(Event).filter(Event.id == event_id).first()
 #             populate_event_occurrences(db, event_id=event_id)
+
 
 # should only be used for testing purposes
 @events_bp.route("/create_recurrence_rule", methods=["POST"])
@@ -288,28 +344,34 @@ def create_recurrence_rules():
         by_day = data.get("by_day", None)
         by_month_day = data.get("by_month_day", None)
         by_month = data.get("by_month", None)
-        
+
         if not event_id or not start_datetime or not frequency or not interval:
-            return jsonify({"error": "Missing event_id or start_datetime or frequency or interval"}), 400
-        
+            return jsonify(
+                {"error": "Missing event_id or start_datetime or frequency or interval"}
+            ), 400
+
         event = db.query(Event).filter(Event.id == event_id).first()
-        rule = add_recurrence_rule(db, 
-                                event_id=event_id, 
-                                frequency=frequency,
-                                interval=interval,
-                                start_datetime = start_datetime,
-                                count=count,
-                                until=until,
-                                by_day=by_day,
-                                by_month_day=by_month_day,
-                                by_month=by_month)
+        rule = add_recurrence_rule(
+            db,
+            event_id=event_id,
+            frequency=frequency,
+            interval=interval,
+            start_datetime=start_datetime,
+            count=count,
+            until=until,
+            by_day=by_day,
+            by_month_day=by_month_day,
+            by_month=by_month,
+        )
         occurrence_msg = populate_event_occurrences(db, event=event, rule=rule)
         db.commit()  # Only commit if all succeeded
         return jsonify({"status": f"recurrence rules created. {occurrence_msg}"}), 201
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
 
 # should only be used for testing purposes
 @events_bp.route("/create_single_event_occurrence", methods=["POST"])
@@ -330,9 +392,17 @@ def create_single_event_occurrence():
         location = data.get("location", None)
         source_url = data.get("source_url", None)
 
-        if not event_id or not org_id or not category_id or not title or not start_datetime or not end_datetime or not recurrence:
+        if (
+            not event_id
+            or not org_id
+            or not category_id
+            or not title
+            or not start_datetime
+            or not end_datetime
+            or not recurrence
+        ):
             return jsonify({"error": "Missing required fields"}), 400
-        
+
         event = db.query(Event).filter(Event.id == event_id).first()
         event_tz = ZoneInfo(event.event_timezone)
         if not recurrence == "EXCEPTION":
@@ -341,35 +411,39 @@ def create_single_event_occurrence():
             event_saved_at = datetime.now(timezone.utc)
         if not event:
             return jsonify({"error": "Event not found"}), 404
-        
+
         start_dt = _parse_iso_aware(start_datetime, event_tz)
-        end_dt   = _parse_iso_aware(end_datetime, event_tz)
+        end_dt = _parse_iso_aware(end_datetime, event_tz)
         if start_dt.tzinfo is None or end_dt.tzinfo is None:
             return jsonify({"error": "Datetime must be timezone-aware"}), 400
 
-        event_occurrence = save_event_occurrence(db, 
-                                            event_id=event_id, 
-                                            org_id=org_id, 
-                                            category_id=category_id, 
-                                            title=title,
-                                            start_datetime=start_dt,
-                                            end_datetime=end_dt,
-                                            recurrence=recurrence,
-                                            event_saved_at=event_saved_at,
-                                            is_all_day=is_all_day,
-                                            event_timezone=event.event_timezone,
-                                            user_edited=user_edited,
-                                            description=description,
-                                            location=location,
-                                            source_url=source_url)
-        
+        event_occurrence = save_event_occurrence(
+            db,
+            event_id=event_id,
+            org_id=org_id,
+            category_id=category_id,
+            title=title,
+            start_datetime=start_dt,
+            end_datetime=end_dt,
+            recurrence=recurrence,
+            event_saved_at=event_saved_at,
+            is_all_day=is_all_day,
+            event_timezone=event.event_timezone,
+            user_edited=user_edited,
+            description=description,
+            location=location,
+            source_url=source_url,
+        )
+
         db.commit()  # Only commit if all succeeded
-        return jsonify({"status": f"event occurrence {event_occurrence.id} created."}), 201
+        return jsonify(
+            {"status": f"event occurrence {event_occurrence.id} created."}
+        ), 201
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
-        
 
 
 @events_bp.route("/regenerate_occurrences_by_events", methods=["POST"])
@@ -385,18 +459,21 @@ def regenerate_occurrences_by_events():
         regenerated, skipped = regenerate_event_occurrences_by_event_ids(db, event_ids)
 
         print("Before commit, occurrences count:", db.query(EventOccurrence).count())
-        
+
         db.commit()
 
-        return jsonify({
+        return jsonify(
+            {
                 "status": "ok",
                 "regenerated_events": regenerated,
-                "skipped_events": skipped
-            }), 201
+                "skipped_events": skipped,
+            }
+        ), 201
 
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
 
@@ -404,15 +481,15 @@ def regenerate_occurrences_by_events():
 def get_tags():
     # print("🙇 geting tags 🙇")
     db = g.db
-    try: 
+    try:
         # print("here we go")
         tags = get_all_tags(db)
         # print("tags, ", tags)
         return jsonify([{"name": tag.name, "id": tag.id} for tag in tags]), 200
     except Exception as e:
-
-        print("❌ Exception:", e)
+        print("Exception:", e)
         return jsonify({"error": str(e)}), 500
+
 
 @events_bp.route("/<event_id>/tags", methods=["GET"])
 def get_event_tags(event_id):
@@ -423,11 +500,11 @@ def get_event_tags(event_id):
         # if not clerk_id:
         #     return jsonify({"error": "Missing user_id"}), 400
         # user = get_user_by_clerk_id(db, clerk_id)
-        
+
         # # event = db.query(Event).filter_by(id=event_id).first()
         # event = get_event_by_id(db, event_id)
         # event_dict = event.as_dict()
-        
+
         # org = db.query(Organization).filter_by(id=event.org_id).first()
         # event_dict["org"] = org.name
         # event_dict["user_is_admin"] = True if get_admin_by_org_and_user(db, event.org_id, user.id) else False
@@ -455,8 +532,10 @@ def get_event_tags(event_id):
 
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
 
 @events_bp.route("/", methods=["GET"])
 def get_all_events():
@@ -475,22 +554,36 @@ def get_all_events():
         user = get_user_by_clerk_id(db, clerk_id)
 
         # only select some columns to save loading cost
-        events = db.query(Event.id, Event.title, Event.start_datetime, Event.end_datetime,
-            Event.location, Event.org_id, Event.category_id, Event.event_timezone, Event.event_type).join(Event.org)
-
+        events = db.query(
+            Event.id,
+            Event.title,
+            Event.start_datetime,
+            Event.end_datetime,
+            Event.location,
+            Event.org_id,
+            Event.category_id,
+            Event.event_timezone,
+            Event.event_type,
+        ).join(Event.org)
 
         # if search term is applied, filter results
         if term:
             term_pattern = f"%{term}%"
-            events = events.filter(or_(
-                Event.title.ilike(term_pattern),
-                Event.description.ilike(term_pattern),
-                Organization.name.ilike(term_pattern),
-            ))
+            events = events.filter(
+                or_(
+                    Event.title.ilike(term_pattern),
+                    Event.description.ilike(term_pattern),
+                    Organization.name.ilike(term_pattern),
+                )
+            )
 
         # if tags are applied, filter results
         if len(tag_ids) > 0:
-            events = events.join(EventTag).filter(EventTag.tag_id.in_(tag_ids)).group_by(Event.id)
+            events = (
+                events.join(EventTag)
+                .filter(EventTag.tag_id.in_(tag_ids))
+                .group_by(Event.id)
+            )
 
         # if date is applied, filter results
         if date:
@@ -505,7 +598,9 @@ def get_all_events():
 
         # check for saved events
         if user:
-            added_ids = db.query(UserSavedEvent.event_id).filter_by(user_id=user.id).all()
+            added_ids = (
+                db.query(UserSavedEvent.event_id).filter_by(user_id=user.id).all()
+            )
             added_ids = set(row[0] for row in added_ids)
         else:
             added_ids = set()
@@ -528,8 +623,10 @@ def get_all_events():
 
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
 
 @events_bp.route("/batch_delete_events_by_params", methods=["DELETE"])
 def batch_delete_events_by_params():
@@ -539,7 +636,7 @@ def batch_delete_events_by_params():
     - RecurrenceRule (+ overrides, rdates, exdates)
     - EventTag
     - UserSavedEvent
-    
+
     Parameters can include semester, org_id, category_id, event_type, source_url.
     Note that SOC events are identified by source_url: 'https://enr-apps.as.cmu.edu/open/SOC/SOCServlet/completeSchedule'
     """
@@ -586,9 +683,7 @@ def batch_delete_events_by_params():
         db.execute(
             delete(EventOccurrence).where(EventOccurrence.event_id.in_(event_id_subq))
         )
-        db.execute(
-            delete(EventTag).where(EventTag.event_id.in_(event_id_subq))
-        )
+        db.execute(delete(EventTag).where(EventTag.event_id.in_(event_id_subq)))
         db.execute(
             delete(UserSavedEvent).where(UserSavedEvent.event_id.in_(event_id_subq))
         )
@@ -599,54 +694,42 @@ def batch_delete_events_by_params():
             RecurrenceRule.event_id.in_(event_id_subq)
         )
         db.execute(
-            delete(RecurrenceExdate).where(
-                RecurrenceExdate.rrule_id.in_(rrule_ids)
-            )
+            delete(RecurrenceExdate).where(RecurrenceExdate.rrule_id.in_(rrule_ids))
         )
 
         db.execute(
-            delete(RecurrenceRdate).where(
-                RecurrenceRdate.rrule_id.in_(rrule_ids)
-            )
+            delete(RecurrenceRdate).where(RecurrenceRdate.rrule_id.in_(rrule_ids))
         )
 
-        db.execute(
-            delete(EventOverride).where(
-                EventOverride.rrule_id.in_(rrule_ids)
-            )
-        )
+        db.execute(delete(EventOverride).where(EventOverride.rrule_id.in_(rrule_ids)))
 
         db.execute(
-            delete(RecurrenceOverride).where(
-                RecurrenceOverride.rrule_id.in_(rrule_ids)
-            )
+            delete(RecurrenceOverride).where(RecurrenceOverride.rrule_id.in_(rrule_ids))
         )
 
-        db.execute(
-            delete(RecurrenceRule).where(
-                RecurrenceRule.id.in_(rrule_ids)
-            )
-        )
+        db.execute(delete(RecurrenceRule).where(RecurrenceRule.id.in_(rrule_ids)))
 
         # --------------------------------------------------
         # 4. Delete events
         # --------------------------------------------------
-        db.execute(
-            delete(Event).where(Event.id.in_(event_id_subq))
-        )
+        db.execute(delete(Event).where(Event.id.in_(event_id_subq)))
 
         db.commit()
 
-        return jsonify({
-            "status": "ok",
-            "deleted_events": len(event_id_list),
-            "event_ids": event_id_list,
-        }), 200
+        return jsonify(
+            {
+                "status": "ok",
+                "deleted_events": len(event_id_list),
+                "event_ids": event_id_list,
+            }
+        ), 200
 
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
 
 @events_bp.route("/<int:event_id>", methods=["DELETE"])
 def delete_event(event_id: int):
@@ -662,10 +745,16 @@ def delete_event(event_id: int):
         db.execute(delete(UserSavedEvent).where(UserSavedEvent.event_id == event_id))
 
         rrule_ids = select(RecurrenceRule.id).where(RecurrenceRule.event_id == event_id)
-        db.execute(delete(RecurrenceExdate).where(RecurrenceExdate.rrule_id.in_(rrule_ids)))
-        db.execute(delete(RecurrenceRdate).where(RecurrenceRdate.rrule_id.in_(rrule_ids)))
+        db.execute(
+            delete(RecurrenceExdate).where(RecurrenceExdate.rrule_id.in_(rrule_ids))
+        )
+        db.execute(
+            delete(RecurrenceRdate).where(RecurrenceRdate.rrule_id.in_(rrule_ids))
+        )
         db.execute(delete(EventOverride).where(EventOverride.rrule_id.in_(rrule_ids)))
-        db.execute(delete(RecurrenceOverride).where(RecurrenceOverride.rrule_id.in_(rrule_ids)))
+        db.execute(
+            delete(RecurrenceOverride).where(RecurrenceOverride.rrule_id.in_(rrule_ids))
+        )
         db.execute(delete(RecurrenceRule).where(RecurrenceRule.event_id == event_id))
 
         db.execute(delete(Event).where(Event.id == event_id))
@@ -675,7 +764,8 @@ def delete_event(event_id: int):
 
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
 
@@ -689,19 +779,25 @@ def get_specific_events(event_id):
         if not clerk_id:
             return jsonify({"error": "Missing user_id"}), 400
         user = get_user_by_clerk_id(db, clerk_id)
-        
+
         # event = db.query(Event).filter_by(id=event_id).first()
         event = get_event_by_id(db, event_id)
         event_dict = event.as_dict()
-        
+
         org = db.query(Organization).filter_by(id=event.org_id).first()
         event_dict["org"] = org.name
-        event_dict["user_is_admin"] = True if get_admin_by_org_and_user(db, event.org_id, user.id) else False
+        event_dict["user_is_admin"] = (
+            True if get_admin_by_org_and_user(db, event.org_id, user.id) else False
+        )
 
         # check if saved
         if user:
-            saved = db.query(UserSavedEvent.event_id).filter_by(user_id=user.id, event_id=event_id).first()
-            event_dict["user_saved"] = (saved is not None)
+            saved = (
+                db.query(UserSavedEvent.event_id)
+                .filter_by(user_id=user.id, event_id=event_id)
+                .first()
+            )
+            event_dict["user_saved"] = saved is not None
         else:
             event_dict["user_saved"] = False
 
@@ -709,8 +805,10 @@ def get_specific_events(event_id):
 
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
 
 @events_bp.route("/<event_id>", methods=["PATCH"])
 def update_event(event_id):
@@ -719,12 +817,12 @@ def update_event(event_id):
     try:
         data = request.get_json()
         print("🔢🔢🔢🔢🔢DATA ", data)
-        
+
         event_data = data.get("updated_event", None)
         tag_data = data.get("updated_tags", None)
         recurrence_data = data.get("updated_recurrence", None)
 
-        if not event_data: 
+        if not event_data:
             return jsonify({"error": "No event data provided"}), 400
 
         # update the event itself
@@ -732,7 +830,7 @@ def update_event(event_id):
         if not event:
             return jsonify({"error": "Event not found"}), 400
 
-        for key, value in event_data.items(): 
+        for key, value in event_data.items():
             if hasattr(event, key):
                 setattr(event, key, value)
 
@@ -740,12 +838,14 @@ def update_event(event_id):
         if tag_data:
             # desired_tags = [t.strip().lower() for t in tag_data]
             desired_tags = [t["name"].strip().lower() for t in tag_data]
-            current_tags = [t.name.strip().lower() for t in get_tags_by_event(db, event_id)]  # returns list of tag names
+            current_tags = [
+                t.name.strip().lower() for t in get_tags_by_event(db, event_id)
+            ]  # returns list of tag names
             # print("👑", desired_tags, "🥒", current_tags)
             for tag_name in desired_tags:
                 tag = get_tag_by_name(db, tag_name)
                 if not tag:
-                    tag = save_tag(db, name=tag_name) # add new tag
+                    tag = save_tag(db, name=tag_name)  # add new tag
                 if tag_name not in current_tags:
                     save_event_tag(db, event_id=event_id, tag_id=tag.id)
 
@@ -754,7 +854,6 @@ def update_event(event_id):
                 if tag_name not in desired_tags:
                     tag = get_tag_by_name(db, tag_name)
                     delete_event_tag(db, event_id=event_id, tag_id=tag.id)
-
 
         # TODO: update recurrence table
 
@@ -767,7 +866,8 @@ def update_event(event_id):
 
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
 
@@ -785,12 +885,14 @@ def get_all_saved_events():
         # print("😀 [user] ", user)
 
         # only columns required for calendar view
-        events = db.query(Event.id, Event.title, Event.start_datetime, Event.end_datetime)\
-            .join(UserSavedEvent).filter(
-                UserSavedEvent.user_id == user.id
-            ).all()
+        events = (
+            db.query(Event.id, Event.title, Event.start_datetime, Event.end_datetime)
+            .join(UserSavedEvent)
+            .filter(UserSavedEvent.user_id == user.id)
+            .all()
+        )
 
-        return jsonify([e[0] for e in events]) 
+        return jsonify([e[0] for e in events])
         # [
         #     {
         #         "id": e[0],
@@ -803,8 +905,10 @@ def get_all_saved_events():
 
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
 
 @events_bp.route("user_saved_event_occurrences", methods=["GET"])
 def get_all_saved_events_occurrences():
@@ -816,13 +920,19 @@ def get_all_saved_events_occurrences():
             return jsonify({"error": "Missing user_id"}), 400
         user = get_user_by_clerk_id(db, clerk_id)
 
-        event_occurrences = (db.query(EventOccurrence.id, EventOccurrence.title, 
-        EventOccurrence.start_datetime, EventOccurrence.end_datetime, Event.id)
+        event_occurrences = (
+            db.query(
+                EventOccurrence.id,
+                EventOccurrence.title,
+                EventOccurrence.start_datetime,
+                EventOccurrence.end_datetime,
+                Event.id,
+            )
             .join(Event, EventOccurrence.event_id == Event.id)
             .join(UserSavedEvent, UserSavedEvent.event_id == Event.id)
-            .filter(
-                UserSavedEvent.user_id == user.id
-            ).all())
+            .filter(UserSavedEvent.user_id == user.id)
+            .all()
+        )
 
         return [
             {
@@ -830,15 +940,17 @@ def get_all_saved_events_occurrences():
                 "title": e[1],
                 "start": e[2].isoformat(),
                 "end": e[3].isoformat(),
-                "event_id": e[4]
+                "event_id": e[4],
             }
             for e in event_occurrences
         ]
 
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
 
 @events_bp.route("/user_saved_events", methods=["POST"])
 def user_save_event():
@@ -852,19 +964,21 @@ def user_save_event():
         user = get_user_by_clerk_id(db, clerk_id)
 
         new_entry = UserSavedEvent(
-            user_id = user.id,
-            event_id = data["event_id"],
-            google_event_id = data["google_event_id"],
-            saved_at = datetime.now(timezone.utc),
+            user_id=user.id,
+            event_id=data["event_id"],
+            google_event_id=data["google_event_id"],
+            saved_at=datetime.now(timezone.utc),
         )
         db.add(new_entry)
         db.commit()
         return jsonify({"message": "Event added to user's saved events."}), 200
-        
+
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
 
 @events_bp.route("/user_saved_events/<event_id>", methods=["DELETE"])
 def user_unsave_event(event_id):
@@ -878,17 +992,23 @@ def user_unsave_event(event_id):
         user = get_user_by_clerk_id(db, clerk_id)
 
         user_id = user.id
-        entry = db.query(UserSavedEvent).filter_by(user_id=user_id, event_id=event_id).first()
+        entry = (
+            db.query(UserSavedEvent)
+            .filter_by(user_id=user_id, event_id=event_id)
+            .first()
+        )
 
         if entry:
             db.delete(entry)
             db.commit()
-        return jsonify({"message": "Event removed from user's saved events."}), 200 
-            
+        return jsonify({"message": "Event removed from user's saved events."}), 200
+
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
 
 @events_bp.route("/<category_id>/category", methods=["GET"])
 def get_event_category(category_id):
@@ -896,13 +1016,19 @@ def get_event_category(category_id):
     db = g.db
     try:
         category = get_category_by_id(db, category_id)
-        print("-------------------\n", jsonify(category_to_dict(category)), "-------------------\n")
+        print(
+            "-------------------\n",
+            jsonify(category_to_dict(category)),
+            "-------------------\n",
+        )
         return jsonify(category_to_dict(category))
-    
+
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
 
 @events_bp.route("/by_org/<int:org_id>", methods=["GET"])
 def get_events_by_organization(org_id: int):
@@ -921,7 +1047,9 @@ def get_events_by_organization(org_id: int):
             "id": ev.id,
             "title": ev.title,
             "description": ev.description,
-            "start_datetime": ev.start_datetime.isoformat() if ev.start_datetime else None,
+            "start_datetime": ev.start_datetime.isoformat()
+            if ev.start_datetime
+            else None,
             "end_datetime": ev.end_datetime.isoformat() if ev.end_datetime else None,
             "all_day": ev.all_day,
             "calendar_source_id": ev.calendar_source_id,

@@ -1,10 +1,10 @@
+# tests/factories/org_factory.py
+import uuid
+
 import pytest
+
 from app.models.models import Organization
 
-# tests/factories/org_factory.py
-import pytest
-import uuid
-from app.models.models import Organization
 
 @pytest.fixture
 def org_factory(db):
@@ -18,5 +18,5 @@ def org_factory(db):
         db.add(org)
         db.flush()
         return org
-    return create_org
 
+    return create_org

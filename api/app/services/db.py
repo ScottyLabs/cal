@@ -1,7 +1,8 @@
 # app/services/db.py
 import os
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
 
@@ -28,10 +29,9 @@ def init_db():
 
     if is_pytest and not allow_test_db:
         raise RuntimeError(
-            "❌ Pytest detected but ALLOW_TEST_DB is not set. "
+            "Pytest detected but ALLOW_TEST_DB is not set. "
             "Refusing to connect to database."
         )
-
 
     _engine = create_engine(
         db_url,
@@ -51,6 +51,7 @@ def get_engine():
     if _engine is None:
         raise RuntimeError("DB not initialized. Call init_db() first.")
     return _engine
+
 
 def get_session():
     if _SessionLocal is None:

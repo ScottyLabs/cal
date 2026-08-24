@@ -1,10 +1,11 @@
-import pytest
-from zoneinfo import ZoneInfo
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
-from scraper.helpers.timezone import timezone_from_location, DEFAULT_TZ
-from scraper.transforms.soc_events import build_events_and_rrules
+import pytest
+
+from scraper.helpers.timezone import DEFAULT_TZ, timezone_from_location
 from scraper.models import ScheduleOfClasses
+from scraper.transforms.soc_events import build_events_and_rrules
 
 
 @pytest.mark.parametrize(
@@ -36,9 +37,12 @@ def test_timezone_from_location_none_fallback():
     tz = timezone_from_location(None)
     assert tz == DEFAULT_TZ
 
+
 # Integration test to ensure build_events_and_rrules creates timezone-aware datetimes
 SEM_START = datetime(2026, 1, 12)
 SEM_END = datetime(2026, 5, 5)
+
+
 def make_soc(location="Pittsburgh, Pennsylvania"):
     return ScheduleOfClasses(
         id=1,
@@ -72,6 +76,7 @@ def test_build_events_timezone_aware():
     assert event["end_datetime"].tzinfo is not None
     assert event["start_datetime"].tzinfo.key == "America/New_York"
 
+
 def test_dst_transition_new_york():
     soc = make_soc()
     org_id_by_key = {("15112", "Spring_26"): 1}
@@ -88,12 +93,8 @@ def test_dst_transition_new_york():
     # January 12, 2026 should be EST (UTC-5)
     assert start.utcoffset().total_seconds() == -5 * 3600
     assert start.isoformat().endswith("-05:00")
-    expected = datetime(
-        2026, 1, 12, 9, 0,
-        tzinfo=ZoneInfo("America/New_York")
-    )
+    expected = datetime(2026, 1, 12, 9, 0, tzinfo=ZoneInfo("America/New_York"))
     assert start == expected
-
 
     # Now test a date in daylight saving time
     soc.sem_start = datetime(2026, 3, 30)  # After
@@ -106,11 +107,9 @@ def test_dst_transition_new_york():
     # March 30, 2026 should be EDT (UTC-4)
     assert start.utcoffset().total_seconds() == -4 * 3600
     assert start.isoformat().endswith("-04:00")
-    expected = datetime(
-        2026, 3, 30, 9, 0,
-        tzinfo=ZoneInfo("America/New_York")
-    )
+    expected = datetime(2026, 3, 30, 9, 0, tzinfo=ZoneInfo("America/New_York"))
     assert start == expected
+
 
 def test_event_and_rrule_timezone_consistency():
     soc = make_soc("Pittsburgh, Pennsylvania")
@@ -139,6 +138,7 @@ def test_event_and_rrule_timezone_consistency():
     # RRULE should match event local wall-clock time
     assert rrule["start_datetime"].hour == event["start_datetime"].hour
     assert rrule["start_datetime"].minute == event["start_datetime"].minute
+
 
 def test_rrule_dst_transition_new_york():
     soc = make_soc("Pittsburgh, Pennsylvania")

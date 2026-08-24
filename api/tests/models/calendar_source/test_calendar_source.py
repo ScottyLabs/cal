@@ -1,11 +1,9 @@
-from app.models import Event, CalendarSource
+from app.models import CalendarSource, Event
 from app.models.calendar_source import deactivate_calendar_source
 from app.services.ical import delete_events_for_calendar_source
 
 
-def test_delete_events_for_calendar_source(
-    db, calendar_source_factory, event_factory
-):
+def test_delete_events_for_calendar_source(db, calendar_source_factory, event_factory):
     source = calendar_source_factory(active=True)
 
     events = event_factory.create_batch(

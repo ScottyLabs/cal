@@ -1,10 +1,12 @@
 import enum
 
+
 class FrequencyType(enum.Enum):
     DAILY = "DAILY"
     WEEKLY = "WEEKLY"
     MONTHLY = "MONTHLY"
     YEARLY = "YEARLY"
+
 
 # class DayType(enum.Enum):
 #     MO = "MO"
@@ -14,6 +16,7 @@ class FrequencyType(enum.Enum):
 #     FR = "FR"
 #     SA = "SA"
 #     SU = "SU"
+
 
 class RecurrenceType(enum.Enum):
     ONETIME = "ONETIME"

@@ -1,5 +1,7 @@
 import pytest
+
 from app.models.admin import create_admin
+
 
 @pytest.fixture
 def admin_factory(db):
@@ -11,4 +13,5 @@ def admin_factory(db):
             role=role,
             category_id=category_id,
         )
+
     return create_admin_factory

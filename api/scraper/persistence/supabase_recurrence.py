@@ -1,5 +1,6 @@
+from scraper.helpers.event import clean_row_for_insert
 from scraper.persistence.supabase_writer import chunked
-from scraper.helpers.event import clean_row_for_insert, event_identity
+
 
 def replace_recurrence_rules(db, rrules, event_id_by_identity):
     rows = []

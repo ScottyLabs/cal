@@ -1,11 +1,7 @@
 from datetime import datetime, time
 from typing import Optional
 from zoneinfo import ZoneInfo
-from app.models import FrequencyType
-from scraper.models import ScheduleOfClasses
 
-from datetime import datetime, time
-from typing import Optional
 from app.models import FrequencyType
 
 SOC_DAY_MAP = {

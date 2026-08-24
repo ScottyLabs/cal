@@ -1,6 +1,5 @@
 import datetime
-from typing import Optional, Tuple
-
+from typing import Tuple
 
 SEMESTER_CONFIG = {
     "Spring": {
@@ -43,7 +42,9 @@ def get_current_semester(
         )
 
     if name not in SEMESTER_CONFIG:
-        raise ValueError(f"Unknown semester name '{name}'. Should be in {list(SEMESTER_CONFIG.keys())}")
+        raise ValueError(
+            f"Unknown semester name '{name}'. Should be in {list(SEMESTER_CONFIG.keys())}"
+        )
 
     config = SEMESTER_CONFIG[name]
 

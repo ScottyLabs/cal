@@ -1,5 +1,7 @@
-from app.models.models import User
 from flask import g
+
+from app.models.models import User
+
 
 def get_current_user(clerk_id: str = None):
     """
@@ -10,8 +12,8 @@ def get_current_user(clerk_id: str = None):
     try:
         if not clerk_id:
             return None
-        
+
         user = db.query(User).filter(User.clerk_id == clerk_id).first()
         return user
     finally:
-        db.close() 
+        db.close()

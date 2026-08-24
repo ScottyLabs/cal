@@ -1,19 +1,11 @@
-from app.models.models import Event
-
 # from icalendar import Calendar, Event as IcalEvent
 # from recurring_ical_events import recurring_ical_events
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional
-import requests
-from app.utils.date import ensure_aware_datetime, infer_semester_from_datetime
+from typing import List
+
 from app.models.models import (
     Event,
-    RecurrenceRule,
-    EventOccurrence,
-    RecurrenceRdate,
-    RecurrenceExdate,
-    EventOverride,
 )
+from app.utils.date import ensure_aware_datetime, infer_semester_from_datetime
 
 
 ### need to check type of start_datetime, end_datetime before using them

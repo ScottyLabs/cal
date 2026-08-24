@@ -1,11 +1,11 @@
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
-from alembic import context
-
 # load per-env dotenv files so Alembic sees your secrets
 import os
+from logging.config import fileConfig
 from pathlib import Path
+
+from alembic import context
 from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
 
 # load .flaskenv to get APP_ENV, then the matching .env.{env}
 load_dotenv(".flaskenv")  # contains APP_ENV
@@ -24,7 +24,7 @@ if not db_url:
     raise RuntimeError("SUPABASE_DB_URL is not set")
 config.set_main_option("sqlalchemy.url", db_url)
 
-print(f"[alembic] APP_ENV={env}  url_driver={db_url.split('://',1)[0]}")
+print(f"[alembic] APP_ENV={env}  url_driver={db_url.split('://', 1)[0]}")
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -38,6 +38,7 @@ if config.config_file_name is not None:
 # from app.services.db import Base
 # from app.models.models import *
 from app.models import Base
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -46,7 +47,15 @@ target_metadata = Base.metadata
 # ... etc.
 
 # Skip Supabase/pg system schemas
-EXCLUDE_SCHEMAS = {"pgbouncer", "pg_catalog", "information_schema", "auth", "storage", "realtime"}
+EXCLUDE_SCHEMAS = {
+    "pgbouncer",
+    "pg_catalog",
+    "information_schema",
+    "auth",
+    "storage",
+    "realtime",
+}
+
 
 def include_object(object, name, type_, reflected, compare_to):
     # Skip everything in excluded schemas
@@ -72,9 +81,9 @@ def run_migrations_offline() -> None:
     context.configure(
         url=url,
         target_metadata=target_metadata,
-        include_object=include_object,         
-        compare_type=True,                     
-        compare_server_default=True,           
+        include_object=include_object,
+        compare_type=True,
+        compare_server_default=True,
         # render_nullability=True,             # optional but handy
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -101,9 +110,9 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            include_object=include_object,    
-            compare_type=True,                 
-            compare_server_default=True,       
+            include_object=include_object,
+            compare_type=True,
+            compare_server_default=True,
             # render_nullability=True,         # optional
         )
 

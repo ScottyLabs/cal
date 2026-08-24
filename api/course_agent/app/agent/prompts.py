@@ -40,4 +40,3 @@ Is this clearly the official course website (not Piazza, Canvas, Reddit, or a ge
 
 Answer ONLY one word: accept or reject.
 """
-

@@ -1,10 +1,11 @@
 from datetime import date, datetime, timezone
-from typing import Dict, List, Optional
-from zoneinfo import ZoneInfo
 from email.utils import parsedate_to_datetime
+from typing import Optional
+from zoneinfo import ZoneInfo
+
 from dateutil.parser import isoparse
 
-DEFAULT_TZ = ZoneInfo("America/New_York")  # pick what’s right for your feed
+DEFAULT_TZ = ZoneInfo("America/New_York")  # pick what's right for your feed
 
 
 def parse_user_datetime(date_str: str, time_str: str, tz_str: str = "UTC") -> datetime:
@@ -29,14 +30,15 @@ def parse_user_datetime(date_str: str, time_str: str, tz_str: str = "UTC") -> da
         tz = ZoneInfo(tz_str)
     except Exception:
         raise ValueError(f"Invalid timezone: {tz_str}")
-    
+
     aware_dt = naive.replace(tzinfo=tz)
-    
+
     # if want iso string:
     return aware_dt.isoformat()
 
     # if want datetime object:
     # return aware_dt
+
 
 # print(parse_user_datetime("2025-06-17", "13:37", "America/New_York"))
 
@@ -47,10 +49,11 @@ def parse_user_datetime(date_str: str, time_str: str, tz_str: str = "UTC") -> da
 #     val = component.decoded(key)
 #     # val can be date or datetime
 #     if isinstance(val, date) and not isinstance(val, datetime):
-#         # All-day date → normalize to midnight UTC
+#         # All-day date -> normalize to midnight UTC
 #         return datetime(val.year, val.month, val.day, tzinfo=timezone.utc)
 #     # Ensure tz-aware
 #     return _ensure_aware(val)
+
 
 def decoded_dt_with_tz(component, key: str, default_tz: ZoneInfo = DEFAULT_TZ):
     prop = component.get(key)
@@ -75,10 +78,12 @@ def decoded_dt_with_tz(component, key: str, default_tz: ZoneInfo = DEFAULT_TZ):
 
     return None
 
+
 def normalize_occurrence(occ_start: datetime, event_tz):
     if occ_start.tzinfo is None:
         return occ_start.replace(tzinfo=event_tz)
     return occ_start.astimezone(event_tz)
+
 
 def normalize_set_to_tz(dts, tz):
     out = set()
@@ -89,6 +94,7 @@ def normalize_set_to_tz(dts, tz):
             out.add(dt.astimezone(tz))
     return out
 
+
 def _ensure_aware(dt):
     if dt is None:
         return None
@@ -97,6 +103,7 @@ def _ensure_aware(dt):
     if dt.tzinfo is None:
         return dt.replace(tzinfo=timezone.utc)
     return dt
+
 
 def ensure_aware_datetime(dt):
     if isinstance(dt, str):
@@ -107,6 +114,7 @@ def ensure_aware_datetime(dt):
 
     return dt
 
+
 def _parse_iso(iso_str: Optional[str]) -> Optional[datetime]:
     if not iso_str:
         return None
@@ -114,6 +122,7 @@ def _parse_iso(iso_str: Optional[str]) -> Optional[datetime]:
     if iso_str.endswith("Z"):
         iso_str = iso_str[:-1] + "+00:00"
     return datetime.fromisoformat(iso_str)
+
 
 def _parse_iso_aware(s: str = None, timezone: ZoneInfo = None) -> Optional[datetime]:
     if not s:
@@ -130,8 +139,10 @@ def _parse_iso_aware(s: str = None, timezone: ZoneInfo = None) -> Optional[datet
             dt = dt.astimezone(timezone)
     return dt
 
+
 def convert_to_iso8601(dt_str):
     return datetime.strptime(dt_str, "%a, %d %b %Y %H:%M:%S %Z").isoformat() + "Z"
+
 
 def infer_semester_from_datetime(dt: datetime | str) -> str:
     if isinstance(dt, str):
@@ -151,6 +162,7 @@ def infer_semester_from_datetime(dt: datetime | str) -> str:
     else:
         return f"Fall_{str(year)[-2:]}"
 
+
 def parsed_httpdate_to_dt(value: str):
     """
     Parse HTTP date (RFC 7231 / RFC 1123) into timezone-aware datetime (UTC).
@@ -161,4 +173,3 @@ def parsed_httpdate_to_dt(value: str):
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
-

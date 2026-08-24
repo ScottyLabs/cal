@@ -1,5 +1,6 @@
 # tests/monitors/test_schedule_of_classes.py
 import pathlib
+
 from scraper.monitors.academic.schedule_of_classes import ScheduleOfClassesScraper
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures"
@@ -33,6 +34,7 @@ def test_architecture_has_multiple_events_for_48105():
     assert len(events_48105) == 6
     assert {e.lecture_section for e in events_48105} == {"Lec", "A", "B", "C", "D", "E"}
 
+
 def test_stagecraft_multiple_events():
     resources = parse_fixture("soc_stage.html")
 
@@ -41,6 +43,7 @@ def test_stagecraft_multiple_events():
     d3_events = [e for e in events if e.lecture_section == "D3"]
     assert len(d3_events) == 3
     assert all(e.course_name == "Stagecraft: Rigging (3 units)" for e in d3_events)
+
 
 def test_no_tba_or_empty_times():
     resources = parse_fixture("soc_architecture.html")
@@ -56,6 +59,7 @@ def test_all_course_nums_are_numeric():
 
     for r in resources:
         assert r.course_num.isdigit()
+
 
 def test_semester_is_attached():
     resources = parse_fixture("soc_architecture.html")

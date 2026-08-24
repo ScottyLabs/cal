@@ -77,12 +77,12 @@ def run_scrape_and_export():
 
         full_path = os.path.abspath(output_filename)
         print("\n-------------------------------------------------")
-        print("✅ Success! Data exported to:")
+        print("[ok] Success! Data exported to:")
         print(f"{full_path}")
         print("-------------------------------------------------")
 
     except Exception as e:
-        print("\n❌ An error occurred during scraping or export:")
+        print("\n[x] An error occurred during scraping or export:")
         print(f"{e}")
         traceback.print_exc()
 

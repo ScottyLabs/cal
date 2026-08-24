@@ -16,10 +16,7 @@ def upsert_orgs(db, orgs: dict) -> dict:
 
     # Upsert: insert or update on conflict
     for batch in chunked(data, 200):
-        db.table("organizations").upsert(
-            batch,
-            on_conflict="name"
-        ).execute()
+        db.table("organizations").upsert(batch, on_conflict="name").execute()
 
     # Fetch IDs back
     name_to_id = {}

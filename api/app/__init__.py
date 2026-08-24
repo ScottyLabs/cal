@@ -1,10 +1,12 @@
 # Initializes the Flask app, database, and JWT authentication.
 import os
-from flask import Flask,g
+
+from flask import Flask, g
 from werkzeug.middleware.proxy_fix import ProxyFix
-from app.services.db import get_session
 
 from app.env import load_env
+from app.services.db import get_session
+
 ENV = load_env()
 
 import logging
@@ -14,8 +16,9 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 
-from app.config import DevelopmentConfig, TestingConfig, ProductionConfig
+from app.config import DevelopmentConfig, ProductionConfig, TestingConfig
 from app.services.db import init_db
+
 
 def create_app():
     app = Flask(__name__)
@@ -26,7 +29,9 @@ def create_app():
         app.config.from_object(TestingConfig)
     else:
         app.config.from_object(DevelopmentConfig)
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1) # tell Flask to trust Railway’s proxy headers
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app, x_proto=1, x_host=1
+    )  # tell Flask to trust Railway's proxy headers
 
     init_db()
 
@@ -43,27 +48,36 @@ def create_app():
             db.close()
             # print(f"[DB] Session closed {id(db)}")
 
-    if not os.getenv("ALEMBIC_RUNNING"): # skip during Alembic
+    if not os.getenv("ALEMBIC_RUNNING"):  # skip during Alembic
         from flask_cors import CORS
-        from app.api.users import users_bp
-        from app.api.organizations import orgs_bp
-        from app.api.base import base_bp
-        from app.api.google import google_bp
-        from app.api.events import events_bp
-        from app.api.schedule import schedule_bp
+
         from app.api.admin import admin_bp
+        from app.api.base import base_bp
+        from app.api.events import events_bp
+        from app.api.google import google_bp
+        from app.api.organizations import orgs_bp
+        from app.api.schedule import schedule_bp
+        from app.api.users import users_bp
 
-        origins = [o.strip() for o in os.getenv(
-            "CORS_ALLOWED_ORIGINS",
-            "http://localhost:3000,https://cmucal.vercel.app,http://cmucal.com,https://cal.scottylabs.org"
-        ).split(",")]
+        origins = [
+            o.strip()
+            for o in os.getenv(
+                "CORS_ALLOWED_ORIGINS",
+                "http://localhost:3000,https://cmucal.vercel.app,http://cmucal.com,https://cal.scottylabs.org",
+            ).split(",")
+        ]
 
-        CORS(app, resources={r"/api/*": {
-            "origins": origins,
-            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "Clerk-User-Id"],
-        }}, supports_credentials=True)
-
+        CORS(
+            app,
+            resources={
+                r"/api/*": {
+                    "origins": origins,
+                    "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+                    "allow_headers": ["Content-Type", "Authorization", "Clerk-User-Id"],
+                }
+            },
+            supports_credentials=True,
+        )
 
         # Register blueprints (modular routing)
         app.register_blueprint(users_bp, url_prefix="/api/users")

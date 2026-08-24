@@ -242,7 +242,7 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
         ) : (
             <div className="space-y-3">
             <h2 className="text-xl font-semibold mb-4">
-                Updating event{/*  in {currentCategory.org} — {currentCategory.name} */}
+                Updating event{/*  in {currentCategory.org} - {currentCategory.name} */}
             </h2>
             
 

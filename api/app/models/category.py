@@ -1,4 +1,5 @@
-from app.models.models import Category, Organization 
+from app.models.models import Category, Organization
+
 
 def category_to_dict(category):
     return {
@@ -8,6 +9,7 @@ def category_to_dict(category):
         "created_at": category.created_at.isoformat() if category.created_at else None,
     }
 
+
 def category_organization_to_dict(category, organization):
     return {
         "id": category.id,
@@ -16,6 +18,7 @@ def category_organization_to_dict(category, organization):
         "organization_name": organization.name if organization else None,
         "created_at": category.created_at.isoformat() if category.created_at else None,
     }
+
 
 def create_category(db, org_id: int, name: str):
     """
@@ -34,6 +37,7 @@ def create_category(db, org_id: int, name: str):
     db.add(category)
     return category
 
+
 def get_category_by_id(db, category_id: int):
     """
     Retrieve a category by its ID.
@@ -47,6 +51,7 @@ def get_category_by_id(db, category_id: int):
     """
     return db.query(Category).filter(Category.id == category_id).first()
 
+
 def get_categories_by_org_id(db, org_id: int):
     """
     Retrieve all categories for an organization.
@@ -59,6 +64,7 @@ def get_categories_by_org_id(db, org_id: int):
         List of Category objects for the organization.
     """
     return db.query(Category).filter(Category.org_id == org_id).all()
+
 
 def delete_category(db, category_id: int):
     """
@@ -75,6 +81,7 @@ def delete_category(db, category_id: int):
         return True
     return False
 
+
 def get_joined_category_org(db, category_id: int):
     """
     Join Category and Organization on org_id
@@ -86,10 +93,13 @@ def get_joined_category_org(db, category_id: int):
     Returns:
         A list of (Category, Organization) tuples
     """
-    return db.query(Category, Organization).join(
-        Category, Organization.id == Category.org_id).filter(
-            Category.id == category_id
-        ).first()
+    return (
+        db.query(Category, Organization)
+        .join(Category, Organization.id == Category.org_id)
+        .filter(Category.id == category_id)
+        .first()
+    )
+
 
 def join_org_and_to_dict(db, category_id: int):
     """

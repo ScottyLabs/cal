@@ -1,10 +1,17 @@
-from flask import Blueprint, jsonify, request, g
-from sqlalchemy.orm import joinedload, subqueryload
+from flask import Blueprint, g, jsonify, request
 from sqlalchemy import or_
-from app.models.models import User, Schedule, Category, Organization, EventOccurrence, Event, CalendarSource
+
+from app.models.models import (
+    CalendarSource,
+    Category,
+    Event,
+    EventOccurrence,
+    Schedule,
+)
 from app.utils.auth import get_current_user
 
-schedule_bp = Blueprint('schedule_bp', __name__)
+schedule_bp = Blueprint("schedule_bp", __name__)
+
 
 def event_occurrence_to_dict(occurrence: EventOccurrence):
     """Manually serialize EventOccurrence SQLAlchemy object to a dictionary."""
@@ -23,11 +30,12 @@ def event_occurrence_to_dict(occurrence: EventOccurrence):
         "category_id": occurrence.category_id,
     }
 
-@schedule_bp.route('/', methods=['GET'])
+
+@schedule_bp.route("/", methods=["GET"])
 def get_schedule_route():
     """returns the user's schedule with courses and clubs, their categories, and event occurrences"""
-    clerk_user_id = request.headers.get('Clerk-User-Id')
-    schedule_id = request.args.get('schedule_id')
+    clerk_user_id = request.headers.get("Clerk-User-Id")
+    schedule_id = request.args.get("schedule_id")
     user = get_current_user(clerk_user_id)
 
     if not user:
@@ -56,81 +64,110 @@ def get_schedule_route():
 
             # Get all categories for this org
             categories = db.query(Category).filter(Category.org_id == org.id).all()
-            
+
             # Get all events and occurrences for this org
             events_query = db.query(Event).filter(Event.org_id == org.id)
-            
+
             # Check if org is a course or club
             if org.type == "COURSE" or org.type == "ACADEMIC":
                 courses[org.id] = {
                     "org_id": org.id,
                     "name": org.name,
                     "categories": [],
-                    "events": {}
+                    "events": {},
                 }
-                
+
                 # Add categories and their events
                 for category in categories:
-                    courses[org.id]["categories"].append({
-                        "id": category.id,
-                        "name": category.name
-                    })
-                    
+                    courses[org.id]["categories"].append(
+                        {"id": category.id, "name": category.name}
+                    )
+
                     # Get events for this category (exclude events from inactive sources)
-                    events = db.query(Event).outerjoin(
-                        CalendarSource, Event.calendar_source_id == CalendarSource.id
-                    ).filter(
-                        Event.org_id == org.id,
-                        Event.category_id == category.id,
-                        or_(Event.calendar_source_id == None, CalendarSource.active == True),  # noqa: E711
-                    ).all()
+                    events = (
+                        db.query(Event)
+                        .outerjoin(
+                            CalendarSource,
+                            Event.calendar_source_id == CalendarSource.id,
+                        )
+                        .filter(
+                            Event.org_id == org.id,
+                            Event.category_id == category.id,
+                            or_(
+                                Event.calendar_source_id == None,
+                                CalendarSource.active == True,
+                            ),  # noqa: E711
+                        )
+                        .all()
+                    )
 
                     # Get event occurrences
                     event_ids = [e.id for e in events]
-                    occurrences = db.query(EventOccurrence).filter(
-                        EventOccurrence.event_id.in_(event_ids)
-                    ).all()
+                    occurrences = (
+                        db.query(EventOccurrence)
+                        .filter(EventOccurrence.event_id.in_(event_ids))
+                        .all()
+                    )
 
-                    courses[org.id]["events"][category.name] = [event_occurrence_to_dict(o) for o in occurrences]
-            
+                    courses[org.id]["events"][category.name] = [
+                        event_occurrence_to_dict(o) for o in occurrences
+                    ]
+
             elif org.type == "CLUB":
                 clubs[org.id] = {
                     "org_id": org.id,
                     "name": org.name,
                     "categories": [],
-                    "events": {}
+                    "events": {},
                 }
-                
+
                 # Add categories and their events
                 for category in categories:
-                    clubs[org.id]["categories"].append({
-                        "id": category.id,
-                        "name": category.name
-                    })
-                    
+                    clubs[org.id]["categories"].append(
+                        {"id": category.id, "name": category.name}
+                    )
+
                     # Get regular events for this category (exclude events from inactive sources)
-                    events = db.query(Event).outerjoin(
-                        CalendarSource, Event.calendar_source_id == CalendarSource.id
-                    ).filter(
-                        Event.org_id == org.id,
-                        Event.category_id == category.id,
-                        or_(Event.calendar_source_id == None, CalendarSource.active == True),  # noqa: E711
-                    ).all()
+                    events = (
+                        db.query(Event)
+                        .outerjoin(
+                            CalendarSource,
+                            Event.calendar_source_id == CalendarSource.id,
+                        )
+                        .filter(
+                            Event.org_id == org.id,
+                            Event.category_id == category.id,
+                            or_(
+                                Event.calendar_source_id == None,
+                                CalendarSource.active == True,
+                            ),  # noqa: E711
+                        )
+                        .all()
+                    )
 
                     event_ids = [e.id for e in events]
 
                     occurrences = []
                     if event_ids:
-                        occurrences = db.query(EventOccurrence).filter(
-                            EventOccurrence.event_id.in_(event_ids)
-                        ).all()
+                        occurrences = (
+                            db.query(EventOccurrence)
+                            .filter(EventOccurrence.event_id.in_(event_ids))
+                            .all()
+                        )
 
                     clubs[org.id]["events"][category.name] = [
                         event_occurrence_to_dict(o) for o in occurrences
                     ]
 
-        return jsonify({"courses": list(courses.values()), "clubs": list(clubs.values()), "schedule_id": schedule.id})
+        return jsonify(
+            {
+                "courses": list(courses.values()),
+                "clubs": list(clubs.values()),
+                "schedule_id": schedule.id,
+            }
+        )
     except Exception as e:
         import traceback
-        print("❌ Exception:", traceback.format_exc())
+
+        print("Exception:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500

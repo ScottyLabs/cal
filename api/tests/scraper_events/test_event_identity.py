@@ -1,8 +1,6 @@
-import pytest
 from datetime import datetime
-from dateutil.parser import isoparse
 
-from scraper.helpers.event import event_identity, normalize_dt
+from scraper.helpers.event import event_identity
 
 
 def test_event_identity_datetime_roundtrip():
@@ -44,6 +42,7 @@ def test_event_identity_datetime_roundtrip():
 
     assert identity_naive == identity_iso
 
+
 def test_event_identity_location_is_distinct():
     org_id = 42
     title = "48105 A"
@@ -58,6 +57,7 @@ def test_event_identity_location_is_distinct():
     id2 = event_identity(org_id, title, semester, start, end, loc2)
 
     assert id1 != id2
+
 
 def test_event_identity_location_whitespace():
     org_id = 42
@@ -74,6 +74,7 @@ def test_event_identity_location_whitespace():
     )
 
     assert id1 == id2
+
 
 def test_rrule_identity_matches_event_identity():
     event = {

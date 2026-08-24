@@ -1,9 +1,10 @@
-from typing import TypedDict, Optional, List, Literal
+from typing import List, Literal, Optional, TypedDict
+
 
 class CourseAgentState(TypedDict):
     course_id: int
     org_id: int
-    category_id: int 
+    category_id: int
     course_number: str
     course_name: str
     agent_run_id: str
@@ -29,9 +30,6 @@ class CourseAgentState(TypedDict):
     heuristic_score: Optional[float]
     final_score: Optional[float]
 
-    terminal_status: Optional[
-        Literal["success", "no_site_found", "no_calendar"]
-    ]
+    terminal_status: Optional[Literal["success", "no_site_found", "no_calendar"]]
 
     done: bool
-

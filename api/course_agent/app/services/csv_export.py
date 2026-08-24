@@ -2,6 +2,7 @@
 import csv
 from pathlib import Path
 
+
 def write_courses_csv(courses, filename):
     if not courses:
         print(f"Skipping {filename} (no rows)")
@@ -19,4 +20,4 @@ def write_courses_csv(courses, filename):
         writer.writeheader()
         writer.writerows(courses)
 
-    print(f"Saved {len(courses)} rows → {path}")
+    print(f"Saved {len(courses)} rows -> {path}")

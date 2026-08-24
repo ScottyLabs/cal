@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from app.models.models import EventOccurrence
 from app.models.enums import FrequencyType
 from app.models.event_occurrence import populate_event_occurrences
+from app.models.models import EventOccurrence
 
 
 def test_recurring_event_occurrences_respect_local_time_across_dst(

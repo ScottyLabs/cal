@@ -1,14 +1,17 @@
 # course_agent/app/services/search.py
-import requests
 import os
+
+import requests
 
 SERPER_URL = "https://google.serper.dev/search"
 
 _search_fn = None
 
+
 def get_search_course_site():
     global _search_fn
     if _search_fn is None:
+
         def _search(course_name: str, max_results: int = 5) -> list[str]:
             payload = {
                 "q": f"{course_name} Carnegie Mellon course website",

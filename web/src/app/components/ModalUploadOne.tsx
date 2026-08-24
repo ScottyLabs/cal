@@ -67,7 +67,7 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
         <option value="" disabled>Select a calendar</option>
         {adminCategories.map((category) => (
           <option key={category.id} value={category.id}>
-            {category.organization_name} — {category.name}
+            {category.organization_name} - {category.name}
           </option>
         ))}
       </select>

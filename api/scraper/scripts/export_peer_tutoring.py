@@ -1,16 +1,17 @@
 # scraper/scripts/export_peer_tutoring.py
 
 from datetime import timedelta
-from dateutil.parser import isoparse
 from zoneinfo import ZoneInfo
 
-from app.env import load_env, get_api_base_url
+from dateutil.parser import isoparse
+
+from app.env import get_api_base_url, load_env
 from app.models.enums import FrequencyType
 from scraper.helpers.event import event_identity
 from scraper.monitors.academic import PeerTutoringScraper
-from scraper.persistence.supabase_writer import get_supabase
 from scraper.persistence.supabase_events import insert_events
 from scraper.persistence.supabase_recurrence import replace_recurrence_rules
+from scraper.persistence.supabase_writer import get_supabase
 
 ENV = load_env()
 API_BASE_URL = get_api_base_url()
@@ -31,7 +32,9 @@ def export_peer_tutoring():
     rrules = []
 
     for resource in resources:
-        category = setup_sasc_category(db, org, resource.course_num, clear=CLEAR_CATEGORIES)
+        category = setup_sasc_category(
+            db, org, resource.course_num, clear=CLEAR_CATEGORIES
+        )
         event, rrule = create_pt_event(resource, org, category)
         events.append(event)
         rrules.append(rrule)
@@ -41,7 +44,9 @@ def export_peer_tutoring():
         replace_recurrence_rules(db, rrules, event_id_by_identity)
 
 
-def create_pt_event(resource, org: dict, category: dict, *, semester: str = PT_SEMESTER):
+def create_pt_event(
+    resource, org: dict, category: dict, *, semester: str = PT_SEMESTER
+):
     time_location = resource.time_location
     location = time_location["location"]
     tz = PT_TIMEZONE
@@ -53,9 +58,11 @@ def create_pt_event(resource, org: dict, category: dict, *, semester: str = PT_S
     org_id = org["id"]
     category_id = category["id"]
     by_day = time_location["recurrence_by_day"]
-    
+
     title = f"Peer Tutoring {resource.course_num} [{by_day}] ({location})"
-    description = f"{resource.course_name} - Peer Tutoring with {', '.join(resource.tutors)}"
+    description = (
+        f"{resource.course_name} - Peer Tutoring with {', '.join(resource.tutors)}"
+    )
     identity = event_identity(org_id, title, semester, start_dt, end_dt, location)
 
     event = {
@@ -96,13 +103,15 @@ def setup_sasc_org(db):
     res = db.table("organizations").select("id, name").eq("name", "SASC").execute()
     if res.data:
         return {"id": res.data[0]["id"], "name": res.data[0]["name"]}
-    
+
     # Create SASC organization if it doesn't exist
-    db.table("organizations").insert({
-        "name": "SASC",
-        "description": "Student Academic Success Center",
-        "type": "DEPARTMENT",
-    }).execute()
+    db.table("organizations").insert(
+        {
+            "name": "SASC",
+            "description": "Student Academic Success Center",
+            "type": "DEPARTMENT",
+        }
+    ).execute()
     res = db.table("organizations").select("id, name").eq("name", "SASC").execute()
     row = res.data[0]
     return {"id": row["id"], "name": row["name"]}
@@ -126,7 +135,9 @@ def setup_sasc_category(db, org: dict, course_num: str, clear: bool = False) -> 
         row = res.data[0]
         category_id = row["id"]
     else:
-        db.table("categories").insert({"org_id": org_id, "name": category_name}).execute()
+        db.table("categories").insert(
+            {"org_id": org_id, "name": category_name}
+        ).execute()
         res = (
             db.table("categories")
             .select("id, org_id, name")
@@ -146,4 +157,3 @@ def setup_sasc_category(db, org: dict, course_num: str, clear: bool = False) -> 
 
 if __name__ == "__main__":
     export_peer_tutoring()
-

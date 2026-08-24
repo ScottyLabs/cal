@@ -1,5 +1,6 @@
 from course_agent.app.agent.graph import build_course_agent
 
+
 def main():
     graph = build_course_agent()
 
@@ -11,6 +12,7 @@ def main():
         f.write(dot)
 
     print("Mermaid graph saved to course_agent_graph.mmd")
+
 
 if __name__ == "__main__":
     main()

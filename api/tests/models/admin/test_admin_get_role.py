@@ -1,6 +1,7 @@
 # tests/models/admin/test_admin_get_role.py
 from app.models.admin import get_role
 
+
 # ---------- NO ROLES ----------
 def test_get_role_no_admin_entries(db, user_factory):
     user = user_factory(email="user1@test.com")

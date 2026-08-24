@@ -34,7 +34,7 @@ const Calendar: FC<Props> = ({ events }) => {
     mergedEventsMap.set(key, event);
   });
 
-  // Then add events (higher priority — will overwrite duplicates)
+  // Then add events (higher priority - will overwrite duplicates)
   events.forEach(event => {
     // if (event.title === "15210 A") {
     //   console.log(event.title, event.start);

@@ -1,5 +1,7 @@
 import pytest
+
 from app.models.models import Category
+
 
 @pytest.fixture
 def category_factory(db):
@@ -12,4 +14,5 @@ def category_factory(db):
         db.add(category)
         db.flush()
         return category
+
     return create_category

@@ -12,9 +12,7 @@ def save_user_saved_event(db, user_id: int, event_id: int, google_event_id: str)
         The created UserSavedEvent object.
     """
     user_saved_event = UserSavedEvent(
-        user_id=user_id,
-        event_id=event_id,
-        google_event_id=google_event_id
+        user_id=user_id, event_id=event_id, google_event_id=google_event_id
     )
     db.add(user_saved_event)
     return user_saved_event

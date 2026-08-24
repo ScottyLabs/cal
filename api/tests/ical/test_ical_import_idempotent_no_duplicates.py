@@ -1,13 +1,11 @@
-import pytest
-from app.models.models import Event, CalendarSource
-from app.services.ical import import_ical_feed_using_helpers
+from datetime import datetime, timedelta, timezone
+
 from app.models.calendar_source import create_calendar_source
-from datetime import datetime, timezone, timedelta
+from app.models.models import Event
+from app.services.ical import import_ical_feed_using_helpers
 
 dtstamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-dtstart = (
-    datetime.now(timezone.utc) + timedelta(days=1)
-).strftime("%Y%m%dT%H%M%SZ")
+dtstart = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y%m%dT%H%M%SZ")
 
 SIMPLE_ICS = f"""BEGIN:VCALENDAR
 VERSION:2.0
@@ -25,7 +23,9 @@ END:VCALENDAR
 """
 
 
-def test_ical_import_idempotent_no_duplicates(db, org_factory, category_factory, user_factory):
+def test_ical_import_idempotent_no_duplicates(
+    db, org_factory, category_factory, user_factory
+):
     """
     Importing the same ICS twice for the same CalendarSource
     must NOT create duplicate Events.
@@ -59,9 +59,7 @@ def test_ical_import_idempotent_no_duplicates(db, org_factory, category_factory,
     assert result1["success"] is True
 
     events_after_first = (
-        db.query(Event)
-        .filter(Event.calendar_source_id == calendar_source.id)
-        .all()
+        db.query(Event).filter(Event.calendar_source_id == calendar_source.id).all()
     )
     assert len(events_after_first) == 1
     first_event_id = events_after_first[0].id
@@ -79,9 +77,7 @@ def test_ical_import_idempotent_no_duplicates(db, org_factory, category_factory,
     assert result2["success"] is True
 
     events_after_second = (
-        db.query(Event)
-        .filter(Event.calendar_source_id == calendar_source.id)
-        .all()
+        db.query(Event).filter(Event.calendar_source_id == calendar_source.id).all()
     )
 
     # THE CRITICAL ASSERTION

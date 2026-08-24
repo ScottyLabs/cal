@@ -1,4 +1,9 @@
-{ pkgs, inputs, ... }:
+{
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 {
   imports = [ inputs.scottylabs.devenvModules.default ];
 
@@ -29,6 +34,14 @@
     pkgs.nodejs_22
     pkgs.uv
   ];
+
+  # The shared module wires `ty` to the uv venv it creates from a pyproject.toml
+  # at the devenv root. This repo keeps the Python project under api/, so no
+  # root venv exists and every third-party import resolves to nothing - roughly
+  # 200 spurious unresolved-import errors that drown the genuine type errors
+  # underneath. Disabled until the Python project is hoisted to the root or ty
+  # is pointed at api/.venv. Tracked in README.md.
+  git-hooks.hooks.ty.enable = lib.mkForce false;
 
   scripts = {
     api-dev.exec = "cd api && python run.py";

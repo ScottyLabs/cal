@@ -1,16 +1,19 @@
-import hashlib
-from datetime import datetime, date
-from enum import Enum
 from collections import defaultdict
+from datetime import date, datetime
+from enum import Enum
+
 from dateutil.parser import isoparse
+
 
 def normalize_dt(value):
     if isinstance(value, datetime):
         return value.replace(tzinfo=None)
     return isoparse(value).replace(tzinfo=None)
 
+
 def normalize_str(s: str) -> str:
     return s.strip() if s else ""
+
 
 def group_soc_rows(soc_rows):
     grouped = defaultdict(list)
@@ -29,6 +32,7 @@ def group_soc_rows(soc_rows):
 
     return grouped
 
+
 def event_identity(org_id, title, semester, start_datetime, end_datetime, location):
     return (
         org_id,
@@ -38,6 +42,7 @@ def event_identity(org_id, title, semester, start_datetime, end_datetime, locati
         normalize_dt(end_datetime),
         normalize_str(location),
     )
+
 
 def json_safe(value):
     if isinstance(value, (datetime, date)):

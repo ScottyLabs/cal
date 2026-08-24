@@ -1,55 +1,74 @@
-
-
-import requests
-import bs4
-from scraper.monitors.base_scraper import BaseScraper
-from scraper.models import CourseResource, ResourceEvent
-import time
-import re
 import datetime
+import re
+import time
+
+import bs4
+import requests
+
+from scraper.models import CourseResource, ResourceEvent
+from scraper.monitors.base_scraper import BaseScraper
+
 
 class DropInScraper(BaseScraper):
     def __init__(self, db):
         super().__init__(db, "Drop In Tutoring", "CMU Drop In Website")
-    
+
     def scrape(self):
         link = "https://www.cmu.edu/student-success/programs/tutoring.html"
         r = requests.get(link, headers=self.headers)
-        soup = bs4.BeautifulSoup(r.text, 'html.parser')
+        soup = bs4.BeautifulSoup(r.text, "html.parser")
 
-        table = soup.find('table', id="dropintable")
-        #print(table)
+        table = soup.find("table", id="dropintable")
+        # print(table)
 
         if table is None:
-            raise Exception("No table exists on Drop In website. Could be due to lack of courses (Summer time)")
-        
+            raise Exception(
+                "No table exists on Drop In website. Could be due to lack of courses (Summer time)"
+            )
+
         resources = []
-        for i, row in enumerate(table.find_all('tr')):
+        for i, row in enumerate(table.find_all("tr")):
             if i != 0:
-                data = row.find_all('th') + row.find_all('td')
+                data = row.find_all("th") + row.find_all("td")
 
                 course_nameids = data[0].text.strip()
-                courses_name_ids_parsed = re.findall(r'(\d{2}-\d{3})\s(.*?)(?=(\d{2}-\d{3})|$)', course_nameids)
+                courses_name_ids_parsed = re.findall(
+                    r"(\d{2}-\d{3})\s(.*?)(?=(\d{2}-\d{3})|$)", course_nameids
+                )
 
                 # Default: 8-10pm
                 start_time = datetime.time(hour=20)
                 end_time = datetime.time(hour=22)
                 weekday = data[1].text.strip()
-                
+
                 if "(" in weekday:
-                    new_time = weekday.split("(", 1)[1].split(")")[0].strip().replace(" ", "").split("-")
+                    new_time = (
+                        weekday.split("(", 1)[1]
+                        .split(")")[0]
+                        .strip()
+                        .replace(" ", "")
+                        .split("-")
+                    )
                     try:
-                        start_time = datetime.datetime.strptime(new_time[0], "%I:%M%p").time()
+                        start_time = datetime.datetime.strptime(
+                            new_time[0], "%I:%M%p"
+                        ).time()
                     except ValueError:
-                        start_time = datetime.datetime.strptime(new_time[0], "%I%p").time()
-                    
+                        start_time = datetime.datetime.strptime(
+                            new_time[0], "%I%p"
+                        ).time()
+
                     try:
-                        end_time = datetime.datetime.strptime(new_time[1], "%I:%M%p").time()
+                        end_time = datetime.datetime.strptime(
+                            new_time[1], "%I:%M%p"
+                        ).time()
                     except ValueError:
-                        end_time = datetime.datetime.strptime(new_time[1], "%I%p").time()
-                    
+                        end_time = datetime.datetime.strptime(
+                            new_time[1], "%I%p"
+                        ).time()
+
                     weekday = weekday.split("(")[0].strip()
-                
+
                 location = data[2].text.strip()
                 tutor = data[3].text.strip()
 
@@ -63,7 +82,7 @@ class DropInScraper(BaseScraper):
                 recurrence = {
                     "frequency": "weekly",
                     "interval": 1,
-                    "weekdays": [weekday]
+                    "weekdays": [weekday],
                 }
 
                 # Create the ResourceEvent with recurrence
@@ -71,7 +90,7 @@ class DropInScraper(BaseScraper):
                     start_datetime=start_datetime,
                     end_datetime=end_datetime,
                     location=location,
-                    recurrence=recurrence
+                    recurrence=recurrence,
                 )
 
                 # For each course, create a CourseResource
@@ -85,25 +104,25 @@ class DropInScraper(BaseScraper):
                         course_name=course_name,
                         professor=None,  # Assuming no professor info for tutoring
                         instructor=tutor,
-                        events=[event]
+                        events=[event],
                     )
                     resources.append(resource)
-        
+
         # Update the database
         unique_keys = ["resource_type", "course_id", "instructor"]
         self.update_database(resources, "academic_events", unique_keys)
-    
+
     def scrape_data_only(self):
         """Return scraped resources without database operations."""
         # Call the existing scrape method but capture resources before database update
         original_update = self.update_database
         captured_resources = []
-        
+
         def capture_resources(resources, collection_name, unique_keys):
             captured_resources.extend(resources)
-        
+
         self.update_database = capture_resources
         self.scrape()
         self.update_database = original_update
-        
+
         return captured_resources

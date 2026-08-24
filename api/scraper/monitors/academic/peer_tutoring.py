@@ -5,15 +5,15 @@ from zoneinfo import ZoneInfo
 import bs4
 import requests
 
-from scraper.monitors.base_scraper import BaseScraper
 from scraper.models import PeerTutoring
+from scraper.monitors.base_scraper import BaseScraper
 
 # Timezone constant for CMU events
 PT_TIMEZONE = ZoneInfo("America/New_York")
 
 # Default tutoring time (8:00pm - 10:00pm)
 DEFAULT_START_TIME = dt.time(20, 0)  # 8:00pm
-DEFAULT_END_TIME = dt.time(22, 0)    # 10:00pm
+DEFAULT_END_TIME = dt.time(22, 0)  # 10:00pm
 
 
 class PeerTutoringScraper(BaseScraper):
@@ -34,7 +34,7 @@ class PeerTutoringScraper(BaseScraper):
         return peer_tutoring_sessions
 
     def _process_html(self, pt_html) -> list[PeerTutoring]:
-        soup = bs4.BeautifulSoup(pt_html, 'html.parser')
+        soup = bs4.BeautifulSoup(pt_html, "html.parser")
 
         table = soup.find(id="dropintable")
         if not table:
@@ -64,14 +64,22 @@ class PeerTutoringScraper(BaseScraper):
 
             # Location and optional custom time
             location_cell = cols[1]
-            location, start_time, end_time = self._parse_location_and_time(location_cell)
+            location, start_time, end_time = self._parse_location_and_time(
+                location_cell
+            )
 
             # Tutors - can be multiple separated by & or commas
             tutors_text = cols[2].get_text(strip=True)
-            tutors = [name.strip() for name in re.split(r"[,&]+\s*", tutors_text) if name.strip()]
+            tutors = [
+                name.strip()
+                for name in re.split(r"[,&]+\s*", tutors_text)
+                if name.strip()
+            ]
 
             # Generate time location data
-            time_location = self._generate_time_location(day_of_week, start_time, end_time, location)
+            time_location = self._generate_time_location(
+                day_of_week, start_time, end_time, location
+            )
 
             # Create one PeerTutoring object per course
             for course in courses:
@@ -79,16 +87,18 @@ class PeerTutoringScraper(BaseScraper):
                     course_num=course["course_num"],
                     course_name=course["course_name"],
                     tutors=tutors,
-                    time_location=time_location
+                    time_location=time_location,
                 )
                 all_peer_tutoring_sessions.append(session)
-                print(f"Peer Tutoring {course['course_num']}: {day_of_week} at {location}")
+                print(
+                    f"Peer Tutoring {course['course_num']}: {day_of_week} at {location}"
+                )
 
         return all_peer_tutoring_sessions
 
     def _parse_courses(self, th_element) -> list[dict]:
         """Parse course info from the <th> element.
-        
+
         Courses are formatted like "15-110 Principles of Computing"
         Multiple courses are separated by <br> tags.
         """
@@ -101,32 +111,29 @@ class PeerTutoringScraper(BaseScraper):
                 continue
 
             # Parse course number and name: "15-110 Principles of Computing"
-            match = re.match(r'^(\d{2}-\d{3})\s+(.+)$', content)
+            match = re.match(r"^(\d{2}-\d{3})\s+(.+)$", content)
             if match:
                 course_num = match.group(1).replace("-", "")
                 course_name = match.group(2)
-                courses.append({
-                    "course_num": course_num,
-                    "course_name": course_name
-                })
+                courses.append({"course_num": course_num, "course_name": course_name})
 
         return courses
 
     def _parse_location_and_time(self, location_cell) -> tuple[str, dt.time, dt.time]:
         """Parse location and optional custom time from location cell.
-        
+
         The location cell may contain a custom time in <strong> tags like:
         "Highmark Tartan Room<br><strong>(7:30pm - 9:30pm)</strong>"
-        
+
         If no custom time, use default 8:00pm - 10:00pm.
         """
         # Check for custom time in <strong> tag
         strong_tag = location_cell.find("strong")
-        
+
         if strong_tag:
             time_text = strong_tag.get_text(strip=True)
             start_time, end_time = self._parse_time_range(time_text)
-            
+
             # Get location without the time part
             # Remove the strong tag temporarily to get clean location
             strong_tag.decompose()
@@ -142,7 +149,7 @@ class PeerTutoringScraper(BaseScraper):
         """Parse time range like '(7:30pm - 9:30pm)' or '7:30pm - 9:30pm'."""
         # Remove parentheses if present
         time_text = time_text.strip("()")
-        
+
         # Split by "-" and parse each time
         parts = time_text.split("-")
         if len(parts) != 2:
@@ -158,9 +165,11 @@ class PeerTutoringScraper(BaseScraper):
         except ValueError:
             return DEFAULT_START_TIME, DEFAULT_END_TIME
 
-    def _generate_time_location(self, day_of_week: str, start_time: dt.time, end_time: dt.time, location: str) -> dict:
+    def _generate_time_location(
+        self, day_of_week: str, start_time: dt.time, end_time: dt.time, location: str
+    ) -> dict:
         """Generate a time location dictionary.
-        
+
         Returns: dict with the following keys:
             - recurrence_frequency: "WEEKLY"
             - recurrence_interval: 1
@@ -173,7 +182,9 @@ class PeerTutoringScraper(BaseScraper):
 
         # Create timezone-aware datetime objects (date component is arbitrary)
         arbitrary_date = dt.date.today()
-        start_datetime = dt.datetime.combine(arbitrary_date, start_time, tzinfo=PT_TIMEZONE)
+        start_datetime = dt.datetime.combine(
+            arbitrary_date, start_time, tzinfo=PT_TIMEZONE
+        )
         end_datetime = dt.datetime.combine(arbitrary_date, end_time, tzinfo=PT_TIMEZONE)
 
         time_location_data = {
@@ -182,7 +193,7 @@ class PeerTutoringScraper(BaseScraper):
             "recurrence_by_day": weekday_code,
             "start_datetime": start_datetime.isoformat(),
             "end_datetime": end_datetime.isoformat(),
-            "location": location
+            "location": location,
         }
 
         return time_location_data
@@ -190,15 +201,14 @@ class PeerTutoringScraper(BaseScraper):
     def _weekday_name_to_code(self, weekday_name: str) -> str:
         """Convert weekday name directly to two-letter code ('MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU')."""
         mapping = {
-            'Monday': 'MO',
-            'Tuesday': 'TU',
-            'Wednesday': 'WE',
-            'Thursday': 'TH',
-            'Friday': 'FR',
-            'Saturday': 'SA',
-            'Sunday': 'SU'
+            "Monday": "MO",
+            "Tuesday": "TU",
+            "Wednesday": "WE",
+            "Thursday": "TH",
+            "Friday": "FR",
+            "Saturday": "SA",
+            "Sunday": "SU",
         }
         # Handle both singular and plural forms
-        day = weekday_name.rstrip('s').strip()
-        return mapping.get(day, 'MO')
-
+        day = weekday_name.rstrip("s").strip()
+        return mapping.get(day, "MO")

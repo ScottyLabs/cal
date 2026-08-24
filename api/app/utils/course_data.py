@@ -1,10 +1,13 @@
 # OBSOLETE FILE - DO NOT USE
 
-import os
 import json
+import os
 
 current_dir = os.path.dirname(__file__)
-target_path = os.path.abspath(os.path.join(current_dir, '../../../rust/all_courses.json'))
+target_path = os.path.abspath(
+    os.path.join(current_dir, "../../../rust/all_courses.json")
+)
+
 
 def get_course_data():
     """
@@ -13,9 +16,9 @@ def get_course_data():
     """
     if not os.path.exists(target_path):
         raise FileNotFoundError(f"File not found: {target_path}")
-    
+
     # Load the input JSON file
-    with open(target_path, 'r', encoding='utf-8') as f:
+    with open(target_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     # Dictionary to store unique courses by course number
@@ -24,10 +27,10 @@ def get_course_data():
     for entry in data:
         course = entry.get("course", {})
         metadata = entry.get("metadata", {})
-        
+
         course_number = course.get("number")
         crosslisted = metadata.get("crosslisted", [])
-        
+
         components = course.get("components", [])
         title = components[0].get("title") if components else ""
 
@@ -36,7 +39,7 @@ def get_course_data():
             unique_courses[course_number] = {
                 "course_number": course_number,
                 "title": title,
-                "crosslisted": crosslisted
+                "crosslisted": crosslisted,
             }
 
     # Convert dictionary values to list
@@ -45,7 +48,5 @@ def get_course_data():
     output_data = list(unique_courses.values())
 
     # Write to output JSON file
-    with open('courses_output.json', 'w', encoding='utf-8') as f:
+    with open("courses_output.json", "w", encoding="utf-8") as f:
         json.dump(output_data, f, indent=2)
-
-

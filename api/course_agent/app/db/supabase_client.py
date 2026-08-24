@@ -1,8 +1,10 @@
 # course_agent/app/db/supabase_client.py
-from supabase import create_client
 import os
 
+from supabase import create_client
+
 _supabase = None
+
 
 def get_supabase():
     global _supabase

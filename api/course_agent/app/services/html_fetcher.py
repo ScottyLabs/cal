@@ -1,5 +1,6 @@
 import requests
 
+
 def fetch_html(url: str) -> str | None:
     try:
         return requests.get(url, timeout=20).text

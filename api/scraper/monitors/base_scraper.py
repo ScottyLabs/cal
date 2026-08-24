@@ -1,6 +1,5 @@
-
-from pymongo import UpdateOne
 import datetime
+
 
 class BaseScraper:
     def __init__(self, db, monitor_name, resource_source):
@@ -11,7 +10,7 @@ class BaseScraper:
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en-US,en;q=0.9",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.67 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.67 Safari/537.36",
         }
 
     def __str__(self):
@@ -19,9 +18,11 @@ class BaseScraper:
 
     def scrape(self):
         raise NotImplementedError("Scrape method must be implemented by subclasses.")
-    
+
     def scrape_data_only(self):
-        raise NotImplementedError("scrape_data_only method must be implemented by subclasses.")
+        raise NotImplementedError(
+            "scrape_data_only method must be implemented by subclasses."
+        )
 
     def get_next_weekday(self, weekday):
         """

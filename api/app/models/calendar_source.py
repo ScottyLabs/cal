@@ -1,7 +1,10 @@
-from app.models.models import CalendarSource
-from typing import Optional
-from sqlalchemy.orm import Session
 from datetime import datetime, timezone
+from typing import Optional
+
+from sqlalchemy.orm import Session
+
+from app.models.models import CalendarSource
+
 
 def create_calendar_source(
     db_session,

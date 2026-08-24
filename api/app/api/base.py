@@ -1,7 +1,5 @@
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, g, jsonify
 from sqlalchemy import text
-from app.models.models import User 
-
 
 base_bp = Blueprint("base", __name__)
 
@@ -10,15 +8,15 @@ base_bp = Blueprint("base", __name__)
 def health():
     # Kennel polls this every 2s for up to 60s after starting the service and
     # will not route the public domain here until it returns 200. Keep it off
-    # the database so a slow Supabase connection can't fail the deploy —
+    # the database so a slow Supabase connection can't fail the deploy -
     # /test_db below is the liveness check that does touch the DB.
     return jsonify({"status": "ok"}), 200
 
 
 @base_bp.route("/")
 def home():
-    print('hi')
-    print('there')
+    print("hi")
+    print("there")
     return "Welcome to the CMUCal Flask API!"
 
 
@@ -26,30 +24,26 @@ def home():
 def db_health_check():
     db = g.db
     try:
-        db.execute(text('SELECT 1'))
+        db.execute(text("SELECT 1"))
         return jsonify({"status": "connected"})
     except Exception as e:
         return jsonify({"status": "error", "details": str(e)}), 500
 
+
 @base_bp.route("/test_db_error")
 def test_db_error():
     db = g.db
-    db.execute(text('SELECT 1'))
+    db.execute(text("SELECT 1"))
     raise RuntimeError("boom")
 
 
-        
 @base_bp.route("/test_rrule", methods=["GET"])
 def test_rrule():
-    from app.models.recurrence_rule import get_rrule_from_db_rule
-    from app.models.models import RecurrenceRule
-    from app.models.enums import FrequencyType
     from datetime import datetime, timedelta, timezone
+
     from dateutil.rrule import (
+        DAILY,
         rrule,
-        DAILY, WEEKLY, MONTHLY, YEARLY,
-        MO, TU, WE, TH, FR, SA, SU,
-        weekday,
     )
 
     db = g.db
@@ -77,15 +71,12 @@ def test_rrule():
 
         # rrule = get_rrule_from_db_rule(rule)
 
-
-        
-
         start = datetime.now(timezone.utc) - timedelta(days=1)
         until = datetime.now(timezone.utc) + timedelta(days=5)
 
         rule = rrule(freq=DAILY, dtstart=start, until=until)
 
-        print(list(rule))  # ✅ prints 6 daily dates
+        print(list(rule))  # [ok] prints 6 daily dates
 
         # for dt in rrule:
         #     print(dt.date())

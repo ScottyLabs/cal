@@ -1,6 +1,7 @@
-import pytest
-from datetime import datetime, timezone
 import uuid
+from datetime import datetime, timezone
+
+import pytest
 
 from app.models.models import CalendarSource
 
@@ -14,7 +15,7 @@ def calendar_source_factory(db, org_factory, category_factory):
         source = CalendarSource(
             url=kwargs.pop(
                 "url",
-                f"https://calendar.google.com/calendar/ical/test/{uuid.uuid4()}.ics"
+                f"https://calendar.google.com/calendar/ical/test/{uuid.uuid4()}.ics",
             ),
             org_id=kwargs.pop("org_id", org.id),
             category_id=kwargs.pop("category_id", category.id),

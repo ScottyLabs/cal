@@ -4,7 +4,7 @@ A unified web calendar for all CMU academic events. Deployed with
 [kennel](https://docs.kennel.scottylabs.org).
 
 This repository replaces the two GitHub repositories the project used to live
-in — `ScottyLabs/cmucal` (frontend) and `ScottyLabs/cmucal-backend` — which were
+in - `ScottyLabs/cmucal` (frontend) and `ScottyLabs/cmucal-backend` - which were
 deployed on Vercel and Railway respectively.
 
 ## Layout
@@ -79,23 +79,23 @@ values in it are public by design.
 
 These are tracked as part of the migration and are not yet done:
 
-- [x] ~~`api/uv.lock`~~ — generated, 132 packages locked.
-- [x] ~~`npmDepsHash`~~ — resolved.
+- [x] ~~`api/uv.lock`~~ - generated, 132 packages locked.
+- [x] ~~`npmDepsHash`~~ - resolved.
 - [ ] **Clerk is on its `pk_test_` instance**, not production. The test key
       is committed in `web/.env.production` (publishable keys are public by
       design) so the staged cutover to `cal.scottylabs.org` works. Before
       `cmucal.com` goes live this needs the `pk_live_` key **and** the new
-      domain added to the production Clerk instance's allowed origins —
+      domain added to the production Clerk instance's allowed origins -
       neither of which carries over automatically.
 - [ ] **`nix build .#api` is unverified.** It fails on macOS with
-      `mkdir: command not found` inside pyproject hook derivations — a
+      `mkdir: command not found` inside pyproject hook derivations - a
       Determinate Nix 3.22.2 structured-attrs bug on darwin, not a packaging
       fault. `uv sync` resolves the lockfile and the generated `bin/api`
       entrypoint serves `/api/health`, so the first real check of the uv2nix
       build happens in CI on x86_64-linux.
 - [ ] **`cmucal.com` is not a registered Cloudflare zone** in
       `ScottyLabs/infrastructure`. Until it is, the apex domain cannot point at
-      kennel — hence `cal.scottylabs.org` above. Needs a devops PR adding the
+      kennel - hence `cal.scottylabs.org` above. Needs a devops PR adding the
       zone ID to `modules/hosts/deploy-01/kennel.nix`.
 - [ ] **`api/Dockerfile` is dead.** Railway used it; kennel does not. Delete
       once the deployment is green.
@@ -106,5 +106,18 @@ These are tracked as part of the migration and are not yet done:
       `DATABASE_URL`) is the follow-up that unblocks preview deployments and
       removes the free-tier pause risk that took production down for four
       months.
+- [ ] **Lint and type-check are scoped down, not satisfied.** The shared hook
+      set reported 673 ruff findings and ~200 ty errors against code that had
+      never been linted. What landed: the two genuine `F821` undefined-name
+      bugs are fixed, 240 findings were auto-fixed (import ordering, unused
+      imports), and `api/pyproject.toml` now selects `E4/E7/E9/F/I` with
+      documented ignores. Still deferred, in rough order of value:
+      `RUF013` implicit Optional (21), `DTZ*` naive datetimes (44),
+      `BLE001` blind except (68), `UP*` typing modernisation (101).
+- [ ] **The `ty` hook is disabled.** The shared module points it at a uv venv
+      built from a root `pyproject.toml`; this repo keeps the Python project
+      under `api/`, so nothing resolves and the real type errors are buried
+      under ~200 spurious unresolved-import ones. Fix is to hoist the Python
+      project to the repo root or point `ty` at `api/.venv`, then re-enable.
 - [ ] **Clerk is still the auth provider**, not the Keycloak `oidc_client` that
       governance provisions for this repo. Deliberate for the lift-and-shift.

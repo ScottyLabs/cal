@@ -1,7 +1,8 @@
 import os
 
-from scraper.exporters.supplemental_instruction_export_to_excel import run_scrape_and_export  # noqa: E402
-
+from scraper.exporters.supplemental_instruction_export_to_excel import (
+    run_scrape_and_export,  # noqa: E402
+)
 
 # Run with "python -m tests.raw_tests.test_SI_export" from base directory                                                                                                           ─╯
 if __name__ == "__main__":

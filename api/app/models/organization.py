@@ -1,6 +1,5 @@
-from typing import List
 from app.models.models import Organization
-from app.utils.course_data import get_course_data
+
 
 def create_organization(db, name: str, description: str = None, type: str = None):
     """
@@ -18,11 +17,13 @@ def create_organization(db, name: str, description: str = None, type: str = None
     db.add(org)
     return org
 
+
 def get_orgs_by_type(db, org_type: str):
     """
     Fetch all organizations of a specific type.
     """
     return db.query(Organization).filter(Organization.type == org_type).all()
+
 
 def get_organization_by_id(db, org_id: int):
     """
@@ -35,6 +36,7 @@ def get_organization_by_id(db, org_id: int):
     """
     return db.query(Organization).filter(Organization.id == org_id).first()
 
+
 def get_organization_by_name(db, name: str):
     """
     Retrieve an organization by its name.
@@ -45,6 +47,7 @@ def get_organization_by_name(db, name: str):
         The Organization object if found, otherwise None.
     """
     return db.query(Organization).filter(Organization.name == name).first()
+
 
 def delete_organization(db, org_id: int):
     """
@@ -62,4 +65,3 @@ def delete_organization(db, org_id: int):
         db.delete(org)
         return True
     return False
-

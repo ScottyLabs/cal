@@ -1,7 +1,9 @@
-import pytest
 from datetime import datetime, timezone
-from app.models.models import RecurrenceRule
+
+import pytest
+
 from app.models.enums import FrequencyType
+from app.models.models import RecurrenceRule
 
 
 @pytest.fixture

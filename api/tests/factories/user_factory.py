@@ -1,5 +1,7 @@
 import pytest
+
 from app.models.models import User
+
 
 @pytest.fixture
 def user_factory(db):
@@ -12,4 +14,5 @@ def user_factory(db):
         db.add(user)
         db.flush()
         return user
+
     return create_user
