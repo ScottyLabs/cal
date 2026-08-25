@@ -97,8 +97,6 @@ These are tracked as part of the migration and are not yet done:
       `ScottyLabs/infrastructure`. Until it is, the apex domain cannot point at
       kennel - hence `cal.scottylabs.org` above. Needs a devops PR adding the
       zone ID to `modules/hosts/deploy-01/kennel.nix`.
-- [ ] **`api/Dockerfile` is dead.** Railway used it; kennel does not. Delete
-      once the deployment is green.
 - [ ] **Supabase is still the database.** Both projects (`cmucal`,
       `cmucal-dev`) idled into a paused state and were restored on
       2026-08-22; the data survived intact. Migrating into kennel's

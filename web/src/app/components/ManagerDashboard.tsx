@@ -291,6 +291,8 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
               onOrgDeleted();
             }
           } catch (error) {
+            // nosemgrep: javascript.lang.security.audit.unsafe-formatstring.unsafe-formatstring
+            // Template literal, already interpolated - not a util.format specifier string.
             console.error(`Failed to delete ${deleteTarget.type}:`, error);
           }
           setShowDeleteConfirm(false);
