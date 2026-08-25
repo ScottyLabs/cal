@@ -1,0 +1,173 @@
+from flask import Blueprint, g, jsonify, request
+from sqlalchemy import or_
+
+from app.models.models import (
+    CalendarSource,
+    Category,
+    Event,
+    EventOccurrence,
+    Schedule,
+)
+from app.utils.auth import get_current_user
+
+schedule_bp = Blueprint("schedule_bp", __name__)
+
+
+def event_occurrence_to_dict(occurrence: EventOccurrence):
+    """Manually serialize EventOccurrence SQLAlchemy object to a dictionary."""
+    return {
+        "id": occurrence.id,
+        "title": occurrence.title,
+        "description": occurrence.description,
+        "start_datetime": occurrence.start_datetime.isoformat(),
+        "end_datetime": occurrence.end_datetime.isoformat(),
+        "location": occurrence.location,
+        "is_all_day": occurrence.is_all_day,
+        "source_url": occurrence.source_url,
+        "recurrence": occurrence.recurrence.name if occurrence.recurrence else None,
+        "event_id": occurrence.event_id,
+        "org_id": occurrence.org_id,
+        "category_id": occurrence.category_id,
+    }
+
+
+@schedule_bp.route("/", methods=["GET"])
+def get_schedule_route():
+    """returns the user's schedule with courses and clubs, their categories, and event occurrences"""
+    clerk_user_id = request.headers.get("Clerk-User-Id")
+    schedule_id = request.args.get("schedule_id")
+    user = get_current_user(clerk_user_id)
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    db = g.db
+    try:
+        # Get specific schedule or user's first schedule
+        schedule_query = db.query(Schedule).filter(Schedule.user_id == user.id)
+        if schedule_id:
+            schedule = schedule_query.filter(Schedule.id == schedule_id).first()
+        else:
+            schedule = schedule_query.first()
+
+        if not schedule:
+            return jsonify({"courses": [], "clubs": []})
+
+        courses = {}
+        clubs = {}
+
+        # Get all organizations in the schedule
+        for schedule_org in schedule.schedule_orgs:
+            org = schedule_org.org
+            if not org:
+                continue
+
+            # Get all categories for this org
+            categories = db.query(Category).filter(Category.org_id == org.id).all()
+
+            # Get all events and occurrences for this org
+            events_query = db.query(Event).filter(Event.org_id == org.id)
+
+            # Check if org is a course or club
+            if org.type == "COURSE" or org.type == "ACADEMIC":
+                courses[org.id] = {
+                    "org_id": org.id,
+                    "name": org.name,
+                    "categories": [],
+                    "events": {},
+                }
+
+                # Add categories and their events
+                for category in categories:
+                    courses[org.id]["categories"].append(
+                        {"id": category.id, "name": category.name}
+                    )
+
+                    # Get events for this category (exclude events from inactive sources)
+                    events = (
+                        db.query(Event)
+                        .outerjoin(
+                            CalendarSource,
+                            Event.calendar_source_id == CalendarSource.id,
+                        )
+                        .filter(
+                            Event.org_id == org.id,
+                            Event.category_id == category.id,
+                            or_(
+                                Event.calendar_source_id == None,
+                                CalendarSource.active == True,
+                            ),  # noqa: E711
+                        )
+                        .all()
+                    )
+
+                    # Get event occurrences
+                    event_ids = [e.id for e in events]
+                    occurrences = (
+                        db.query(EventOccurrence)
+                        .filter(EventOccurrence.event_id.in_(event_ids))
+                        .all()
+                    )
+
+                    courses[org.id]["events"][category.name] = [
+                        event_occurrence_to_dict(o) for o in occurrences
+                    ]
+
+            elif org.type == "CLUB":
+                clubs[org.id] = {
+                    "org_id": org.id,
+                    "name": org.name,
+                    "categories": [],
+                    "events": {},
+                }
+
+                # Add categories and their events
+                for category in categories:
+                    clubs[org.id]["categories"].append(
+                        {"id": category.id, "name": category.name}
+                    )
+
+                    # Get regular events for this category (exclude events from inactive sources)
+                    events = (
+                        db.query(Event)
+                        .outerjoin(
+                            CalendarSource,
+                            Event.calendar_source_id == CalendarSource.id,
+                        )
+                        .filter(
+                            Event.org_id == org.id,
+                            Event.category_id == category.id,
+                            or_(
+                                Event.calendar_source_id == None,
+                                CalendarSource.active == True,
+                            ),  # noqa: E711
+                        )
+                        .all()
+                    )
+
+                    event_ids = [e.id for e in events]
+
+                    occurrences = []
+                    if event_ids:
+                        occurrences = (
+                            db.query(EventOccurrence)
+                            .filter(EventOccurrence.event_id.in_(event_ids))
+                            .all()
+                        )
+
+                    clubs[org.id]["events"][category.name] = [
+                        event_occurrence_to_dict(o) for o in occurrences
+                    ]
+
+        return jsonify(
+            {
+                "courses": list(courses.values()),
+                "clubs": list(clubs.values()),
+                "schedule_id": schedule.id,
+            }
+        )
+    except Exception as e:
+        import traceback
+
+        print("Exception:", traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
