@@ -30,9 +30,18 @@
 
   # Node is not part of the shared module set; the web service needs it for
   # local development.
+  #
+  # rustc is here only to satisfy CI. The shared prepare action runs
+  # Swatinem/rust-cache unconditionally with cmd-format "devenv shell {0}",
+  # so it probes `devenv shell rustc -vV` in every project and fails the job
+  # when there is no Rust toolchain on PATH. This project has no Rust. Worth
+  # raising with devops so the step becomes conditional; until then this is
+  # the cheapest way to keep the probe happy without pulling in the whole
+  # scottylabs.rust module.
   packages = [
     pkgs.nodejs_22
     pkgs.uv
+    pkgs.rustc
   ];
 
   # The shared module wires `ty` to the uv venv it creates from a pyproject.toml
