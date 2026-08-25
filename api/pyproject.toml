@@ -1,0 +1,140 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cmucal-backend"
+version = "0.1.0"
+description = "CMUCal backend scrapers and API"
+requires-python = ">=3.10"
+
+# -----------------------------
+# Runtime dependencies ONLY
+# -----------------------------
+dependencies = [
+    # Web / API
+    "Flask>=3.1",
+    "flask-cors",
+    "Flask-JWT-Extended",
+    "Flask-PyMongo",
+    "gunicorn",
+
+    # Database
+    "SQLAlchemy>=2.0",
+    "alembic",
+    "psycopg2-binary",
+    "pymongo",
+    "supabase",
+
+    # Auth / security
+    "bcrypt",
+    "Flask-Bcrypt",
+    "PyJWT",
+    "python-dotenv",
+
+    # Scraping / parsing
+    "requests",
+    "urllib3",
+    "beautifulsoup4",
+
+    # Data / export
+    "pandas",
+    "numpy",
+    "openpyxl",
+
+    # Calendar / time
+    "icalendar",
+    "recurring-ical-events",
+    "python-dateutil",
+    "pytz",
+    "tzlocal",
+    "x-wr-timezone",
+
+    # Google APIs
+    "google-api-python-client",
+    "google-auth",
+    "google-auth-oauthlib",
+
+    # LLM / Agents
+    "langchain",
+    "langchain-openai",
+    "langgraph",
+    "openai",
+    "tiktoken",
+
+    # Visualization (LangGraph)
+    "graphviz",
+
+    # Misc
+    "inflect",
+]
+
+# -----------------------------
+# Entry points
+# -----------------------------
+# buildPythonService exposes each [project.scripts] entry under bin/, and
+# kennel runs bin/<service-name>. This name must match the
+# scottylabs.kennel.services key in devenv.nix.
+[project.scripts]
+api = "app.wsgi:main"
+
+# -----------------------------
+# Dev / test dependencies
+# -----------------------------
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "coverage",
+    "typeguard",
+    "sqlacodegen",
+]
+
+# -----------------------------
+# Lint
+# -----------------------------
+# Scoped down for the kennel migration. This code has never been linted, and
+# the full default hook set reports 673 findings. Selected here are the rules
+# that catch real defects (pyflakes plus the syntax/runtime subset of
+# pycodestyle) and import ordering, which is mechanically fixable.
+#
+# Deliberately deferred, tracked in README.md:
+#   UP*     101 non-pep604-annotation and friends - typing modernisation
+#   BLE001   68 blind-except
+#   DTZ*     44 naive datetime construction (real, but needs care per call site)
+#   RUF013   21 implicit Optional
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+ignore = [
+  # `col == None` and `col == True` inside a SQLAlchemy filter are correct and
+  # required - they build IS NULL / IS TRUE in the generated SQL, whereas the
+  # suggested `is` rewrites evaluate in Python and break the query. The code
+  # carried inline `# noqa` for these, but ruff-format moves the expression
+  # onto a different line from the comment, so they are ignored here instead.
+  "E711",
+  "E712",
+  # app/__init__.py must call load_env() before importing anything that reads
+  # configuration at import time, so imports legitimately follow statements.
+  "E402",
+  # Pre-existing, deferred with the rest of the cleanup (see README.md).
+  "F403",
+  "F841",
+  "E722",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Alembic revisions are generated; leave them as emitted.
+"migrations/versions/*" = ["E", "F", "I"]
+# Package re-exports.
+"**/__init__.py" = ["F401"]
+
+# -----------------------------
+# Package discovery
+# -----------------------------
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scraper*", "app*"]

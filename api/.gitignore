@@ -1,0 +1,8 @@
+client_secret.json
+**/.env*
+venv/
+**/__pycache__/
+*.pyc
+**/.DS_Store
+temp/
+*.egg-info/
