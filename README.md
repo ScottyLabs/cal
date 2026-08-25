@@ -116,5 +116,18 @@ These are tracked as part of the migration and are not yet done:
       under `api/`, so nothing resolves and the real type errors are buried
       under ~200 spurious unresolved-import ones. Fix is to hoist the Python
       project to the repo root or point `ty` at `api/.venv`, then re-enable.
+- [ ] **The scrapers need their Supabase credentials in OpenBao.**
+      `.forgejo/workflows/scrape.yml` runs them on manual dispatch, but
+      `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are declared optional and
+      are not yet set for either profile, so a run will fail at
+      `get_supabase()`. Set them and do one watched `soc` run against `dev`
+      before pointing it at `prod`.
+- [ ] **A kennel Postgres migration is larger than it looks.** The scraper and
+      course agent persist through the Supabase REST client
+      (`.table().upsert()` across `scraper/persistence/*` and
+      `course_agent/app/db/*`), not SQLAlchemy. Moving off Supabase means
+      rewriting those seven modules, not just moving data. The pause risk that
+      motivated it is now largely self-limiting: the project idled out because
+      the site was down for four months, and it is serving traffic again.
 - [ ] **Clerk is still the auth provider**, not the Keycloak `oidc_client` that
       governance provisions for this repo. Deliberate for the lift-and-shift.
