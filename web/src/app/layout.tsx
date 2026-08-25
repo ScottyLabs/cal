@@ -1,5 +1,6 @@
 import "~/styles/globals.css";
-import { Inter, Geist_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
+import { GeistMono } from 'geist/font/mono';
 
 import { ClerkProvider } from '@clerk/nextjs';
 import type { Metadata } from "next";
@@ -16,8 +17,16 @@ import ModalRender from "@components/ModalRender";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { loginWithClerk } from "./utils/api/users";
 
-const inter = Inter({ variable: '--font-inter', subsets: ['latin'], display: 'swap' });
-const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
+// next/font/google downloads at build time, which fails in the Nix sandbox on
+// the CI runner (no network). Inter is vendored as a latin-subset variable
+// woff2, and Geist Mono comes from the self-hosted `geist` package, which
+// already exposes the same --font-geist-mono variable. Rendering is unchanged.
+const inter = localFont({
+  src: './fonts/Inter-Variable.woff2',
+  variable: '--font-inter',
+  display: 'swap',
+  weight: '100 900',
+});
 
 export const metadata: Metadata = {
   title: "CMUCal",
@@ -46,7 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <ClerkProvider>
       <html lang="en" className="h-full">
-        <body className={`${inter.variable} ${geistMono.variable} font-sans antialiased dark:#0F1115 h-full`}>
+        <body className={`${inter.variable} ${GeistMono.variable} font-sans antialiased dark:#0F1115 h-full`}>
           <GcalEventsProvider>
             <EventStateProvider>
               <UserProvider>

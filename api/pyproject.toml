@@ -110,8 +110,12 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I"]
 ignore = [
-  # `col == True` inside a SQLAlchemy filter is correct and required; the
-  # suggested rewrite to a truth check silently changes the generated SQL.
+  # `col == None` and `col == True` inside a SQLAlchemy filter are correct and
+  # required - they build IS NULL / IS TRUE in the generated SQL, whereas the
+  # suggested `is` rewrites evaluate in Python and break the query. The code
+  # carried inline `# noqa` for these, but ruff-format moves the expression
+  # onto a different line from the comment, so they are ignored here instead.
+  "E711",
   "E712",
   # app/__init__.py must call load_env() before importing anything that reads
   # configuration at import time, so imports legitimately follow statements.
