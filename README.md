@@ -28,7 +28,6 @@ nix run git+https://git.cmu.dev/ScottyLabs/kennel#login
 Then, in the repository:
 
 ```bash
-cp .env.example .env
 devenv allow
 ```
 
