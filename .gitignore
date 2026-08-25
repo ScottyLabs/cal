@@ -30,3 +30,8 @@ tsconfig.tsbuildinfo
 
 # Local Claude Code state
 .claude/settings.local.json
+
+# Python build artifacts
+build/
+dist/
+*.whl
