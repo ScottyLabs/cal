@@ -29,13 +29,29 @@
           node = pkgs.nodejs_22;
         in
         {
-          # Flask API. buildPythonService resolves the dependency closure from
-          # api/uv.lock and exposes each [project.scripts] entry under bin/, so
-          # the console script in api/pyproject.toml must be named `api` to
-          # match the scottylabs.kennel.services key.
-          api = helpers.buildPythonService {
-            src = ./api;
-          };
+          # Flask API. buildPythonService returns a uv2nix mkVirtualEnv, whose
+          # bin/ holds a console script for every dependency (alembic, dotenv,
+          # flask, gunicorn, ...), not just this project's.
+          #
+          # Kennel's find_executable picks the alphabetically first entry in
+          # bin/, so it would exec `alembic` and never `api`; the unit exits
+          # immediately and the deploy fails its healthcheck. Wrapping the venv
+          # leaves exactly one entry, which is unambiguous. find_executable
+          # already skips makeWrapper's dot-prefixed files, so this is the shape
+          # it expects.
+          api =
+            let
+              venv = helpers.buildPythonService { src = ./api; };
+            in
+            pkgs.runCommand "cal-api"
+              {
+                nativeBuildInputs = [ pkgs.makeWrapper ];
+                meta.mainProgram = "api";
+              }
+              ''
+                mkdir -p $out/bin
+                makeWrapper ${venv}/bin/api $out/bin/api
+              '';
 
           # Next.js server. Clerk's middleware needs a Node runtime, so this is
           # a kennel service rather than a static site - which also means it
