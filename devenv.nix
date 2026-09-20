@@ -20,10 +20,10 @@
 
     kennel.services = {
       api = {
-        customDomain = "api.cal.scottylabs.org";
+        customDomain = "api.cmucal.com";
       };
       web = {
-        customDomain = "cal.scottylabs.org";
+        customDomain = "cmucal.com";
       };
     };
   };

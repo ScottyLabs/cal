@@ -47,7 +47,7 @@ Open a pull request to get a build.
 
 | Branch    | Profile | URL                                |
 | --------- | ------- | ---------------------------------- |
-| `main`    | prod    | `cal.scottylabs.org`, `api.cal.scottylabs.org` |
+| `main`    | prod    | `cmucal.com`, `api.cmucal.com`     |
 | `staging` | staging | `cal-web-staging.scottylabs.net`   |
 | `dev`     | dev     | `cal-web-dev.scottylabs.net`       |
 
