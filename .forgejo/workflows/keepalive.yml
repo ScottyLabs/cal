@@ -1,0 +1,96 @@
+# Keeps CMUCal's Supabase free-tier projects from auto-pausing.
+#
+# Supabase pauses a free project after about a week without user database
+# queries. Both projects have been caught paused, dev repeatedly. This sends
+# each one a real query every day and fails when either does not answer, so a
+# paused project shows up as a red scheduled run.
+#
+# prod: GET https://api.cmucal.com/test_db. The deployed API runs `SELECT 1`
+#   over its own pooler connection, so this needs no secrets.
+# dev: POST <SUPABASE_URL>/graphql/v1 with the anon key. pg_graphql resolves
+#   the query inside Postgres as the anon role, so it is a real database query
+#   even though anon has no table grants. The URL and anon key are read from
+#   secret/secretspec/cal/ci/, the only project path the OpenBao `ci` JWT role
+#   can read. Nothing else from OpenBao is needed.
+name: Supabase keepalive
+
+on:
+  schedule:
+    # Daily. Projects pause after ~7 idle days, so this leaves several retries
+    # when the runner queue is backed up.
+    - cron: "23 13 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping Supabase projects
+    runs-on: native
+    timeout-minutes: 10
+    enable-openid-connect: true
+    steps:
+      - name: Ping prod (fdqvatnksvmycqnwljqm)
+        run: |
+          set -euo pipefail
+          command -v curl >/dev/null && command -v jq >/dev/null \
+            || exec nix shell nixpkgs#curl nixpkgs#jq --command bash -euo pipefail "$0"
+
+          body="$RUNNER_TEMP/prod.json"
+          code=$(curl -sS -m 30 --retry 2 --retry-delay 10 -o "$body" -w '%{http_code}' \
+            https://api.cmucal.com/test_db) || code=000
+          status=$(jq -r '.status // empty' "$body" 2>/dev/null || true)
+
+          if [ "$code" != 200 ] || [ "$status" != connected ]; then
+            echo "::error title=prod Supabase keepalive failed::api.cmucal.com/test_db returned HTTP $code (status '$status'). The prod project may be paused: https://supabase.com/dashboard/project/fdqvatnksvmycqnwljqm"
+            exit 1
+          fi
+          echo "prod: SELECT 1 via api.cmucal.com ok"
+
+      - name: Ping dev (riacgqvnvczpnwbkzuqy)
+        if: always()
+        run: |
+          set -euo pipefail
+          command -v curl >/dev/null && command -v jq >/dev/null \
+            || exec nix shell nixpkgs#curl nixpkgs#jq --command bash -euo pipefail "$0"
+
+          bao=https://secrets.scottylabs.org
+          fail() {
+            echo "::error title=dev Supabase keepalive failed::$*"
+            exit 1
+          }
+
+          # Exchange the job's Forgejo OIDC token for a short-lived OpenBao
+          # token, the same way secretspec's openbao-ci provider does.
+          jwt=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=openbao" | jq -r '.value // empty') || jwt=
+          [ -n "$jwt" ] || fail "could not get a Forgejo OIDC token"
+          echo "::add-mask::$jwt"
+
+          token=$(jq -n --arg jwt "$jwt" '{role: "ci", jwt: $jwt}' \
+            | curl -sSf -X POST --data @- "$bao/v1/auth/jwt/login" \
+            | jq -r '.auth.client_token // empty') || token=
+          [ -n "$token" ] || fail "OpenBao JWT login with role ci failed"
+          echo "::add-mask::$token"
+
+          read_secret() {
+            curl -sS -H "X-Vault-Token: $token" "$bao/v1/secret/data/secretspec/cal/ci/$1" \
+              | jq -r '.data.data.value // empty'
+          }
+          url=$(read_secret SUPABASE_URL)
+          key=$(read_secret SUPABASE_API_KEY)
+          curl -sS -o /dev/null -X POST -H "X-Vault-Token: $token" "$bao/v1/auth/token/revoke-self" || true
+
+          if [ -z "$url" ] || [ -z "$key" ]; then
+            fail "SUPABASE_URL or SUPABASE_API_KEY is missing from secret/secretspec/cal/ci. Copy the dev project's URL and anon key there."
+          fi
+          echo "::add-mask::$key"
+
+          body="$RUNNER_TEMP/dev.json"
+          code=$(curl -sS -m 30 --retry 2 --retry-delay 10 -o "$body" -w '%{http_code}' \
+            -H "apikey: $key" -H "Authorization: Bearer $key" -H 'Content-Type: application/json' \
+            --data '{"query":"{ __typename }"}' "$url/graphql/v1") || code=000
+          typename=$(jq -r '.data.__typename // empty' "$body" 2>/dev/null || true)
+
+          if [ "$code" != 200 ] || [ "$typename" != Query ]; then
+            fail "graphql/v1 returned HTTP $code. The dev project may be paused: https://supabase.com/dashboard/project/riacgqvnvczpnwbkzuqy"
+          fi
+          echo "dev: pg_graphql query as anon ok"
