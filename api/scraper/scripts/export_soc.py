@@ -11,6 +11,7 @@ import logging
 import traceback
 
 from scraper.monitors.academic import ScheduleOfClassesScraper
+from scraper.persistence.supabase_agent_run import insert_agent_run
 from scraper.persistence.supabase_categories import ensure_lecture_category
 from scraper.persistence.supabase_events import insert_events
 from scraper.persistence.supabase_org_course import upsert_courses, upsert_orgs
@@ -41,6 +42,10 @@ def export_soc():
     scraper = ScheduleOfClassesScraper(db, semester_label="Spring_26")
     resources = scraper.scrape_data_only()
 
+    # agent run
+    agent_run_id = insert_agent_run(db, agent_version="soc_v1")
+    logger.info(f"Created agent run with ID {agent_run_id}")
+
     # orgs + courses
     orgs, courses = build_orgs_and_courses(resources)
     org_id_by_key = upsert_orgs(db, orgs)
@@ -55,7 +60,7 @@ def export_soc():
 
     # events + recurrence rules
     events, rrules = build_events_and_rrules(
-        resources, org_id_by_key, category_id_by_org
+        resources, org_id_by_key, category_id_by_org, agent_run_id
     )
     event_id_by_identity = insert_events(db, events)
     replace_recurrence_rules(db, rrules, event_id_by_identity)

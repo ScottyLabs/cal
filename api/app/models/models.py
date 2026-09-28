@@ -48,6 +48,7 @@ class AgentRun(Base):
     course_websites: Mapped[list["CourseWebsite"]] = relationship(
         "CourseWebsite", back_populates="agent_run"
     )
+    events: Mapped[list["Event"]] = relationship("Event", back_populates="agent_run")
 
 
 class Organization(Base):
@@ -521,6 +522,12 @@ class Event(Base):
             ondelete="CASCADE",
             name="events_org_id_fkey",
         ),
+        ForeignKeyConstraint(
+            ["agent_run_id"],
+            ["agent_runs.id"],
+            ondelete="CASCADE",
+            name="events_agent_run_id_fkey",
+        ),
         # Dedupe SOC events only
         UniqueConstraint(
             "org_id",
@@ -566,6 +573,7 @@ class Event(Base):
     calendar_source_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, index=True
     )
+    agent_run_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
 
     description: Mapped[Optional[str]] = mapped_column(Text)
     source_url: Mapped[Optional[str]] = mapped_column(Text)
@@ -590,6 +598,9 @@ class Event(Base):
     )
     category: Mapped["Category"] = relationship("Category", back_populates="events")
     org: Mapped["Organization"] = relationship("Organization", back_populates="events")
+    agent_run: Mapped[Optional["AgentRun"]] = relationship(
+        "AgentRun", back_populates="events"
+    )
     event_occurrences: Mapped[List["EventOccurrence"]] = relationship(
         "EventOccurrence", back_populates="event", passive_deletes=True
     )
