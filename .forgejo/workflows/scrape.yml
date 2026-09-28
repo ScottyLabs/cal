@@ -1,0 +1,67 @@
+# Data refresh for CMUCal.
+#
+# These ran as Railway cron jobs before the kennel migration. Kennel deploys
+# long-running services, not scheduled jobs, so they live here instead -
+# matching ScottyLabs/courses, which runs its scraper the same way.
+#
+# Manual dispatch only, deliberately. These write directly to the production
+# database, the Schedule of Classes scrape takes roughly an hour, and semester
+# detection is not yet automatic. Add a `schedule:` trigger once a run has been
+# watched end to end under kennel and the semester handling is trusted.
+name: Scrape
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Which source to scrape"
+        required: true
+        type: choice
+        options:
+          - soc
+          - peer_tutoring
+          - supplemental_instruction
+          - all
+        default: soc
+      profile:
+        description: "Secret profile to resolve (which database gets written)"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+        default: dev
+
+jobs:
+  scrape:
+    name: Scrape and export
+    runs-on: native
+    enable-openid-connect: true
+    env:
+      # Kennel overrides the provider at deploy time, but here we resolve
+      # explicitly: the CI job authenticates to OpenBao with its own OIDC token.
+      SECRETSPEC_PROFILE: ${{ inputs.profile }}
+      SECRETSPEC_PROVIDER: openbao-ci
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@v7
+      - uses: https://git.cmu.dev/ScottyLabs/kennel/.forgejo/actions/prepare@main
+
+      - name: Scrape
+        working-directory: api
+        run: |
+          set -euo pipefail
+          run_one() {
+            echo "::group::$1"
+            devenv shell -- python -m "scraper.scripts.$1"
+            echo "::endgroup::"
+          }
+          case "${{ inputs.source }}" in
+            soc)                      run_one export_soc ;;
+            peer_tutoring)            run_one export_peer_tutoring ;;
+            supplemental_instruction) run_one export_supplemental_instruction ;;
+            all)
+              run_one export_soc
+              run_one export_peer_tutoring
+              run_one export_supplemental_instruction
+              ;;
+          esac
