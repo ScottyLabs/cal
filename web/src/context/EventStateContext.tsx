@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "./AuthContext";
 import { EventType } from "../app/types/EventType";
 import { EventInput } from "@fullcalendar/core";
 import { List } from "lucide-react";
@@ -35,7 +35,7 @@ type EventStateContextType = {
 export const EventStateContext = createContext<EventStateContextType | null>(null);
 
 export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useUser();
+  const { isSignedIn } = useAuth();
   const { isGoogleConnected, cmuCalendarId } = useGcalEvents();
   const [selectedEvent, setSelectedEvent] = useState<number|null>(null);
   const [modalView, setModalView] = useState<ModalView>(null);
@@ -48,14 +48,11 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // fetch saved events IDs on login
   useEffect(() => {
-    if (!user?.id) return; // prevents requesting with invalid user ID
+    if (!isSignedIn) return;
     async function fetchSaved() {
       try {
         // console.log("😮Fetching saved events for user:", user?.id);
         const response = await axios.get(`${API_BASE_URL}/events/user_saved_events`, {
-          params: {
-            user_id: user?.id,
-          },
           withCredentials: true,
         });
         setSavedEventIds(new Set(response.data));
@@ -65,7 +62,7 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
     }
     fetchSaved();
-  }, [user?.id]);
+  }, [isSignedIn]);
 
 
   // TODO: define toggleAdded (move it here)
@@ -103,7 +100,6 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!isCurrentlySaved) {
         // Add the event to current user's calendar
         await axios.post(`${API_BASE_URL}/events/user_saved_events`, {
-          user_id: user?.id,
           event_id: event.id,
           google_event_id: event.id, // [Q|TODO] is google event id needed in this table
         }, {
@@ -113,7 +109,6 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         // Remove the event from current user's calendar
         await axios.delete(`${API_BASE_URL}/events/user_saved_events/${event.id}`, {
           data: {
-          user_id: user?.id,
           google_event_id: event.id, // [Q|TODO] is google event id needed in this table
         },
           withCredentials: true,
@@ -133,7 +128,6 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           console.log("Adding event to Google Calendar");
           // Add to Google Calendar via backend
           await axios.post(`${API_BASE_URL}/google/calendar/events/add`, {
-            user_id: user?.id,
             local_event_id: event.id,
             title: event.title,
             start: event.start_datetime,
@@ -146,9 +140,6 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         } else {
           // Remove from Google Calendar via backend
           await axios.delete(`${API_BASE_URL}/google/calendar/events/${event.id}`, {
-            data: {
-              user_id: user?.id,
-            },
             withCredentials: true,
           });
         }

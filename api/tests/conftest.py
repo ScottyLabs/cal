@@ -4,6 +4,17 @@ import os
 os.environ["APP_ENV"] = "test"
 os.environ["ALLOW_TEST_DB"] = "1"
 
+# create_app() refuses to start without Keycloak settings, and init_db() needs a
+# URL. Tests that talk to a real database still override these from the
+# environment; the auth tests (tests/api/auth) never connect to either.
+os.environ.setdefault(
+    "SUPABASE_DB_URL", "postgresql://unused:unused@127.0.0.1:1/unused"
+)
+os.environ.setdefault("KEYCLOAK_URL", "https://idp.example.test")
+os.environ.setdefault("KEYCLOAK_REALM", "scottylabs")
+os.environ.setdefault("OIDC_CLIENT_ID", "cal-test")
+os.environ.setdefault("PROJECT_ADMIN_GROUP", "/projects/cal/admins")
+
 
 import pytest
 from sqlalchemy.orm import Session

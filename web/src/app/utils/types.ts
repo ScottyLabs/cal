@@ -57,7 +57,6 @@ export interface Org {
 
 export interface AdminInOrg {
   user_id: number;
-  clerk_id: string | null;
   andrew_id: string;
   user_email: string;
   org_id: number;
@@ -85,7 +84,6 @@ export interface GCalLinkPayloadType {
   gcal_link: string;
   org_id: string;
   category_id: string;
-  clerk_id: string;
   course_num?: string;
   course_name?: string;
   instructors?: string[];
@@ -104,7 +102,6 @@ export interface EventPayloadType {
   event_type: string;
   category_id: number;
   org_id: string;
-  clerk_id: string;
   event_tags?: string[];
   course_num?: string;
   course_name?: string;
@@ -281,16 +278,3 @@ export interface CalendarSourceType {
   created_at: string | null;
   updated_at: string | null;
 }
-
-
-
-export type LoginPayload = {
-  clerk_id: string;
-  email?: string;
-  fname?: string | null;
-  lname?: string | null;
-};
-
-export type LoginResponse = {
-  user: { id: number | string };
-};

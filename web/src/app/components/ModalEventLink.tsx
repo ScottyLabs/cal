@@ -9,7 +9,7 @@ dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
 
 import axios from "axios";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "~/context/AuthContext";
 import { useEventState } from "../../context/EventStateContext";
 import Modal from "./Modal";
 import { GCalLinkPayloadType } from "../utils/types";
@@ -32,7 +32,7 @@ export default function ModalEventLink({
   selectedCategory,
 }: ModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { user } = useUser(); // clerk user object
+  const { isSignedIn } = useAuth();
 
   const [selectedEventType, setSelectedEventType] = useState<string>("");
   const [eventTypeError, setEventTypeError] = useState(false);
@@ -90,8 +90,8 @@ export default function ModalEventLink({
         openUpload(selectedCategory, selectedEventType);
         return;
       } else if (gcalLink.trim()) {
-        if (!user?.id) {
-          alert("User not found.");
+        if (!isSignedIn) {
+          alert("Please sign in first.");
           return;
         }
 
@@ -99,7 +99,6 @@ export default function ModalEventLink({
           gcal_link: gcalLink,
           org_id: selectedCategory.org_id,
           category_id: selectedCategory.id,
-          clerk_id: user.id,
         };
 
         console.log("Submitting payload:", payload);
@@ -125,7 +124,7 @@ export default function ModalEventLink({
     }
   };
 
-  if (!show || !selectedCategory || !user) return null;
+  if (!show || !selectedCategory || !isSignedIn) return null;
 
   if (isSubmitting) {
     return (

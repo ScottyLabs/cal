@@ -10,13 +10,10 @@ export interface EnsureCalendarResponse {
 }
 
 export type EnsureCalendarRequest = null;
-export const ensureCalendarExists = (clerkId: string) =>
+export const ensureCalendarExists = () =>
   apiPost<EnsureCalendarResponse, EnsureCalendarRequest>(
     "/google/calendars/init",
     null,
-    {
-      headers: { "Clerk-User-Id": clerkId },
-    },
   );
 
 export const listGoogleCalendars = () => apiGet<any[]>("/google/calendar/list");

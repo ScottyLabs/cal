@@ -4,7 +4,6 @@ import Modal from './Modal';
 import { formatDate } from "~/app/utils/dateService";
 import { EventType } from '../types/EventType';
 import axios from "axios";
-import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from 'react';
 // import ModalEventUpdate from './ModalEventUpdate';
 import { useEventState } from "../../context/EventStateContext";
@@ -41,7 +40,6 @@ function SkeletonEventDetails() {
 
 
 export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEventProps) {    
-    const { user } = useUser();
     const { selectedEvent, openUpdate, toggleAdded, savedEventIds } = useEventState();
     const { isGoogleConnected } = useGcalEvents();
     const [eventDetails, setEventDetails] = useState<EventType | null>(savedEventDetails || null);
@@ -63,9 +61,6 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
         const fetchEventDetails = async() => {
             try {
                 const eventRes = await axios.get(`${API_BASE_URL}/events/${eventId}`, {
-                    params: {
-                        user_id: user?.id,
-                    },
                     withCredentials: true,
                 });
                 setEventDetails(eventRes.data)
@@ -78,7 +73,7 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
         }
         fetchEventDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [eventId, user?.id])
+    }, [eventId])
 
     useEffect(() => {
         if (!eventId) return;

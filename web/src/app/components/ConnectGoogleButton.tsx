@@ -1,7 +1,7 @@
 // components/ConnectGoogleButton.tsx
 "use client";
 
-import { useUser, useAuth } from "@clerk/nextjs";
+import axios from "axios";
 import { useEffect, useState } from "react";
 
 import * as React from 'react';
@@ -9,7 +9,7 @@ import { useGcalEvents } from "../../context/GCalEventsContext";
 import { formatGCalEvent } from "../utils/calendarUtils";
 import { CalendarFields } from "../utils/types";
 import { checkGoogleAuthStatus, ensureCalendarExists, fetchBulkEventsFromCalendars, unauthorizeGoogle } from "../utils/api/googleCalendar";
-import { API_BASE_URL } from "../utils/api/api";
+import { api, API_BASE_URL } from "../utils/api/api";
 import Modal from "./Modal";
 
 // TODO: FIX GOOGLE CALENDAR AND THE JUST_CONNECTED POPUP
@@ -25,11 +25,7 @@ const MenuProps = {
   },
 };
 
-type ConnectGoogleButtonProps = {
-  clerkId: string;
-};
-
-export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
+export function ConnectGoogleButton() {
   // https://mui.com/material-ui/react-select/
   const [loading, setLoading] = useState(true);
   const hasFetchedCalendars = React.useRef(false); // Track if we've already fetched calendars
@@ -75,7 +71,7 @@ export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
 
         if (authorized && availableCalendars.length === 0 && !hasFetchedCalendars.current) {
           hasFetchedCalendars.current = true; // Mark as fetched to prevent duplicate calls
-          await fetchCalendars(clerkId);
+          await fetchCalendars();
         }
       } catch (err) {
         console.error("Error checking Google auth status:", err);
@@ -145,10 +141,10 @@ export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
     }
   }
 
-  const fetchCalendars = async (clerkId: string) => {
+  const fetchCalendars = async () => {
     // Ensure CMUCal exists in user's Google Calendars. If not, create it.
     try {
-      const calendarResult = await ensureCalendarExists(clerkId || "");
+      const calendarResult = await ensureCalendarExists();
       console.log("CMUCal calendar:", calendarResult.created ? "created" : "already exists", "ID:", calendarResult.calendar_id);
       setCmuCalendarId(calendarResult.calendar_id);
     } catch (error) {
@@ -157,19 +153,23 @@ export function ConnectGoogleButton({clerkId}: ConnectGoogleButtonProps) {
     }
 
     // Fetch calendars list AFTER ensuring CMUCal exists so newly created calendar appears in the list
-    const res = await fetch(`${API_BASE_URL}/google/calendars`, {
-      method: "GET",
-      credentials: "include",
-    });
-
-    if (res.status === 401) {
-      // should add a screen to give them more information and ask if 
-      // the user wants to connect their Google account
-      window.location.href = `${API_BASE_URL}/google/authorize`;
-      return;
+    let data: CalendarFields[];
+    try {
+      data = (await api.get<CalendarFields[]>("/google/calendars")).data;
+    } catch (err) {
+      // A 401 without a Bearer challenge means Google, not CMUCal, wants a
+      // login (an expired CMUCal token was already refreshed and retried).
+      const challenge = axios.isAxiosError(err)
+        ? String(err.response?.headers?.["www-authenticate"] ?? "")
+        : "";
+      if (axios.isAxiosError(err) && err.response?.status === 401 && !/^bearer/iu.test(challenge)) {
+        // should add a screen to give them more information and ask if 
+        // the user wants to connect their Google account
+        window.location.href = `${API_BASE_URL}/google/authorize`;
+        return;
+      }
+      throw err;
     }
-  
-    const data : CalendarFields[] = await res.json();
   
     // Sort order:
     // 1. CMUCal (events added from our website)

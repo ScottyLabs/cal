@@ -39,13 +39,28 @@ checks it.
 
 ## 4. Frontend
 
-In a second terminal, from the repository root:
+Sign-in goes through ScottyLabs Keycloak and the
+[Ricochet](https://codeberg.org/anish/ricochet) relay, which you run locally.
+Install it once (needs [Rust](https://rustup.rs)):
+
+```bash
+cargo install --git https://codeberg.org/anish/ricochet --rev ddc58bcad0bb2b898f900a3c13c94c263e797ad2 --locked
+```
+
+Then, in its own terminal:
+
+```bash
+RICOCHET_DEV=1 RICOCHET_BIND=127.0.0.1:8090 ricochet
+```
+
+In another terminal, from the repository root:
 
 ```bash
 cp web/.env.example web/.env.local
 ```
 
-Fill in `CLERK_SECRET_KEY` (ask the tech lead). Then:
+Fill in `OIDC_CLIENT_SECRET` (ask the tech lead) and `SESSION_SECRET` (any
+random 32+ characters). Then:
 
 ```bash
 cd web
@@ -53,7 +68,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3000 and sign in with your CMU account.
 
 ## 5. Migrations
 
@@ -69,9 +84,11 @@ the tech lead, and never point a local checkout at production.
 
 ## Troubleshooting
 
-- **Every page returns 500, `Missing secretKey`**: `CLERK_SECRET_KEY` is not
-  set in `web/.env.local`. Next.js reads env files only at startup, so restart
-  `npm run dev` after editing it.
+- **Sign-in says Keycloak login is not configured**: a value in
+  `web/.env.local` is empty. Next.js reads env files only at startup, so
+  restart `npm run dev` after editing it.
+- **Sign-in ends on a connection error at `localhost:8090`**: Ricochet is not
+  running.
 - **API crashes with `Expected string or URL object, got None`**:
   `SUPABASE_DB_URL` is missing, or you did not start the API from `api/`.
 - **Pages load but data never does**: some CMU networks block outbound

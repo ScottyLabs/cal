@@ -7,7 +7,6 @@ from flask import Blueprint, g, jsonify, request
 from sqlalchemy import Date, cast, delete, or_, select
 from sqlalchemy.orm import joinedload
 
-from app.models.admin import get_admin_by_org_and_user
 from app.models.calendar_source import create_calendar_source
 from app.models.category import category_to_dict, get_category_by_id
 from app.models.event import get_event_by_id, save_event
@@ -19,6 +18,7 @@ from app.models.event_occurrence import (
 from app.models.event_tag import delete_event_tag, get_tags_by_event, save_event_tag
 from app.models.models import (
     CalendarSource,
+    Category,
     Event,
     EventOccurrence,
     EventOverride,
@@ -32,14 +32,48 @@ from app.models.models import (
 )
 from app.models.recurrence_rule import add_recurrence_rule
 from app.models.tag import get_all_tags, get_tag_by_name, save_tag
-from app.models.user import get_user_by_clerk_id
 from app.services.db import get_session
 from app.services.ical import (
     import_ical_feed_using_helpers,
 )
+from app.utils.auth import (
+    accepts_service_token,
+    can_edit_category,
+    can_manage_org,
+    current_user,
+    forbidden,
+    is_site_admin,
+    public,
+    site_admin_or_service_required,
+    site_admin_required,
+)
 from app.utils.date import _parse_iso_aware
 
 events_bp = Blueprint("events", __name__)
+
+# Columns a PATCH may never rewrite. The update modal echoes id and org_id back
+# unchanged, so they are skipped rather than rejected.
+IMMUTABLE_EVENT_FIELDS = {
+    "id",
+    "org_id",
+    "calendar_source_id",
+    "created_at",
+    "last_updated_at",
+    "user_edited",
+}
+
+
+def _category_in_org(db, org_id, category_id) -> bool:
+    try:
+        org_id, category_id = int(org_id), int(category_id)
+    except (TypeError, ValueError):
+        return False
+    return (
+        db.query(Category.id)
+        .filter(Category.id == category_id, Category.org_id == org_id)
+        .first()
+        is not None
+    )
 
 
 def _import_ical_background(
@@ -116,10 +150,13 @@ def create_event_record():
         category_id = data.get("category_id")
         event_tags = data.get("event_tags", None)
         recurrence = data.get("recurrence", None)
-        clerk_id = data.get("clerk_id", None)
 
-        if not org_id or not category_id or not clerk_id:
-            return jsonify({"error": "Missing org_id or category_id or clerk_id"}), 400
+        if not org_id or not category_id:
+            return jsonify({"error": "Missing org_id or category_id"}), 400
+        if not _category_in_org(db, org_id, category_id):
+            return jsonify({"error": "Category does not belong to that org"}), 400
+        if not can_edit_category(db, org_id, category_id):
+            return forbidden()
 
         if (
             not title
@@ -134,10 +171,7 @@ def create_event_record():
                 }
             ), 400
 
-        user = get_user_by_clerk_id(db, clerk_id)
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-        user_edited.append(user.id)
+        user_edited.append(current_user().id)
 
         # Assuming you have a function to create an event
         event = save_event(
@@ -232,15 +266,16 @@ def read_gcal_link():
         event_type = data.get("event_type", None)
         org_id = int(data.get("org_id"))
         category_id = int(data.get("category_id"))
-        clerk_id = data.get("clerk_id", None)
         semester = data.get("semester", None)
         notes = data.get("notes", None)
 
         if not gcal_link:
             return jsonify({"error": "Missing gcal_link"}), 400
-        user = get_user_by_clerk_id(db, clerk_id)
-        if not user:
-            return jsonify({"error": "User not found"}), 404
+        if not _category_in_org(db, org_id, category_id):
+            return jsonify({"error": "Category does not belong to that org"}), 400
+        if not can_edit_category(db, org_id, category_id):
+            return forbidden()
+        user = current_user()
 
         # Ensure CalendarSource exists - unique constraint is (category_id, url)
         calendar_source = (
@@ -331,6 +366,7 @@ def read_gcal_link():
 
 # should only be used for testing purposes
 @events_bp.route("/create_recurrence_rule", methods=["POST"])
+@site_admin_required
 def create_recurrence_rules():
     db = g.db
     try:
@@ -375,6 +411,7 @@ def create_recurrence_rules():
 
 # should only be used for testing purposes
 @events_bp.route("/create_single_event_occurrence", methods=["POST"])
+@site_admin_required
 def create_single_event_occurrence():
     db = g.db
     try:
@@ -446,7 +483,10 @@ def create_single_event_occurrence():
         return jsonify({"error": str(e)}), 500
 
 
+# The SOC scraper calls this after each import, with SCRAPER_API_TOKEN.
 @events_bp.route("/regenerate_occurrences_by_events", methods=["POST"])
+@accepts_service_token
+@site_admin_or_service_required
 def regenerate_occurrences_by_events():
     db = g.db
     try:
@@ -478,6 +518,7 @@ def regenerate_occurrences_by_events():
 
 
 @events_bp.route("/tags", methods=["GET"])
+@public
 def get_tags():
     # print("🙇 geting tags 🙇")
     db = g.db
@@ -492,40 +533,14 @@ def get_tags():
 
 
 @events_bp.route("/<event_id>/tags", methods=["GET"])
+@public
 def get_event_tags(event_id):
     db = g.db
     try:
-        # # get user
-        # clerk_id = request.args.get("user_id")
-        # if not clerk_id:
-        #     return jsonify({"error": "Missing user_id"}), 400
-        # user = get_user_by_clerk_id(db, clerk_id)
-
-        # # event = db.query(Event).filter_by(id=event_id).first()
-        # event = get_event_by_id(db, event_id)
-        # event_dict = event.as_dict()
-
-        # org = db.query(Organization).filter_by(id=event.org_id).first()
-        # event_dict["org"] = org.name
-        # event_dict["user_is_admin"] = True if get_admin_by_org_and_user(db, event.org_id, user.id) else False
-
-        # tags = (
-        #     db.query(Tag.id, Tag.name)
-        #     .join(Tag.event_tags) # relationship set up in models
-        #     # .join(EventTag, Tag.id == EventTag.tag_id)  # explicit join condition
-        #     .filter(EventTag.event_id == event_id)      # filter by the event id
-        #     .all()
-        # )
         tags = get_tags_by_event(db, event_id)
 
         tag_names = [{"id": t.id, "name": t.name} for t in tags]
 
-        # # check if saved
-        # if user:
-        #     saved = db.query(UserSavedEvent.event_id).filter_by(user_id=user.id, event_id=event_id).first()
-        #     event_dict["user_saved"] = (saved is not None)
-        # else:
-        #     event_dict["user_saved"] = False
         print("👉🏷🏷🏷🏷 👈 ", tag_names)
 
         return tag_names
@@ -537,7 +552,9 @@ def get_event_tags(event_id):
         return jsonify({"error": str(e)}), 500
 
 
+# Event browsing is public; a signed-in caller also gets their saved flags.
 @events_bp.route("/", methods=["GET"])
+@public
 def get_all_events():
     term = request.args.get("term", "").lower()
     tag_ids_raw = request.args.get("tags")
@@ -547,11 +564,7 @@ def get_all_events():
     # print("🔗🔗🔗😄 ", request.url)
     db = g.db
     try:
-        # get user
-        clerk_id = request.headers.get("Clerk-User-Id")
-        if not clerk_id:
-            return jsonify({"error": "Missing user_id"}), 400
-        user = get_user_by_clerk_id(db, clerk_id)
+        user = current_user()
 
         # only select some columns to save loading cost
         events = db.query(
@@ -653,6 +666,18 @@ def batch_delete_events_by_params():
         if not any([semester, org_id, category_id, event_type, source_url]):
             return jsonify({"error": "At least one filter must be provided"}), 400
 
+        # Without an org the filter can span every org (e.g. a whole semester
+        # or every SOC event), so only site admins may run it. With one, the
+        # query below is confined to that org.
+        if not is_site_admin():
+            if not org_id:
+                return forbidden("Only CMUCal site admins can delete across orgs")
+            if category_id:
+                if not can_edit_category(db, org_id, category_id):
+                    return forbidden()
+            elif not can_manage_org(db, org_id):
+                return forbidden()
+
         # --------------------------------------------------
         # 1. Build event ID subquery
         # --------------------------------------------------
@@ -739,6 +764,8 @@ def delete_event(event_id: int):
         event = db.query(Event).filter(Event.id == event_id).one_or_none()
         if not event:
             return jsonify({"error": "Event not found"}), 404
+        if not can_edit_category(db, event.org_id, event.category_id):
+            return forbidden()
 
         db.execute(delete(EventOccurrence).where(EventOccurrence.event_id == event_id))
         db.execute(delete(EventTag).where(EventTag.event_id == event_id))
@@ -770,24 +797,23 @@ def delete_event(event_id: int):
 
 
 @events_bp.route("/<event_id>", methods=["GET"])
+@public
 def get_specific_events(event_id):
     print("🍎🍎🍎🍎", request.url)
     db = g.db
     try:
-        # get user
-        clerk_id = request.args.get("user_id")
-        if not clerk_id:
-            return jsonify({"error": "Missing user_id"}), 400
-        user = get_user_by_clerk_id(db, clerk_id)
+        user = current_user()
 
         # event = db.query(Event).filter_by(id=event_id).first()
         event = get_event_by_id(db, event_id)
+        if not event:
+            return jsonify({"error": "Event not found"}), 404
         event_dict = event.as_dict()
 
         org = db.query(Organization).filter_by(id=event.org_id).first()
         event_dict["org"] = org.name
-        event_dict["user_is_admin"] = (
-            True if get_admin_by_org_and_user(db, event.org_id, user.id) else False
+        event_dict["user_is_admin"] = user is not None and can_edit_category(
+            db, event.org_id, event.category_id
         )
 
         # check if saved
@@ -829,8 +855,19 @@ def update_event(event_id):
         event = db.query(Event).filter_by(id=event_id).first()
         if not event:
             return jsonify({"error": "Event not found"}), 400
+        if not can_edit_category(db, event.org_id, event.category_id):
+            return forbidden()
+
+        new_category = event_data.get("category_id", event.category_id)
+        if str(new_category) != str(event.category_id):
+            if not _category_in_org(db, event.org_id, new_category):
+                return jsonify({"error": "Category does not belong to that org"}), 400
+            if not can_edit_category(db, event.org_id, new_category):
+                return forbidden()
 
         for key, value in event_data.items():
+            if key in IMMUTABLE_EVENT_FIELDS:
+                continue
             if hasattr(event, key):
                 setattr(event, key, value)
 
@@ -875,14 +912,7 @@ def update_event(event_id):
 def get_all_saved_events():
     db = g.db
     try:
-        # get user
-        print("🔗Request URL: ", request.url)
-        clerk_id = request.args.get("user_id")
-        # print("😮 [clerk_id] ", clerk_id)
-        if not clerk_id:
-            return jsonify({"error": "Missing user_id"}), 400
-        user = get_user_by_clerk_id(db, clerk_id)
-        # print("😀 [user] ", user)
+        user = current_user()
 
         # only columns required for calendar view
         events = (
@@ -914,11 +944,7 @@ def get_all_saved_events():
 def get_all_saved_events_occurrences():
     db = g.db
     try:
-        # get user
-        clerk_id = request.args.get("user_id")
-        if not clerk_id:
-            return jsonify({"error": "Missing user_id"}), 400
-        user = get_user_by_clerk_id(db, clerk_id)
+        user = current_user()
 
         event_occurrences = (
             db.query(
@@ -957,11 +983,7 @@ def user_save_event():
     db = g.db
     try:
         data = request.get_json()
-        # get user
-        clerk_id = data.get("user_id")
-        if not clerk_id:
-            return jsonify({"error": "Missing user_id"}), 400
-        user = get_user_by_clerk_id(db, clerk_id)
+        user = current_user()
 
         new_entry = UserSavedEvent(
             user_id=user.id,
@@ -984,14 +1006,7 @@ def user_save_event():
 def user_unsave_event(event_id):
     db = g.db
     try:
-        data = request.get_json()
-        # get user
-        clerk_id = data.get("user_id")
-        if not clerk_id:
-            return jsonify({"error": "Missing user_id"}), 400
-        user = get_user_by_clerk_id(db, clerk_id)
-
-        user_id = user.id
+        user_id = current_user().id
         entry = (
             db.query(UserSavedEvent)
             .filter_by(user_id=user_id, event_id=event_id)
@@ -1011,6 +1026,7 @@ def user_unsave_event(event_id):
 
 
 @events_bp.route("/<category_id>/category", methods=["GET"])
+@public
 def get_event_category(category_id):
     print("👀👀👀 ", request.url)
     db = g.db
@@ -1031,6 +1047,7 @@ def get_event_category(category_id):
 
 
 @events_bp.route("/by_org/<int:org_id>", methods=["GET"])
+@public
 def get_events_by_organization(org_id: int):
     db = g.db
     # join Event -> CalendarSource to filter by CalendarSource.org_id

@@ -2,7 +2,7 @@
 import { formatDate } from "~/app/utils/dateService";
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
-import { useUser as useClerkUser } from "@clerk/nextjs";
+import { useAuth } from "~/context/AuthContext";
 import { useUser } from "~/context/UserContext";
 import { FiSearch } from "react-icons/fi";
 import DatePicker from "react-datepicker";
@@ -70,7 +70,7 @@ function SkeletonEventCard() {
 }
 
 export default function SearchResultsSidebar({ events, setEvents }: Props) {
-  const { user } = useClerkUser();
+  const { isSignedIn } = useAuth();
   const { allEvents: globalEvents, eventsLoading: globalEventsLoading, refetchEvents } = useUser();
   const { theme } = useTheme();
   const [allTags, setAllTags] = useState<{id: number; name: string}[]>([]);
@@ -100,10 +100,10 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
         console.error("Failed to fetch tags", err);
       }
     };
-    if (user?.id) {
+    if (isSignedIn) {
       void fetchTags();
     }
-  }, [user?.id]);
+  }, [isSignedIn]);
 
   // Refetch events when tags change
   useEffect(() => {
@@ -116,7 +116,6 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
     const fetchEvents = async () => {
       try {
         const res = await api.get(`/events/`, {
-          headers: { "Clerk-User-Id": user?.id },
           params: {
             term: '',
             tags: selectedTagIds,
@@ -129,10 +128,10 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
         console.error("Failed to fetch events", err);
       }
     };
-    if (user?.id) {
+    if (isSignedIn) {
       void fetchEvents();
     }
-  }, [selectedTags, user?.id, globalEvents]);
+  }, [selectedTags, isSignedIn, globalEvents]);
   const tagOptions = allTags.map(tag => ({
     value: tag.id,
     label: tag.name,

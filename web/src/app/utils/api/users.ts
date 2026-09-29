@@ -1,46 +1,24 @@
-import { apiGet, apiPost, apiDelete } from "./api";
-import { CategoryOrg, LoginPayload, LoginResponse } from "../types";
+import { apiGet } from "./api";
+import { CategoryOrg } from "../types";
 
-export const getAdminCategories = (userId: string) => {
-    return apiGet<CategoryOrg[]>("/users/get_admin_categories", {
-        headers: { "Clerk-User-Id": userId },
-    });
+// The API identifies the caller from the bearer token alone, so none of these
+// take a user id.
+
+export const getAdminCategories = () => {
+    return apiGet<CategoryOrg[]>("/users/get_admin_categories");
 };
 
-export const getUserID = (userId: string) => {
-    return apiGet<{ user_id: string }>("/users/get_user_id", {
-        headers: { "Clerk-User-Id": userId },
-    });
-};
-
-export const loginWithClerk = async (
-  clerkId: string,
-  emailAddress: string | undefined,
-  firstName?: string | null,
-  lastName?: string | null
-): Promise<string | number | null> => {
-  try {
-    const data = await apiPost<LoginResponse, LoginPayload>("/users/login", {
-      clerk_id: clerkId,
-      email: emailAddress,
-      fname: firstName ?? null,
-      lname: lastName ?? null,
-    });
-    return data.user.id;
-  } catch (loginErr) {
-    console.error("Failed to create user:", loginErr);
-    throw new Error("Login failed");
-  }
+export const getUserID = () => {
+    return apiGet<{ user_id: number }>("/users/get_user_id");
 };
 
 export interface RoleResponse {
     is_manager: boolean;
     is_admin: boolean;
+    is_site_admin: boolean;
     roles: { role: string; org_id: number }[];
 }
 
-export const getUserRole = (clerkId: string): Promise<RoleResponse> => {
-    return apiGet<RoleResponse>("/users/get_role", {
-        headers: { "Clerk-User-Id": clerkId },
-    });
+export const getUserRole = (): Promise<RoleResponse> => {
+    return apiGet<RoleResponse>("/users/get_role");
 }

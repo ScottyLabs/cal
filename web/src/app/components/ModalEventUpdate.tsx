@@ -3,7 +3,6 @@ import Modal from './Modal';
 import ModalEventForm from './ModalEventForm'
 import { useEventState } from "../../context/EventStateContext";
 import { EventType } from '../types/EventType';
-import { useUser } from '@clerk/nextjs';
 import { formatRecurrence, toDBRecurrenceEnds, toRRuleFrequency, getNthDayOfWeekInMonth, isLastWeekdayInMonth } from "../utils/dateService";
 
 
@@ -31,7 +30,6 @@ type ModalEventProps = {
 
 
 export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEventTags }: ModalEventProps) {
-    const { user } = useUser();
     const { selectedEvent, openDetails, closeModal } = useEventState();
     // const [currentCategory, setCurrentCategory] = useState(null);
     // const [oldEventInfo, setCurrentInfo] = useState();

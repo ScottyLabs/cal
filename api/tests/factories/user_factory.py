@@ -8,7 +8,7 @@ def user_factory(db):
     def create_user(**kwargs):
         user = User(
             email=kwargs.pop("email", "user@test.com"),
-            clerk_id=kwargs.pop("clerk_id", "clerk_test"),
+            oidc_sub=kwargs.pop("oidc_sub", None),
             **kwargs,
         )
         db.add(user)

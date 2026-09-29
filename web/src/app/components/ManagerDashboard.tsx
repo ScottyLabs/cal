@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "~/context/AuthContext";
 import { FiPlus, FiEdit2, FiTrash2, FiSearch } from "react-icons/fi";
 import type { AdminInOrg, Org, CalendarSourceType, EventOccurrence, Category } from "../utils/types";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
@@ -27,7 +27,7 @@ interface Props {
 }
 
 export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
-  const { user } = useUser();
+  const { isSignedIn, dbUser } = useAuth();
   const selectedOrgId = selectedOrg?.id ?? null;
 
   // Data state
@@ -51,14 +51,14 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
 
   // Fetch admins (used after mutations)
   const fetchAdmins = useCallback(async () => {
-    if (!user?.id || selectedOrgId === null) return;
+    if (!isSignedIn || selectedOrgId === null) return;
     try {
-      const response = await getAdminsInOrg(user.id, selectedOrgId);
+      const response = await getAdminsInOrg(selectedOrgId);
       setAdmins(response);
     } catch (error) {
       console.error("Failed to fetch admins:", error);
     }
-  }, [user?.id, selectedOrgId]);
+  }, [isSignedIn, selectedOrgId]);
 
   // Fetch calendar sources (used after mutations)
   const fetchCalendarSources = useCallback(async () => {
@@ -73,9 +73,9 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
 
   // Fetch events (used after mutations)
   const fetchEvents = useCallback(async () => {
-    if (!user?.id || selectedOrgId === null) return;
+    if (!isSignedIn || selectedOrgId === null) return;
     try {
-      const orgData = await getOrganizationData(user.id, selectedOrgId);
+      const orgData = await getOrganizationData(selectedOrgId);
       setCategories(orgData.categories);
       const allEvents: EventOccurrence[] = [];
       for (const categoryName of Object.keys(orgData.events)) {
@@ -86,7 +86,7 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
     } catch (error) {
       console.error("Failed to fetch events:", error);
     }
-  }, [user?.id, selectedOrgId]);
+  }, [isSignedIn, selectedOrgId]);
 
   // Load all org data together when org selection changes
   useEffect(() => {
@@ -120,8 +120,8 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
 
   // Derive current user's admin record and permissions
   const myAdmin = useMemo(
-    () => admins.find((a) => a.clerk_id === user?.id),
-    [admins, user]
+    () => admins.find((a) => dbUser !== null && a.user_id === dbUser.id),
+    [admins, dbUser]
   );
   const isAdmin = myAdmin?.role === "admin";
   const myDbUserId = myAdmin?.user_id ?? null;
@@ -261,7 +261,6 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
         onClose={() => setShowAddIcal(false)}
         orgId={selectedOrgId!}
         categories={allowedCategories}
-        clerkId={user?.id ?? ""}
         onSuccess={async () => { await fetchCalendarSources(); }}
       />
 
@@ -846,14 +845,12 @@ function AddICalModal({
   onClose,
   orgId,
   categories,
-  clerkId,
   onSuccess,
 }: {
   show: boolean;
   onClose: () => void;
   orgId: number;
   categories: Category[];
-  clerkId: string;
   onSuccess: () => Promise<void>;
 }) {
   const [url, setUrl] = useState("");
@@ -882,7 +879,6 @@ function AddICalModal({
         gcal_link: url.trim(),
         org_id: String(orgId),
         category_id: categoryId,
-        clerk_id: clerkId,
       });
       setUrl("");
       await onSuccess();

@@ -217,9 +217,7 @@ class Tag(Base):
 
 class User(Base):
     __tablename__ = "users"
-    # __table_args__ = (
-    #     PrimaryKeyConstraint('id', name='users_pkey'),
-    # )
+    __table_args__ = (UniqueConstraint("oidc_sub", name="users_oidc_sub_key"),)
 
     id: Mapped[int] = mapped_column(
         BigInteger,
@@ -237,7 +235,11 @@ class User(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
     )
+    # Legacy Clerk user id. Still mapped so autogenerate does not drop the
+    # column, but nothing reads it any more: identity comes from oidc_sub.
     clerk_id: Mapped[Optional[str]] = mapped_column(Text)
+    # Keycloak `sub` claim, set on the user's first Keycloak login.
+    oidc_sub: Mapped[Optional[str]] = mapped_column(Text)
     fname: Mapped[Optional[str]] = mapped_column(Text)
     lname: Mapped[Optional[str]] = mapped_column(Text)
     calendar_id: Mapped[Optional[str]] = mapped_column(Text)

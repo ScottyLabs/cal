@@ -1,36 +1,29 @@
 // vitest.setup.tsx
 import "@testing-library/jest-dom/vitest";
+import type { ReactNode } from "react";
 import { vi } from "vitest";
 
-vi.mock("@clerk/nextjs", () => {
+vi.mock("~/context/AuthContext", () => {
+  const value = {
+    user: { sub: "test-sub", email: "test@andrew.cmu.edu", name: "Test User" },
+    isSignedIn: true,
+    dbUser: {
+      id: 1,
+      email: "test@andrew.cmu.edu",
+      fname: "Test",
+      lname: "User",
+      calendar_id: null,
+      is_site_admin: false,
+    },
+    signIn: vi.fn(),
+    signOut: vi.fn(),
+  };
   return {
-    useAuth: () => ({
-      isLoaded: true,
-      userId: "test-user-id",
-      getToken: vi.fn().mockResolvedValue("fake-token"),
-    }),
-
-    useUser: () => ({
-      user: {
-        id: "test-user-id",
-        firstName: "Test",
-        lastName: "User",
-        imageUrl: "",
-        publicMetadata: { role: "admin" },
-      },
-      isLoaded: true,
-    }),
-
-    SignedIn: ({ children }: any) => children,
+    useAuth: () => value,
+    AuthProvider: ({ children }: { children: ReactNode }) => children,
+    SignedIn: ({ children }: { children: ReactNode }) => children,
     SignedOut: () => null,
-    UserButton: () => <div data-testid="user-button" />,
-
-    auth: () => ({ userId: "test-user-id" }),
-    clerkClient: () => ({
-      users: {
-        getUser: vi.fn(),
-      },
-    }),
+    signInUrl: (returnTo = "/") => `/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`,
   };
 });
 

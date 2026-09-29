@@ -33,7 +33,7 @@ dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
 
 import axios from 'axios';
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "~/context/AuthContext";
 import CustomRecurrenceModal from "./CustomRecurrenceModal"; 
 import { set } from "lodash";
 import { start } from "repl";
@@ -66,7 +66,7 @@ const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
 
 export default function ModalEventForm({ show, onClose, selectedCategory, eventType }: ModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { user } = useUser();  // clerk user object
+  const { isSignedIn } = useAuth();
 
   const [selectedEventType, setSelectedEventType] = useState<string>(eventType || "");
   const [eventTypeError, setEventTypeError] = useState(false);
@@ -233,8 +233,8 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
       alert("Please fill in all required fields.");
       return;
     }
-    if (!user?.id) {
-        alert("User not found.");
+    if (!isSignedIn) {
+        alert("Please sign in first.");
         return;
     }
 
@@ -258,7 +258,6 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
             category_id: selectedCategory.id,
             org_id: selectedCategory.org_id,
             event_tags: selectedTags.map(tag => tag.name),
-            clerk_id: user.id,
           };
 
           if (allDay && !startTime && !endTime) {
@@ -370,7 +369,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
   };
 
 
-  if (!show || !selectedCategory || !user) return null;
+  if (!show || !selectedCategory || !isSignedIn) return null;
 
   useEffect(() => {
     const fetchTags = async () => {

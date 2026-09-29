@@ -29,13 +29,22 @@ from app.models.organization import (
     get_orgs_by_type,
 )
 from app.models.user import (
-    create_user_without_clerk,
-    get_user_by_clerk_id,
+    create_placeholder_user,
     get_user_by_email,
     get_user_by_id,
 )
 from app.services.ical import delete_events_for_calendar_source
-from app.utils.auth import get_current_user
+from app.utils.auth import (
+    ORG_ROLES,
+    can_edit_category,
+    can_manage_org,
+    current_user,
+    forbidden,
+    is_org_member,
+    is_site_admin,
+    public,
+    site_admin_required,
+)
 from app.utils.course_data import get_course_data
 
 orgs_bp = Blueprint("orgs", __name__)
@@ -60,14 +69,9 @@ def event_occurrence_to_dict(occurrence: EventOccurrence):
 
 
 @orgs_bp.route("/org/<int:org_id>", methods=["GET"])
+@public
 def get_organization_data(org_id):
     """returns a single organization's data with its categories and event occurrences"""
-    clerk_user_id = request.headers.get("Clerk-User-Id")
-    user = get_current_user(clerk_user_id)
-
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
     db = g.db
     try:
         org = db.query(Organization).filter(Organization.id == org_id).first()
@@ -175,6 +179,7 @@ def get_organization_data(org_id):
 
 
 @orgs_bp.route("/get_all_orgs", methods=["GET"])
+@public
 def get_all_orgs():
     db = g.db
     try:
@@ -200,6 +205,7 @@ def get_all_orgs():
 
 
 @orgs_bp.route("/get_course_orgs", methods=["GET"])
+@public
 def get_course_orgs():
     db = g.db
     try:
@@ -228,6 +234,7 @@ def get_course_orgs():
 
 
 @orgs_bp.route("/get_club_orgs", methods=["GET"])
+@public
 def get_club_orgs():
     db = g.db
     try:
@@ -263,6 +270,7 @@ def get_club_orgs():
 
 
 @orgs_bp.route("/get_courses", methods=["GET"])
+@public
 def get_courses_from_soc():
     """
     Endpoint to fetch course data from the JSON file.
@@ -278,6 +286,7 @@ def get_courses_from_soc():
 
 
 @orgs_bp.route("/create_org", methods=["POST"])
+@site_admin_required
 def create_org_record():
     db = g.db
     try:
@@ -308,6 +317,8 @@ def create_category_record():
         org_id = data.get("org_id")
         if not org_id:
             return jsonify({"error": "Missing org_id"}), 400
+        if not can_manage_org(db, org_id):
+            return forbidden()
         name = data.get("name")
         if not name:
             return jsonify({"error": "Missing category name"}), 400
@@ -326,6 +337,8 @@ def create_category_record():
 def delete_category_record(org_id: int, cat_id: int):
     """Delete a category. Fails if the org doesn't own it."""
     db = g.db
+    if not can_manage_org(db, org_id):
+        return forbidden()
     try:
         from app.models.models import Category as CategoryModel
 
@@ -363,6 +376,17 @@ def delete_events_and_deactivate_calendar(org_id: int, calendar_source_id: int):
     http://localhost:5001/api/organizations/<org_id>/calendar-sources/<calendar_source_id>/events
     """
     db = g.db
+    calendar_source = (
+        db.query(CalendarSource)
+        .filter(
+            CalendarSource.id == calendar_source_id, CalendarSource.org_id == org_id
+        )
+        .one_or_none()
+    )
+    if not calendar_source:
+        return jsonify({"error": "CalendarSource not found"}), 404
+    if not can_edit_category(db, org_id, calendar_source.category_id):
+        return forbidden()
     try:
         deleted_event_ids = delete_events_for_calendar_source(
             db=db,
@@ -392,6 +416,7 @@ def delete_events_and_deactivate_calendar(org_id: int, calendar_source_id: int):
 
 
 @orgs_bp.route("/create_test_clubs", methods=["POST"])
+@site_admin_required
 def create_test_clubs():
     """Create some test club organizations for development"""
     db = g.db
@@ -469,7 +494,11 @@ def create_admin_record():
         org_id = data.get("org_id")
         if not org_id:
             return jsonify({"error": "Missing org_id"}), 400
+        if not can_manage_org(db, org_id):
+            return forbidden()
         role = data.get("role", "admin")
+        if role not in ORG_ROLES:
+            return jsonify({"error": f"role must be one of {list(ORG_ROLES)}"}), 400
         category_id = data.get("category_id", None)
 
         admin = create_admin(
@@ -498,8 +527,12 @@ def update_admin_record():
         org_id = data.get("org_id")
         if not org_id:
             return jsonify({"error": "Missing org_id"}), 400
+        if not can_manage_org(db, org_id):
+            return forbidden()
 
         role = data.get("role", None)
+        if role is not None and role not in ORG_ROLES:
+            return jsonify({"error": f"role must be one of {list(ORG_ROLES)}"}), 400
         category_id = data.get("category_id", None)
 
         admin = update_admin(
@@ -536,6 +569,8 @@ def delete_admin_record():
         org_id = data.get("org_id")
         if not org_id:
             return jsonify({"error": "Missing org_id"}), 400
+        if not can_manage_org(db, org_id):
+            return forbidden()
 
         deleted = delete_admin(db, org_id=org_id, user_id=user_id)
         if not deleted:
@@ -567,9 +602,20 @@ def bulk_create_admins():
         organization_name = data.get("organization_name")
 
         role = data.get("role", "admin")
+        if role not in ORG_ROLES:
+            return jsonify({"error": f"role must be one of {list(ORG_ROLES)}"}), 400
 
         if not user_emails_str or not organization_name:
             return jsonify({"error": "Missing user_emails or organization_name"}), 400
+
+        # Adding admins to an existing org is an org-level action; creating the
+        # org as a side effect is a global one.
+        existing_org = get_organization_by_name(db, organization_name)
+        if existing_org is None:
+            if not is_site_admin():
+                return forbidden("Only CMUCal site admins can create organizations")
+        elif not can_manage_org(db, existing_org.id):
+            return forbidden()
 
         # Parse comma-separated emails
         user_emails = [
@@ -601,8 +647,8 @@ def bulk_create_admins():
                 # Find or create user
                 user = get_user_by_email(db, email)
                 if not user:
-                    # Create new user without clerk_id
-                    user = create_user_without_clerk(db, email=email)
+                    # Placeholder row; its owner claims it on first login
+                    user = create_placeholder_user(db, email=email)
                     created_users.append(user.email)
 
                 # Check if admin relationship already exists
@@ -663,6 +709,8 @@ def get_admins_in_org():
         org_id = request.args.get("org_id")
         if not org_id:
             return jsonify({"error": "Missing org_id"}), 400
+        if not is_org_member(db, org_id):
+            return forbidden()
 
         admins = get_admins_by_org(db, org_id=int(org_id))
 
@@ -675,7 +723,6 @@ def get_admins_in_org():
             admins_list.append(
                 {
                     "user_id": user.id,
-                    "clerk_id": user.clerk_id,
                     "andrew_id": andrew_id,
                     "user_email": user.email,
                     "org_id": org.id,
@@ -697,12 +744,7 @@ def get_admins_in_org():
 def get_user_role_in_org():
     db = g.db
     try:
-        clerk_id = request.headers.get("Clerk-User-Id")
-        if not clerk_id:
-            return jsonify({"error": "Missing clerk_id"}), 400
-        user = get_user_by_clerk_id(db, clerk_id)
-        if user is None:
-            return jsonify({"error": "User not found"}), 404
+        user = current_user()
 
         org_id = request.args.get("org_id")
         if not org_id:
@@ -723,6 +765,9 @@ def get_user_role_in_org():
 @orgs_bp.route("/<int:org_id>/calendar_sources", methods=["GET"])
 def list_calendar_sources(org_id: int):
     db = g.db
+    # iCal URLs are often secret "private address" feeds.
+    if not is_org_member(db, org_id):
+        return forbidden()
     calendar_sources = (
         db.query(CalendarSource).filter(CalendarSource.org_id == org_id).all()
     )
@@ -766,6 +811,8 @@ def toggle_calendar_source_active(org_id: int, cs_id: int):
 
     if not calendar_source:
         return jsonify({"error": "CalendarSource not found"}), 404
+    if not can_edit_category(db, org_id, calendar_source.category_id):
+        return forbidden()
 
     # Toggle active flag
     calendar_source.active = not bool(calendar_source.active)
@@ -796,6 +843,8 @@ def delete_calendar_source(org_id: int, cs_id: int):
         )
         if not calendar_source:
             return jsonify({"error": "CalendarSource not found"}), 404
+        if not can_edit_category(db, org_id, calendar_source.category_id):
+            return forbidden()
 
         # Delete all events attached to this source first
         delete_events_for_calendar_source(db=db, calendar_source_id=cs_id)
@@ -816,6 +865,8 @@ def delete_calendar_source(org_id: int, cs_id: int):
 @orgs_bp.route("/<int:org_id>", methods=["DELETE"])
 def delete_organization(org_id: int):
     db = g.db
+    if not can_manage_org(db, org_id):
+        return forbidden()
     org = db.query(Organization).filter(Organization.id == org_id).one_or_none()
     if not org:
         return jsonify({"error": "Organization not found"}), 404

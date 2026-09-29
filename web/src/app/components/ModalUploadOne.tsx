@@ -6,7 +6,7 @@ import { useEventState } from "../../context/EventStateContext";
 import { ReactNode, useState, useEffect } from "react";
 
 import axios from 'axios';
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "~/context/AuthContext";
 import { getAdminCategories } from '../utils/api/users';
 import { CategoryOrg } from '../utils/types';
 
@@ -18,20 +18,18 @@ type ModalProps = {
 export default function ModalUploadOne({ show, onClose }: ModalProps) {
 
   const [selectedOption, setSelectedOption] = useState<CategoryOrg | null>(null);
-  const { user } = useUser();  // clerk user object
+  const { isSignedIn } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
   const [adminCategories, setAdminCategories] = useState<CategoryOrg[]>([]);
   const { openUploadLink } = useEventState();
 
-  if (!user) return null;
+  if (!isSignedIn) return null;
 
   useEffect(() => {
     const fetchAdminCategories = async () => {
-      if (!user?.id) return;
-      
-      // console.log("Fetching admin categories for Clerk ID:", user.id);
+      if (!isSignedIn) return;
 
-      const categories = await getAdminCategories(user.id);
+      const categories = await getAdminCategories();
       if (categories) {
         setAdminCategories(categories);
       }
@@ -39,7 +37,7 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
 
     fetchAdminCategories();
     setLoading(false);
-  }, [user]);
+  }, [isSignedIn]);
 
   if (loading) {
     return (

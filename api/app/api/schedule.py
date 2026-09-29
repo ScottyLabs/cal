@@ -8,7 +8,7 @@ from app.models.models import (
     EventOccurrence,
     Schedule,
 )
-from app.utils.auth import get_current_user
+from app.utils.auth import current_user
 
 schedule_bp = Blueprint("schedule_bp", __name__)
 
@@ -34,12 +34,8 @@ def event_occurrence_to_dict(occurrence: EventOccurrence):
 @schedule_bp.route("/", methods=["GET"])
 def get_schedule_route():
     """returns the user's schedule with courses and clubs, their categories, and event occurrences"""
-    clerk_user_id = request.headers.get("Clerk-User-Id")
     schedule_id = request.args.get("schedule_id")
-    user = get_current_user(clerk_user_id)
-
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    user = current_user()
 
     db = g.db
     try:

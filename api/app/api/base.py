@@ -1,10 +1,13 @@
 from flask import Blueprint, g, jsonify
 from sqlalchemy import text
 
+from app.utils.auth import public, site_admin_required
+
 base_bp = Blueprint("base", __name__)
 
 
 @base_bp.route("/api/health", methods=["GET"])
+@public
 def health():
     # Kennel polls this every 2s for up to 60s after starting the service and
     # will not route the public domain here until it returns 200. Keep it off
@@ -14,13 +17,16 @@ def health():
 
 
 @base_bp.route("/")
+@public
 def home():
     print("hi")
     print("there")
     return "Welcome to the CMUCal Flask API!"
 
 
+# Public: the Supabase keepalive workflow polls it anonymously.
 @base_bp.route("/test_db", methods=["GET"])
+@public
 def db_health_check():
     db = g.db
     try:
@@ -31,6 +37,7 @@ def db_health_check():
 
 
 @base_bp.route("/test_db_error")
+@site_admin_required
 def test_db_error():
     db = g.db
     db.execute(text("SELECT 1"))
@@ -38,6 +45,7 @@ def test_db_error():
 
 
 @base_bp.route("/test_rrule", methods=["GET"])
+@site_admin_required
 def test_rrule():
     from datetime import datetime, timedelta, timezone
 

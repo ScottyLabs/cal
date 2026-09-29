@@ -52,7 +52,7 @@ function ManagerPageSkeleton() {
 }
 import { useMultipleRoleRedirect } from "../utils/redirect";
 import TwoColumnLayout from "../components/TwoColumnLayout";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "~/context/AuthContext";
 import { getUserRole } from "../utils/api/users";
 import ManagerSidebar from "../components/ManagerSidebar";
 import ManagerContent from "../components/ManagerDashboard";
@@ -61,15 +61,15 @@ import type { Org } from "../utils/types";
 export default function ManagerPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [managedOrgIds, setManagedOrgIds] = useState<Set<number> | null>(null);
-  const { user } = useUser();
+  const { isSignedIn } = useAuth();
 
   const [selectedOrg, setSelectedOrg] = useState<Org | null>(null);
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!isSignedIn) return;
     const fetchUserRole = async () => {
-      const response = await getUserRole(user.id);
+      const response = await getUserRole();
       if (response.is_manager) {
         setUserRole("manager");
       } else if (response.is_admin) {
@@ -82,7 +82,7 @@ export default function ManagerPage() {
       setManagedOrgIds(orgIds);
     };
     void fetchUserRole();
-  }, [user?.id]);
+  }, [isSignedIn]);
 
   useMultipleRoleRedirect(["manager", "admin"], userRole); // Redirect non-managers
 

@@ -41,21 +41,17 @@ export const getCourseOrgs = async () : Promise<CourseOption[]> => {
   return apiGet<CourseOption[]>("/organizations/get_course_orgs");
 };
 
-export const getAdminsInOrg = async (clerkId: string, orgId: number): Promise<AdminInOrg[]> => {
+export const getAdminsInOrg = async (orgId: number): Promise<AdminInOrg[]> => {
   return apiGet<AdminInOrg[]>("/organizations/get_admins_in_org", {
-    headers: { "Clerk-User-Id": clerkId },
     params: { org_id: orgId },
   });
 };
 
 // Fetch a single organization's data with categories and events
 export const getOrganizationData = async (
-  userId: string,
   orgId: number
 ): Promise<Course | Club> => {
-  return apiGet<Course | Club>(`/organizations/org/${orgId}`, {
-    headers: { "Clerk-User-Id": userId },
-  });
+  return apiGet<Course | Club>(`/organizations/org/${orgId}`);
 };
 
 // Admin management

@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from "~/context/AuthContext";
 import { Course, Club } from "~/app/utils/types";
 import { getSchedule, removeCategoryFromSchedule } from "~/app/utils/api/schedules";
 import { getOrganizationData } from "~/app/utils/api/organizations";
@@ -29,7 +29,7 @@ type UserContextType = {
 export const UserContext = createContext<UserContextType | null>(null);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isLoaded, userId } = useAuth();
+  const { isSignedIn } = useAuth();
   
   const [courses, setCourses] = useState<Course[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -65,7 +65,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const previousScheduleId = useRef<string | number | null>(null);
 
   const fetchSchedule = useCallback(async (scheduleId?: string | number, silent = false) => {
-    if (!isLoaded || !userId) return;
+    if (!isSignedIn) return;
     if (!silent) setLoading(true);
 
     // if scheduleId is -1, clear the schedule
@@ -78,7 +78,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const data = await getSchedule(userId, scheduleId);
+      const data = await getSchedule(scheduleId);
       if (data) {
         setCourses(data.courses || []);
         setClubs(data.clubs || []);
@@ -147,11 +147,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [isLoaded, userId, currentScheduleId]);
+  }, [isSignedIn, currentScheduleId]);
 
   // Fetch schedule on mount and when currentScheduleId changes
   useEffect(() => {
-    if (!isLoaded || !userId) return;
+    if (!isSignedIn) return;
     
     // Only fetch if the schedule ID actually changed (not just from null to a value on first load)
     if (previousScheduleId.current === null && currentScheduleId === null) {
@@ -166,15 +166,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Just update the ref without fetching (this handles null -> actual ID transition)
       previousScheduleId.current = currentScheduleId;
     }
-  }, [isLoaded, userId, currentScheduleId, fetchSchedule]);
+  }, [isSignedIn, currentScheduleId, fetchSchedule]);
 
   // Fetch all events on mount
   const fetchEvents = useCallback(async () => {
-    if (!isLoaded || !userId) return;
+    if (!isSignedIn) return;
     setEventsLoading(true);
     try {
       const res = await api.get(`/events/`, {
-        headers: { "Clerk-User-Id": userId },
         params: {
           term: '',
           tags: '',
@@ -188,13 +187,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setEventsLoading(false);
     }
-  }, [isLoaded, userId]);
+  }, [isSignedIn]);
 
   useEffect(() => {
-    if (isLoaded && userId) {
+    if (isSignedIn) {
       void fetchEvents();
     }
-  }, [isLoaded, userId, fetchEvents]);
+  }, [isSignedIn, fetchEvents]);
 
 
   const setVisibleCategories = useCallback((updater: Set<number> | ((prev: Set<number>) => Set<number>)) => {
@@ -239,11 +238,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Optimistically add an organization to the schedule
   const addOrganization = useCallback(async (orgId: number) => {
-    if (!userId) return undefined;
+    if (!isSignedIn) return undefined;
     
     try {
       // Fetch only the new organization's data
-      const orgData = await getOrganizationData(userId, orgId);
+      const orgData = await getOrganizationData(orgId);
       
       // Add to appropriate list based on type
       if (orgData.type === "CLUB") {
@@ -257,7 +256,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Failed to fetch organization data:", error);
       throw error;
     }
-  }, [userId]);
+  }, [isSignedIn]);
 
   // Optimistically remove an organization from the schedule
   const removeOrganization = useCallback((orgId: number) => {

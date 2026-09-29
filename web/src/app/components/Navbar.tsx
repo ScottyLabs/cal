@@ -7,17 +7,16 @@ import Link from "next/link";
 import { FiSearch, FiMoon, FiSun, FiLogOut, FiTrash2, FiMenu } from "react-icons/fi"; // Search, dark mode, logout
 import { FaRegUser } from "react-icons/fa"; // User icon
 import { BsCalendar3 } from "react-icons/bs"; // Calendar icon
-import { GrUserManager } from "react-icons/gr"; // Manager icon
 import { FiUpload } from "react-icons/fi";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useRouter } from "next/navigation";
 
 import { useEventState } from "../../context/EventStateContext";
-import { useUser as useClerkUser } from "@clerk/nextjs";
-import { UserButton } from "@clerk/nextjs";
+import { useAuth } from "~/context/AuthContext";
 import { useUser } from "~/context/UserContext";
 
 import { ConnectGoogleButton } from "./ConnectGoogleButton";
+import UserMenu from "./UserMenu";
 
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
@@ -53,20 +52,8 @@ export default function Navbar() {
   const [isCreatingSchedule, setIsCreatingSchedule] = useState(false);
   const isMobile = useIsMobile();
 
-  const { user } = useClerkUser();  // clerk user object
+  const { isSignedIn } = useAuth();
   const router = useRouter();
-
-
-  const getUserIdFromClerkId = async (clerkId: string) => {
-    try {
-      // First try to get user ID
-      const data = await getUserID(clerkId);
-      return data.user_id;
-    } catch (err: any) {
-      // If user not found, create new user
-      throw new Error("User not found");
-    }
-  };
 
   const handleScheduleChange = (event: SelectChangeEvent) => {
     // Don't change schedule if "new" is selected - just open the modal
@@ -82,23 +69,15 @@ export default function Navbar() {
   };
 
   const handleCreateSchedule = async () => {
-    if (!newScheduleName.trim() || !user?.id) {
+    if (!newScheduleName.trim() || !isSignedIn) {
       console.error("Missing schedule name or user not logged in");
       return;
     }
 
     setIsCreatingSchedule(true);
     try {
-      const id = await getUserIdFromClerkId(user.id);
-      if (!id) {
-        console.error("No user ID available");
-        setIsCreatingSchedule(false);
-        return;
-      }
-
-      // Create schedule
+      // Create schedule (the API takes the owner from the access token)
       const response = await axios.post(`${API_BASE_URL}/users/create_schedule`, {
-        user_id: id,
         name: newScheduleName.trim()
       }, {
         withCredentials: true,
@@ -128,7 +107,7 @@ export default function Navbar() {
   const handleDeleteSchedule = async (scheduleId: number, scheduleName: string, event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent the select from opening/closing
     
-    if (!user?.id) {
+    if (!isSignedIn) {
       console.error("User not logged in");
       return;
     }
@@ -157,11 +136,6 @@ export default function Navbar() {
 
     // Delete in background
     try {
-      const id = await getUserIdFromClerkId(user.id);
-      if (!id) {
-        throw new Error("No user ID available");
-      }
-
       await axios.delete(`${API_BASE_URL}/users/delete_schedule`, {
         data: { schedule_id: scheduleId },
         withCredentials: true,
@@ -185,26 +159,25 @@ export default function Navbar() {
   // Handle user data fetching (parallelized)
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!user?.id) return;
+      if (!isSignedIn) return;
       
       try {
-        const id = await getUserIdFromClerkId(user.id);
+        const { user_id: id } = await getUserID();
         if (id) {
           setUserId(id);
           
           // Parallel API calls for faster loading
           const [schedulesResponse, role] = await Promise.all([
             axios.get<Array<{ id: number; name: string }>>(`${API_BASE_URL}/users/schedules`, {
-              params: { user_id: id },
               withCredentials: true,
             }),
-            fetchRole(user?.id)
+            fetchRole()
           ]);
           
           setSchedules(schedulesResponse.data);
           setUserRole(role);
         } else {
-          console.error("Failed to retrieve user ID from Clerk ID");
+          console.error("Failed to retrieve the signed-in user's id");
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -214,7 +187,7 @@ export default function Navbar() {
     };
 
     void fetchUserData();
-  }, [user?.id]);
+  }, [isSignedIn]);
 
   // Handle closing pop-up if click outside
   useEffect(() => {
@@ -639,7 +612,7 @@ export default function Navbar() {
           {!isMobile && (
             <>
               <div className="mx-2">
-                {user?.id && <ConnectGoogleButton clerkId={user.id} />}
+                {isSignedIn && <ConnectGoogleButton />}
               </div>
               {/* Dark Mode Toggle */}
               {mounted && (
@@ -667,17 +640,10 @@ export default function Navbar() {
           
           {/* User Button */}
           <div className="mx-2 flex flex-col justify-end"> 
-            <UserButton>
-              {(userRole === "manager" || userRole === "admin") && (
-                <UserButton.MenuItems>
-                  <UserButton.Action
-                    label="Open Admin Dashboard"
-                    labelIcon={<GrUserManager />}
-                    onClick={() => handleAdminDashboardRedirect()}
-                  />
-                </UserButton.MenuItems>
-              )}
-            </UserButton>
+            <UserMenu
+              showAdminDashboard={userRole === "manager" || userRole === "admin"}
+              onOpenAdminDashboard={handleAdminDashboardRedirect}
+            />
           </div>
         </div>
       </nav>
