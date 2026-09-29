@@ -1,7 +1,10 @@
+from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
+
+from sqlalchemy import insert
 
 from app.models.enums import RecurrenceType
 from app.models.models import (
@@ -193,22 +196,40 @@ def save_event_occurrence(
     return event_occurrence
 
 
-def populate_event_occurrences(db, event: Event, rule: RecurrenceRule):
-    """
-    Populate occurrences for a recurring event based on the recurrence rule.
-    If count is set, respects the count -> No limit from until or 6-month cap.
-    If count is not set and until is set, respects the until date with a 6-month cap, and stores the orig until date in the rule. (see add_recurrence_rule)
-    If both count and until are not set, uses a 6-month cap from now, and stores the orig until date in the rule. (see add_recurrence_rule)
-    Args:
-        db: Database session.
-        event: The Event object for which occurrences are to be populated.
-        rule: The RecurrenceRule object defining the recurrence pattern.
-    Returns:
-        A message indicating the number of occurrences populated.
-    """
-    if event.id == TRACE_EVENT_ID:
-        print("🧭 TRACE: populate_event_occurrences()")
+def _occurrence_row(event: Event, start_dt, end_dt, title, desc, loc) -> dict:
+    return {
+        "event_id": event.id,
+        "org_id": event.org_id,
+        "category_id": event.category_id,
+        "title": title,
+        "start_datetime": start_dt.astimezone(timezone.utc),
+        "end_datetime": end_dt.astimezone(timezone.utc),
+        "event_saved_at": event.last_updated_at,
+        "recurrence": "RECURRING",
+        "is_all_day": event.is_all_day,
+        "user_edited": event.user_edited,
+        "description": desc,
+        "location": loc,
+        "source_url": event.source_url,
+    }
 
+
+def _build_occurrence_rows(
+    event: Event,
+    rule: RecurrenceRule,
+    exdate_rows,
+    rdate_rows,
+    override_rows,
+    recurrence_override_rows,
+    now_utc: datetime,
+) -> List[dict]:
+    """
+    Expand one event's recurrence rule into EventOccurrence column dicts.
+
+    Pure: the caller loads the rule's EXDATE/RDATE/override rows, so this can
+    run for one event (populate_event_occurrences) or for many events whose
+    rows were loaded in bulk (regenerate_event_occurrences_by_event_ids).
+    """
     event_tz = ZoneInfo(event.event_timezone)
     # Defensive duration (end could be equal to start in some feeds)
     end_datetime = (
@@ -237,7 +258,6 @@ def populate_event_occurrences(db, event: Event, rule: RecurrenceRule):
         duration = timedelta(0)
 
     # Calculate time bounds
-    now_utc = datetime.now(timezone.utc)
     six_months_later = now_utc + timedelta(days=180)
 
     # Safe copy of rule "view" for expansion window
@@ -247,10 +267,6 @@ def populate_event_occurrences(db, event: Event, rule: RecurrenceRule):
             temp_rule.until = six_months_later
         else:
             temp_rule.until = min(_ensure_aware(temp_rule.until), six_months_later)
-
-    print("->️ rule.start_datetime =", rule.start_datetime)
-    # print("->️ rule.until =", rule.until)
-    # print("->️ temp_rule.until =", temp_rule.until)
 
     trace(
         event,
@@ -266,29 +282,16 @@ def populate_event_occurrences(db, event: Event, rule: RecurrenceRule):
     rrule_iter = list(get_rrule_from_db_rule(temp_rule, event_tz))
     trace(event, "RRULE count =", len(rrule_iter))
 
-    # Pull EXDATE/RDATE/Overrides/RecurrenceOverrides from DB
-    exdates = {
-        _ensure_aware(x.exdate)
-        for x in db.query(RecurrenceExdate).filter_by(rrule_id=rule.id).all()
-    }
-
-    rdates = {
-        _ensure_aware(x.rdate)
-        for x in db.query(RecurrenceRdate).filter_by(rrule_id=rule.id).all()
-    }
-
+    exdates = {_ensure_aware(x.exdate) for x in exdate_rows}
+    rdates = {_ensure_aware(x.rdate) for x in rdate_rows}
     overrides = {
         normalize_occurrence(_ensure_aware(o.recurrence_date), event_tz): o
-        for o in db.query(EventOverride).filter_by(rrule_id=rule.id).all()
+        for o in override_rows
     }
-
-    recurrence_overrides = (
-        db.query(RecurrenceOverride).filter_by(rrule_id=rule.id).all()
-    )
 
     # Construct a dictionary of dates: RecurrenceOverride
     recurrence_override_dates = {}
-    for ro in recurrence_overrides:
+    for ro in recurrence_override_rows:
         try:
             ro_rrule = rrule_from_db_recurrence_override(ro)
             for ro_date in ro_rrule:
@@ -299,15 +302,7 @@ def populate_event_occurrences(db, event: Event, rule: RecurrenceRule):
         except Exception as e:
             print(f"⚠️ Failed to expand RecurrenceOverride {ro.id}: {e}")
 
-    # Start fresh for this event's occurrences
-    deleted = (
-        db.query(EventOccurrence)
-        .filter_by(event_id=event.id)
-        .delete(synchronize_session=False)
-    )
-    trace(event, "Deleted existing occurrences:", deleted)
-
-    count = 0
+    rows = []
     seen_starts = set()  # to avoid dupes when RDATE == RRULE date
 
     # 1) Generate occurrences from RRULE, skipping EXDATE and applying overrides
@@ -317,7 +312,7 @@ def populate_event_occurrences(db, event: Event, rule: RecurrenceRule):
     for occ_start in rrule_iter:
         occ_start = normalize_occurrence(occ_start, event_tz)
 
-        if event.id == TRACE_EVENT_ID and count < 3:
+        if event.id == TRACE_EVENT_ID and len(rows) < 3:
             print("🧭 TRACE: occ_start =", occ_start)
 
         if occ_start in exdates:
@@ -326,30 +321,8 @@ def populate_event_occurrences(db, event: Event, rule: RecurrenceRule):
         start_dt, end_dt, title, desc, loc = apply_overrides(
             occ_start, event, duration, overrides, recurrence_override_dates
         )
-
-        start_dt_utc = start_dt.astimezone(timezone.utc)
-        end_dt_utc = end_dt.astimezone(timezone.utc)
-
-        db.add(
-            EventOccurrence(
-                event_id=event.id,
-                org_id=event.org_id,
-                category_id=event.category_id,
-                title=title,
-                start_datetime=start_dt_utc,
-                end_datetime=end_dt_utc,
-                event_saved_at=event.last_updated_at,
-                recurrence="RECURRING",
-                is_all_day=event.is_all_day,
-                user_edited=event.user_edited,
-                description=desc,
-                location=loc,
-                source_url=event.source_url,
-            )
-        )
-
+        rows.append(_occurrence_row(event, start_dt, end_dt, title, desc, loc))
         seen_starts.add(start_dt.astimezone(timezone.utc))
-        count += 1
 
     # 2) Add RDATEs that weren't already covered
     for rdate in sorted(rdates):
@@ -364,28 +337,47 @@ def populate_event_occurrences(db, event: Event, rule: RecurrenceRule):
         if not rule.count and (start_dt > six_months_later):
             continue
 
-        start_dt_utc = start_dt.astimezone(timezone.utc)
-        end_dt_utc = end_dt.astimezone(timezone.utc)
+        rows.append(_occurrence_row(event, start_dt, end_dt, title, desc, loc))
 
-        db.add(
-            EventOccurrence(
-                event_id=event.id,
-                org_id=event.org_id,
-                category_id=event.category_id,
-                title=title,
-                start_datetime=start_dt_utc,
-                end_datetime=end_dt_utc,
-                event_saved_at=event.last_updated_at,
-                recurrence="RECURRING",
-                is_all_day=event.is_all_day,
-                user_edited=event.user_edited,
-                description=desc,
-                location=loc,
-                source_url=event.source_url,
-            )
-        )
+    return rows
 
-        count += 1
+
+def populate_event_occurrences(db, event: Event, rule: RecurrenceRule):
+    """
+    Populate occurrences for a recurring event based on the recurrence rule.
+    If count is set, respects the count -> No limit from until or 6-month cap.
+    If count is not set and until is set, respects the until date with a 6-month cap, and stores the orig until date in the rule. (see add_recurrence_rule)
+    If both count and until are not set, uses a 6-month cap from now, and stores the orig until date in the rule. (see add_recurrence_rule)
+    Args:
+        db: Database session.
+        event: The Event object for which occurrences are to be populated.
+        rule: The RecurrenceRule object defining the recurrence pattern.
+    Returns:
+        A message indicating the number of occurrences populated.
+    """
+    if event.id == TRACE_EVENT_ID:
+        print("🧭 TRACE: populate_event_occurrences()")
+
+    rows = _build_occurrence_rows(
+        event,
+        rule,
+        db.query(RecurrenceExdate).filter_by(rrule_id=rule.id).all(),
+        db.query(RecurrenceRdate).filter_by(rrule_id=rule.id).all(),
+        db.query(EventOverride).filter_by(rrule_id=rule.id).all(),
+        db.query(RecurrenceOverride).filter_by(rrule_id=rule.id).all(),
+        datetime.now(timezone.utc),
+    )
+
+    # Start fresh for this event's occurrences
+    deleted = (
+        db.query(EventOccurrence)
+        .filter_by(event_id=event.id)
+        .delete(synchronize_session=False)
+    )
+    trace(event, "Deleted existing occurrences:", deleted)
+
+    for row in rows:
+        db.add(EventOccurrence(**row))
 
     # Mark successful regeneration
     now = datetime.now(timezone.utc)
@@ -393,19 +385,33 @@ def populate_event_occurrences(db, event: Event, rule: RecurrenceRule):
     event.last_updated_at = now
 
     db.flush()
-    trace(
-        event,
-        "Occurrences in session =",
-        db.query(EventOccurrence).filter_by(event_id=event.id).count(),
-    )
-    return f"Populated {count} occurrences for event {event.id}"
+    if event.id == TRACE_EVENT_ID:
+        trace(
+            event,
+            "Occurrences in session =",
+            db.query(EventOccurrence).filter_by(event_id=event.id).count(),
+        )
+    return f"Populated {len(rows)} occurrences for event {event.id}"
+
+
+def _rows_by_rrule(db, model, rule_ids: List[int]) -> Dict[int, list]:
+    grouped = defaultdict(list)
+    for row in db.query(model).filter(model.rrule_id.in_(rule_ids)).all():
+        grouped[row.rrule_id].append(row)
+    return grouped
 
 
 def regenerate_event_occurrences_by_event_ids(
     db, event_ids: List[int]
-) -> Dict[int, str]:
+) -> Tuple[int, int]:
     """
     Regenerate occurrences for a list of event IDs.
+
+    Same result as calling populate_event_occurrences per event, but with a
+    fixed number of queries per call instead of about ten per event: events,
+    rules and their EXDATE/RDATE/override rows are loaded in bulk, old
+    occurrences are deleted in one statement and new ones inserted in one
+    bulk insert. Round trips, not CPU, dominate when the database is remote.
 
     Args:
         db: Database session.
@@ -416,21 +422,31 @@ def regenerate_event_occurrences_by_event_ids(
     regenerated = 0
     skipped = 0
     start = datetime.now(timezone.utc)
-    for event_id in event_ids:
-        event = db.query(Event).get(event_id)
+    ids = list(dict.fromkeys(event_ids))
 
-        if event_id == TRACE_EVENT_ID:
-            print("🧭 TRACE: Found event", event_id)
+    events = (
+        {e.id: e for e in db.query(Event).filter(Event.id.in_(ids)).all()}
+        if ids
+        else {}
+    )
+    rules = {}
+    if ids:
+        for rule in (
+            db.query(RecurrenceRule)
+            .filter(RecurrenceRule.event_id.in_(ids))
+            .order_by(RecurrenceRule.id)
+            .all()
+        ):
+            rules.setdefault(rule.event_id, rule)
 
+    todo = []
+    for event_id in ids:
+        event = events.get(event_id)
         if not event:
             skipped += 1
             continue
 
-        rule = db.query(RecurrenceRule).filter_by(event_id=event.id).first()
-
-        if event_id == TRACE_EVENT_ID:
-            print("🧭 TRACE: Rule exists?", bool(rule))
-
+        rule = rules.get(event_id)
         if not rule:
             skipped += 1
             continue
@@ -444,15 +460,48 @@ def regenerate_event_occurrences_by_event_ids(
                 )
             continue
 
-        try:
-            populate_event_occurrences(db, event, rule)
-        except Exception as e:
-            print("FAILED during populate:", e)
-            raise
-        regenerated += 1
-    end = datetime.now(timezone.utc)
-    # total minutes
-    total_time = (end - start).total_seconds() / 60
+        todo.append((event, rule))
+
+    if todo:
+        rule_ids = [rule.id for _, rule in todo]
+        exdates = _rows_by_rrule(db, RecurrenceExdate, rule_ids)
+        rdates = _rows_by_rrule(db, RecurrenceRdate, rule_ids)
+        overrides = _rows_by_rrule(db, EventOverride, rule_ids)
+        recurrence_overrides = _rows_by_rrule(db, RecurrenceOverride, rule_ids)
+
+        now_utc = datetime.now(timezone.utc)
+        rows = []
+        for event, rule in todo:
+            try:
+                rows.extend(
+                    _build_occurrence_rows(
+                        event,
+                        rule,
+                        exdates[rule.id],
+                        rdates[rule.id],
+                        overrides[rule.id],
+                        recurrence_overrides[rule.id],
+                        now_utc,
+                    )
+                )
+            except Exception as e:
+                print(f"FAILED during populate for event {event.id}:", e)
+                raise
+
+        db.query(EventOccurrence).filter(
+            EventOccurrence.event_id.in_([event.id for event, _ in todo])
+        ).delete(synchronize_session=False)
+        if rows:
+            db.execute(insert(EventOccurrence), rows)
+
+        now = datetime.now(timezone.utc)
+        for event, rule in todo:
+            rule.last_generated_at = now
+            event.last_updated_at = now
+        db.flush()
+        regenerated = len(todo)
+
+    total_time = (datetime.now(timezone.utc) - start).total_seconds() / 60
     print(
         f"Regenerated occurrences for {regenerated} events, skipped {skipped} events in {total_time} minutes."
     )
