@@ -1,0 +1,6 @@
+# The Python project lives in api/, not at the repository root, so point ty
+# at its uv venv (created by `cd api && uv sync --extra dev`) for third-party
+# imports and at api/ for first-party ones (app, scraper, course_agent).
+[environment]
+python = "api/.venv"
+root = ["api"]

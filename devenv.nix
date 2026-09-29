@@ -44,12 +44,13 @@
     pkgs.rustc
   ];
 
-  # The shared module wires `ty` to the uv venv it creates from a pyproject.toml
-  # at the devenv root. This repo keeps the Python project under api/, so no
-  # root venv exists and every third-party import resolves to nothing - roughly
-  # 200 spurious unresolved-import errors that drown the genuine type errors
-  # underneath. Disabled until the Python project is hoisted to the root or ty
-  # is pointed at api/.venv. Tracked in README.md.
+  # The shared module runs `ty check` from the devenv root, but this repo keeps
+  # the Python project under api/. ty.toml at the root points ty at api/.venv
+  # and api/, which clears the ~120 spurious unresolved imports. What is left
+  # is about 100 genuine diagnostics (mostly Optional handling and argument
+  # types), so the hook stays off until those are fixed. Enabling it also needs
+  # api/.venv to exist in the shell, since the shared module only runs
+  # `uv sync` for a pyproject.toml at the root. Tracked in README.md.
   git-hooks.hooks.ty.enable = lib.mkForce false;
 
   scripts = {
