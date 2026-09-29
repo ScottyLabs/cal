@@ -34,7 +34,7 @@ type EventTypeOption = {
   label: string;
 };
 
-const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
+const EVENT_TYPE_OPTIONS: [EventTypeOption, ...EventTypeOption[]] = [
   { value: null, label: "All" },
   { value: "ACADEMIC", label: "Academic" },
   { value: "CLUB", label: "Club" },

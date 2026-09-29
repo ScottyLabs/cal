@@ -63,7 +63,7 @@
 
             # Regenerate after any package-lock.json change:
             #   nix run nixpkgs#prefetch-npm-deps -- web/package-lock.json
-            npmDepsHash = "sha256-s+aaPJWwYaFyCq3c5Nolz6aKlFa/OtDb5vl3ndAXG74=";
+            npmDepsHash = "sha256-RXcjCvxC7hy1TfKDmV8AamgNIKC4p8D9J7FJ+ZImFAg=";
 
             env = {
               NEXT_TELEMETRY_DISABLED = "1";
