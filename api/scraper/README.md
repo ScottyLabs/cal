@@ -7,13 +7,10 @@
 `python exporters/peer_tutoring_export_to_excel.py`
 `python exporters/schedule_of_classes_export_to_excel.py` -->
 ## Development Environment
-1. Activate the virtual environment at the root directory
-2. If running the schedule of classes scraper, make sure to change the semester_label in `scraper = ScheduleOfClassesScraper(db, semester_label="Spring_26")`. 
-    - Acceptable formats include `Spring_xx`, `Fall_xx`, `Summer1_xx`, `Summer2_xx`.
-    - Feel free to change the start and end dates of each semester in `scraper/helpers/semester.py` if needed.
-3. Run `python -m scraper.scripts.export_soc` to scrape data and add events to the DB.
-    - the script first creates org and category for each SOC event if those don't exist, then add events, recurrence_rules, and calls an endpoint to generate event occurrences.
-    - generating all events could take around an hour, please keep the terminal open during that time.
+1. Activate the virtual environment at the root directory (`cd api && uv sync`).
+2. Dry run first: `python -m scraper.scripts.export_soc --semester Fall_26 --dry-run`
+    - `--semester` accepts `Spring_xx`, `Fall_xx`, `Summer1_xx`, `Summer2_xx`; it defaults to the semester in session. Semester dates live in `scraper/helpers/semester.py`.
+3. Run without `--dry-run` to write. Needs `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `API_BASE_URL` (e.g. `https://api.cmucal.com`). Reruns are safe.
 
 * If need to delete, run this:
 ```
@@ -23,7 +20,7 @@ curl -X DELETE http://localhost:5001/api/events/batch_delete_events_by_params \
 ```
 
 ## Production Environment
-- created a cron job on Railway that calls `python -m scraper.scripts.export_soc`
+- `.forgejo/workflows/scrape.yml` (manual dispatch) runs `python -m scraper.scripts.export_soc` with secrets from OpenBao. It replaced the Railway cron job.
 
 # Old README
 

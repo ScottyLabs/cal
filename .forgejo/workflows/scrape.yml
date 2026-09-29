@@ -5,9 +5,10 @@
 # matching ScottyLabs/courses, which runs its scraper the same way.
 #
 # Manual dispatch only, deliberately. These write directly to the production
-# database, the Schedule of Classes scrape takes roughly an hour, and semester
-# detection is not yet automatic. Add a `schedule:` trigger once a run has been
-# watched end to end under kennel and the semester handling is trusted.
+# database and the Schedule of Classes scrape takes roughly an hour. The SOC
+# semester defaults to the one in session (Jan-May Spring, Aug-Dec Fall) and
+# the run refuses to write if the SOC page is for a different term. Add a
+# `schedule:` trigger once a run has been watched end to end under kennel.
 name: Scrape
 
 on:
@@ -31,6 +32,16 @@ on:
           - dev
           - prod
         default: dev
+      semester:
+        description: "SOC semester label, e.g. Fall_26. Empty = the one in session"
+        required: false
+        type: string
+        default: ""
+      dry_run:
+        description: "SOC only: fetch and parse, write nothing"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   scrape:
@@ -42,6 +53,9 @@ jobs:
       # explicitly: the CI job authenticates to OpenBao with its own OIDC token.
       SECRETSPEC_PROFILE: ${{ inputs.profile }}
       SECRETSPEC_PROVIDER: openbao-ci
+      # Read by scraper/scripts/export_soc.py.
+      SOC_SEMESTER: ${{ inputs.semester }}
+      SOC_DRY_RUN: ${{ inputs.dry_run }}
     steps:
       - uses: https://code.forgejo.org/actions/checkout@v7
       - uses: https://git.cmu.dev/ScottyLabs/kennel/.forgejo/actions/prepare@main

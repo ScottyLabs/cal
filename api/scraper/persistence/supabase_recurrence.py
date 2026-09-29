@@ -36,4 +36,5 @@ def replace_recurrence_rules(db, rrules, event_id_by_identity):
     for batch in chunked(list(event_ids), 200):
         db.table("recurrence_rules").delete().in_("event_id", batch).execute()
 
-    db.table("recurrence_rules").insert(rows).execute()
+    for batch in chunked(rows, 500):
+        db.table("recurrence_rules").insert(batch).execute()

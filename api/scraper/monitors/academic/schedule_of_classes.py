@@ -4,7 +4,7 @@ import bs4
 import requests
 import urllib3  # <-- 1. Import urllib3 to suppress warnings
 
-from scraper.helpers.semester import get_current_semester
+from scraper.helpers.semester import check_soc_page_matches, get_current_semester
 from scraper.monitors.base_scraper import BaseScraper
 
 
@@ -84,8 +84,9 @@ class ScheduleOfClassesScraper(BaseScraper):
         url = f"https://enr-apps.as.cmu.edu/assets/SOC/{self.soc_layout}.htm"
 
         try:
-            response = self.session.get(url, headers=self.headers)
+            response = self.session.get(url, headers=self.headers, timeout=120)
             response.raise_for_status()
+            check_soc_page_matches(response.text, self.semester_label)
             # Fix malformed HTML: Insert <TR> before orphaned <TD> tags
             # Pattern: After a row ending with </TR>, if the next tag is <TD>, insert <TR>
 

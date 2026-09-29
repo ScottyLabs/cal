@@ -14,18 +14,22 @@ def upsert_orgs(db, orgs: dict) -> dict:
         clean.pop("created_at", None)
         data.append(clean)
 
-    # Upsert: insert or update on conflict
-    for batch in chunked(data, 200):
-        db.table("organizations").upsert(batch, on_conflict="name").execute()
-
-    # Fetch IDs back
+    # Upsert: insert or update on conflict. The upsert returns the stored rows,
+    # so take the IDs from it. Looking them up again with a name filter broke
+    # on titles containing double quotes, which PostgREST's in.() list parses
+    # as delimiters (e.g. 79-355 Fake News: "Truth" in ...).
     name_to_id = {}
-    names = [o["name"] for o in data]
-
-    for batch in chunked(names, 200):  # 200 is safe
-        res = db.table("organizations").select("id,name").in_("name", batch).execute()
+    for batch in chunked(data, 200):
+        res = db.table("organizations").upsert(batch, on_conflict="name").execute()
         for row in res.data:
             name_to_id[row["name"]] = row["id"]
+
+    missing = [o["name"] for o in data if o["name"] not in name_to_id]
+    if missing:
+        raise RuntimeError(
+            f"Organization upsert returned no row for {len(missing)} names,"
+            f" e.g. {missing[0]!r}"
+        )
 
     return {key: name_to_id[org["name"]] for key, org in orgs.items()}
 
@@ -71,5 +75,7 @@ def upsert_courses(db, courses: dict, org_id_by_key: dict):
             }
         )
 
-    # Upsert merged result
-    db.table("courses").upsert(rows_to_upsert, on_conflict="course_number").execute()
+    # Upsert merged result. Chunked: one request with every course in the
+    # catalogue (~2500 rows) is slow and can hit the statement timeout.
+    for batch in chunked(rows_to_upsert, 500):
+        db.table("courses").upsert(batch, on_conflict="course_number").execute()
