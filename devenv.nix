@@ -13,17 +13,26 @@
 
     python.enable = true;
 
-    # The first cutover keeps the existing Supabase database, so every
-    # deployment would share one database. Previews stay off until the data
-    # moves into a kennel-provisioned Postgres.
-    kennel.previewDeployments = false;
+    kennel = {
+      # The first cutover keeps the existing Supabase database, so every
+      # deployment would share one database. Previews stay off until the data
+      # moves into a kennel-provisioned Postgres.
+      previewDeployments = false;
 
-    kennel.services = {
-      api = {
-        customDomain = "api.cmucal.com";
+      services = {
+        api = {
+          customDomain = "api.cmucal.com";
+        };
+        web = {
+          customDomain = "cmucal.com";
+        };
       };
-      web = {
-        customDomain = "cmucal.com";
+
+      # Kennel has no redirect route, so this static page forwards the retired
+      # domain to cmucal.com, keeping the path.
+      sites.redirect = {
+        spa = true;
+        customDomain = "cal.scottylabs.org";
       };
     };
   };

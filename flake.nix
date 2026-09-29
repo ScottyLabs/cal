@@ -99,6 +99,12 @@
               runHook postInstall
             '';
           };
+
+          # Static redirect page for cal.scottylabs.org (see devenv.nix).
+          redirect = pkgs.runCommand "cal-redirect" { } ''
+            mkdir -p $out
+            cp ${./redirect/index.html} $out/index.html
+          '';
         }
       );
     };
