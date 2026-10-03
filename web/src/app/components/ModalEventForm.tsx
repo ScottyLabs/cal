@@ -340,7 +340,6 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
             }
 
             const { dbRecurrence, summary } = formatRecurrence(recurrenceInput);
-            console.log("Recurrence settings:", dbRecurrence, summary);
 
             payload.recurrence_data = dbRecurrence;
             setCustomRecurrenceSummary(summary);
@@ -352,8 +351,6 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
           }
 
 
-          console.log("Submitting payload:", payload);
-          
           const res = await createEvent(payload);
 
           if (res.status === 201) {

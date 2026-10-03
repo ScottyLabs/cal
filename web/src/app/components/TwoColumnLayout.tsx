@@ -47,7 +47,7 @@ export default function TwoColumnLayout({ leftContent, rightContent }: TwoColumn
   }, []);
 
   return (
-    <div className="flex w-screen h-full">
+    <div className="flex w-full h-full">
       {/* Left Section */}
       <aside
         style={{ width: sidebarWidth, minWidth: sidebarWidth }}
@@ -65,9 +65,9 @@ export default function TwoColumnLayout({ leftContent, rightContent }: TwoColumn
       </div>
 
       {/* Right Section */}
-      <main className="flex-1 min-w-0">
+      <section className="flex-1 min-w-0">
         {rightContent}
-      </main>
+      </section>
     </div>
   );
 }

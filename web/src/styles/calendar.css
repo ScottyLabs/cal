@@ -106,6 +106,10 @@
   border: 1px solid #D1D5DB !important;
 }
 
+.fc-button:focus-visible {
+  box-shadow: 0 0 0 2px #3b82f6 !important;
+}
+
 .fc-button:disabled {
   opacity: 0.5 !important;
   cursor: not-allowed !important;

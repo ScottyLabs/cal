@@ -17,7 +17,6 @@ export default function SignedOutNav() {
   }, []);
 
   function handleClick() {
-    console.log("Current theme:", theme);
     setTheme(theme === "dark" ? "light" : "dark")
   }
 
@@ -28,6 +27,7 @@ export default function SignedOutNav() {
         {mounted && (
             <button
               onClick={handleClick}
+              aria-label="Toggle dark mode"
               className="z-50 relative flex items-center justify-center w-20 h-20 mr-6 rounded-md cursor-pointer"
             >
               {theme === "dark" ? (

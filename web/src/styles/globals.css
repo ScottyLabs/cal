@@ -7,3 +7,38 @@
     background-color: #374151; /* Tailwind gray-700 */
     color: #e5e7eb; /* Tailwind gray-200 */
   }
+
+/* react-datepicker popup in dark mode */
+.dark .react-datepicker {
+  background-color: #1f2937; /* Tailwind gray-800 */
+  border-color: #4b5563; /* Tailwind gray-600 */
+  color: #e5e7eb;
+}
+
+.dark .react-datepicker__header {
+  background-color: #374151; /* Tailwind gray-700 */
+  border-bottom-color: #4b5563;
+}
+
+.dark .react-datepicker-popper[data-placement^=bottom] .react-datepicker__triangle {
+  fill: #374151;
+  color: #374151;
+  stroke: #4b5563;
+}
+
+.dark .react-datepicker-popper[data-placement^=top] .react-datepicker__triangle {
+  fill: #1f2937;
+  color: #1f2937;
+  stroke: #4b5563;
+}
+
+.dark .react-datepicker__current-month,
+.dark .react-datepicker__day-name,
+.dark .react-datepicker__day {
+  color: #e5e7eb;
+}
+
+.dark .react-datepicker__day--keyboard-selected,
+.dark .react-datepicker__day:not([aria-disabled=true]):not(.react-datepicker__day--selected):hover {
+  background-color: #4b5563;
+}

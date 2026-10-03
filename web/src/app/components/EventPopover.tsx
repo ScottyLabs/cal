@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
-import { formatDate } from "~/app/utils/dateService";
+import { formatTimeRange } from "~/app/utils/dateService";
 import { EventType } from "../types/EventType";
 import { useEventState, PopoverPosition } from "../../context/EventStateContext";
 import { fetchTagsForEvent } from "../utils/api/events";
@@ -99,6 +99,7 @@ export default function EventPopover({ show, onClose, position, savedEventDetail
           <div className="p-4 relative">
             {/* Close button */}
             <button
+              aria-label="Close"
               className="absolute top-2 right-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
               onClick={onClose}
             >
@@ -109,7 +110,7 @@ export default function EventPopover({ show, onClose, position, savedEventDetail
               <>
                 <h3 className="text-lg font-medium pr-6 dark:text-white">{eventDetails.title}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {formatDate(eventDetails.start_datetime)} - {formatDate(eventDetails.end_datetime)}
+                  {formatTimeRange(eventDetails.start_datetime, eventDetails.end_datetime)}
                 </p>
                 {eventDetails.location && (
                   <p className="text-sm text-gray-500 dark:text-gray-400">{eventDetails.location}</p>

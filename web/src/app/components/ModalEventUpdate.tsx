@@ -33,7 +33,6 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
     const { selectedEvent, openDetails, closeModal } = useEventState();
     // const [currentCategory, setCurrentCategory] = useState(null);
     // const [oldEventInfo, setCurrentInfo] = useState();
-    console.log("show update modal!!", show, oldEventInfo)
 
     // const eventId = selectedEvent;
     const [title, setTitle] = useState(oldEventInfo?.title || "");
@@ -121,7 +120,6 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
                         name: tag.name.toLowerCase(),
                     }))
                 );
-                console.log("fetched predefined tags for update form", tags)
             } catch (err) {
                 console.error("Failed to fetch predefined tags", err);
             }
@@ -167,7 +165,6 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
     }
 
     const handleSubmit = async () => {
-        console.log("👀submitting update form......")
         const isValid = validate();
         if (!isValid) {
             alert("Please fill in all required fields.");
@@ -552,7 +549,6 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
                 type="button"
                 onClick={() => {
-                    console.log("clicked update submit button!");
                     void handleSubmit();
                 }}
                 >

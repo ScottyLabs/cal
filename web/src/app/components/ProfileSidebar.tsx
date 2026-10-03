@@ -228,10 +228,12 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     <div className="h-full dark:text-gray-200 overflow-y-auto">
       <div className="my-6 px-8 ">
         <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center cursor-pointer" onClick={() => setIsCoursesOpen(!isCoursesOpen)}>
-            <h3 className="text-gray-600 dark:text-gray-400 mr-2">My Courses</h3>
-            {isCoursesOpen ? <FiChevronUp className="w-5 h-5 text-gray-600 flex-shrink-0" /> : <FiChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />}
-          </div>
+          <h3>
+            <button type="button" aria-expanded={isCoursesOpen} className="flex items-center cursor-pointer" onClick={() => setIsCoursesOpen(!isCoursesOpen)}>
+              <span className="text-gray-600 dark:text-gray-400 mr-2">My Courses</span>
+              {isCoursesOpen ? <FiChevronUp className="w-5 h-5 text-gray-600 flex-shrink-0" /> : <FiChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />}
+            </button>
+          </h3>
           <div className="flex items-center">
             <button
               onClick={() => setIsCoursesEditMode(false)}
@@ -267,7 +269,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 </div>
               </div>
             )}
-            <div className="max-h-80 overflow-y-auto pr-1">
+            <div className="pr-1">
               {isCoursesEditMode ? (
                 <div className="space-y-3">
                   {loadingCourses ? (
@@ -353,10 +355,12 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
 
       <div className="my-6 px-8 ">
         <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center cursor-pointer" onClick={() => setIsClubsOpen(!isClubsOpen)}>
-            <h3 className="text-gray-600 dark:text-gray-400 mr-2">My Clubs</h3>
-            {isClubsOpen ? <FiChevronUp className="w-5 h-5 text-gray-600 flex-shrink-0" /> : <FiChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />}
-          </div>
+          <h3>
+            <button type="button" aria-expanded={isClubsOpen} className="flex items-center cursor-pointer" onClick={() => setIsClubsOpen(!isClubsOpen)}>
+              <span className="text-gray-600 dark:text-gray-400 mr-2">My Clubs</span>
+              {isClubsOpen ? <FiChevronUp className="w-5 h-5 text-gray-600 flex-shrink-0" /> : <FiChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />}
+            </button>
+          </h3>
           <div className="flex items-center">
             <button
               onClick={() => setIsClubsEditMode(false)}
@@ -392,7 +396,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 </div>
               </div>
             )}
-            <div className="max-h-80 overflow-y-auto pr-1">
+            <div className="pr-1">
               {isClubsEditMode ? (
                 <div className="space-y-3">
                   {loadingClubs ? (

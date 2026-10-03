@@ -1,7 +1,7 @@
 "use client";
 
 import Modal from './Modal';
-import { formatDate } from "~/app/utils/dateService";
+import { formatTimeRange } from "~/app/utils/dateService";
 import { EventType } from '../types/EventType';
 import axios from "axios";
 import { useEffect, useState } from 'react';
@@ -22,18 +22,18 @@ type Tag = { id?: number; name: string };
 
 function SkeletonEventDetails() { 
     return (
-        <div className="animate-pulse p-4 rounded-lg mb-2 bg-white space-y-3">
-            <p className="h-5 bg-gray-200 rounded w-2/5"></p> 
-            <p className="h-3 bg-gray-200 rounded w-3/5"></p>
-            <p className="h-3 bg-gray-200 rounded w-1/3"></p>
-            <p className="h-3 bg-gray-200 rounded w-4/5"></p>
+        <div className="animate-pulse p-4 rounded-lg mb-2 bg-white dark:bg-gray-900 space-y-3">
+            <p className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-2/5"></p> 
+            <p className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/5"></p>
+            <p className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></p>
+            <p className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></p>
             <p className="h-2 my-3"></p>
-            <p className="h-3 bg-gray-200 rounded w-full"></p>
-            <p className="h-3 bg-gray-200 rounded w-full"></p>
+            <p className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"></p>
+            <p className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"></p>
             <p className="h-2 my-3"></p>
             <div className="flex">
-            <p className="h-8 bg-gray-200 rounded w-1/2 mr-2"></p>
-            <p className="h-8 bg-gray-200 rounded w-1/2"></p></div> 
+            <p className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mr-2"></p>
+            <p className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></p></div> 
         </div>
     )
 }
@@ -44,7 +44,6 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
     const { isGoogleConnected } = useGcalEvents();
     const [eventDetails, setEventDetails] = useState<EventType | null>(savedEventDetails ?? null);
     const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
-    console.log("🤔🤔🤔savedEventDetails", savedEventDetails, eventDetails)
     const [loadingEvent, setLoadingEvent] = useState(false);
     const [loadingTags, setLoadingTags] = useState(false);
 
@@ -97,8 +96,6 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
         void fetchTag();
     }, [eventId])
 
-    console.log("show edit modal!!", show, eventDetails)
-
     return (
         <Modal show={show} onClose={onClose}>
             <div>
@@ -110,7 +107,7 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
                 {eventDetails && (
                     <>
                 <p className="text-lg">{eventDetails.title}</p>
-                <p className="text-base text-gray-500">{formatDate(eventDetails.start_datetime)} - {formatDate(eventDetails.end_datetime)}</p>
+                <p className="text-base text-gray-500">{formatTimeRange(eventDetails.start_datetime, eventDetails.end_datetime)}</p>
                 <p className="text-base text-gray-500">{eventDetails.location}</p>
                 {eventDetails.org && (<p className="text-base text-gray-500">Hosted by {eventDetails.org}</p>)}
                 <p className="text-base text-gray-500 py-4">{eventDetails.description == null || eventDetails.description === "" ? "No additional details available." : eventDetails.description}</p>

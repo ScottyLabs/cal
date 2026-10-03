@@ -19,7 +19,30 @@ export function formatDate(dateString: string): string {
       hour12: true         // "AM/PM"
     }).format(date);
   }
-  
+
+// Same-day ranges read "Mon, Feb 16, 6:30 - 7:45 AM"; longer ranges keep
+// the full date on both ends.
+export function formatTimeRange(startString: string, endString: string): string {
+  const start = new Date(startString);
+  const end = new Date(endString);
+  if (start.toDateString() !== end.toDateString()) {
+    return `${formatDate(startString)} - ${formatDate(endString)}`;
+  }
+  const day = new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(start);
+  const time = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  const sameMeridiem = (start.getHours() < 12) === (end.getHours() < 12);
+  const startTime = sameMeridiem ? time.format(start).replace(/\s[AP]M$/, "") : time.format(start);
+  return `${day}, ${startTime} - ${time.format(end)}`;
+}
+
 
 export const getDateString = (date: string) => {
     // return: 2024-08-02

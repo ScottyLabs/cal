@@ -92,7 +92,6 @@ export function ConnectGoogleButton() {
     // Ensure CMUCal exists in user's Google Calendars. If not, create it.
     try {
       const calendarResult = await ensureCalendarExists();
-      console.log("CMUCal calendar:", calendarResult.created ? "created" : "already exists", "ID:", calendarResult.calendar_id);
       setCmuCalendarId(calendarResult.calendar_id);
     } catch (error) {
       console.error("Failed to ensure CMUCal calendar exists:", error);
@@ -188,7 +187,6 @@ export function ConnectGoogleButton() {
   }, []);
 
   useEffect(() => {
-    console.log("Selected calendar IDs:", selectedCalendarIds);
     if (selectedCalendarIds.length > 0) {
       void fetchEventsFromCalendars(selectedCalendarIds);
     } else {

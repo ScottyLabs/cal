@@ -27,14 +27,17 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
     const fetchAdminCategories = async () => {
       if (!isSignedIn) return;
 
-      const categories = await getAdminCategories();
-      if (categories) {
-        setAdminCategories(categories);
+      try {
+        const categories = await getAdminCategories();
+        if (categories) {
+          setAdminCategories(categories);
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
     void fetchAdminCategories();
-    setLoading(false);
   }, [isSignedIn]);
 
   if (!isSignedIn) return null;
@@ -70,17 +73,16 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
         ))}
       </select>
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-        No available calendars? Please fill out this
-        <a href='https://forms.gle/DaaShMuQpbYiSNLn6' target='_blank' className="text-blue-600 hover:underline"> google form </a>
+        No available calendars? Please fill out this{" "}
+        <a href='https://forms.gle/DaaShMuQpbYiSNLn6' target='_blank' className="text-blue-600 hover:underline">google form</a>{" "}
         to request edit access to an organization&apos;s calendar.
       </p>
       <button
-        className="px-4 py-2 bg-blue-500 text-white rounded-md w-full"
+        className="px-4 py-2 bg-blue-500 text-white rounded-md w-full disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={!selectedOption}
         onClick={() => {
           if (selectedOption) {
             // setSelectedCategory(selectedOption);
-            console.log("Selected category:", selectedOption);
             // setShowUploadModalOne(false);
             // setShowUploadModalTwo(true);
             openUploadLink(selectedOption);
@@ -88,12 +90,6 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
         }}
       >
         Next
-      </button>
-      <button
-        className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 dark:hover:text-white"
-        onClick={onClose}
-      >
-          &times;
       </button>
     </Modal>
   );

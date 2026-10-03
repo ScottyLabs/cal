@@ -12,7 +12,7 @@ export default function BottomNav() {
     <nav className="bg-white dark:bg-gray-800 border-t border-gray-300 dark:border-gray-600 shadow-lg md:hidden">
       <div className="flex items-center justify-around h-16">
         {/* Home Button */}
-        <Link href="/" className="flex-1">
+        <Link href="/" className="flex-1" aria-label="Home">
           <div className="flex flex-col items-center justify-center h-full">
             <div
               className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${
@@ -34,7 +34,7 @@ export default function BottomNav() {
         </Link>
 
         {/* Explore Button */}
-        <Link href="/explore" className="flex-1">
+        <Link href="/explore" className="flex-1" aria-label="Explore">
           <div className="flex flex-col items-center justify-center h-full">
             <div
               className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${

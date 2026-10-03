@@ -240,6 +240,7 @@ export default function Navbar() {
                 // This will be handled by the drawer in the page component
                 window.dispatchEvent(new CustomEvent('toggleMobileSidebar'));
               }}
+              aria-label="Toggle sidebar"
               className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               <FiMenu className="text-gray-600 dark:text-gray-300" size={24} />
@@ -255,7 +256,7 @@ export default function Navbar() {
           {/* Segmented Selector for Home/Explore - Desktop only */}
           {!isMobile && (
             <div className="h-10 flex items-center border border-[#E5E7EB] rounded-lg bg-white dark:bg-[#16181D] dark:border-[#262A32] overflow-hidden">
-            <Link href="/" className="flex-1">
+            <Link href="/" className="flex-1 focus-visible:outline-offset-[-2px]" aria-label="Home">
               <div
                 className={`flex items-center justify-center h-10 px-3 cursor-pointer transition-colors
                   ${pathname === "/" 
@@ -263,19 +264,19 @@ export default function Navbar() {
                     : "hover:bg-gray-50 dark:hover:bg-gray-600"}
                 `}
               >
-              <FaRegUser className="w-5 h-5 text-gray-700 dark:text-text-[#A1A6B0]" size={18} />
+              <FaRegUser className="w-5 h-5 text-gray-700 dark:text-[#A1A6B0]" size={18} />
               </div>
             </Link>
 
             {/* Dividing line */}
             <div className="w-px h-full bg-gray-300 dark:bg-gray-600"></div>
 
-            <Link href="/explore" className="flex-1">
+            <Link href="/explore" className="flex-1 focus-visible:outline-offset-[-2px]" aria-label="Explore">
               <div className={`flex items-center justify-center h-10 px-3 cursor-pointer transition-colors
                 ${pathname === "/explore" 
                   ? "bg-gray-100 dark:bg-gray-600" 
                   : "hover:bg-gray-50 dark:hover:bg-gray-600"}`}>
-                <FiSearch className="w-5 h-5 text-gray-700 dark:text-text-[#A1A6B0]" size={20} />
+                <FiSearch className="w-5 h-5 text-gray-700 dark:text-[#A1A6B0]" size={20} />
               </div>
             </Link>
             </div>
@@ -326,6 +327,10 @@ export default function Navbar() {
                     },
                     '&:hover': {
                       backgroundColor: theme === 'dark' ? "#4b5563" : "#f9fafb",
+                    },
+                    '&:has(:focus-visible)': {
+                      outline: "2px solid #3b82f6",
+                      outlineOffset: "2px",
                     },
                     '&.Mui-focused': {
                       boxShadow: "none",
@@ -499,6 +504,10 @@ export default function Navbar() {
                     '&:hover': {
                       backgroundColor: theme === 'dark' ? "#4b5563" : "#f9fafb",
                     },
+                    '&:has(:focus-visible)': {
+                      outline: "2px solid #3b82f6",
+                      outlineOffset: "2px",
+                    },
                     '&.Mui-focused': {
                       boxShadow: "none",
                       border: theme === 'dark' ? "1px solid #4D5461" : "1px solid #e5e7eb"
@@ -620,6 +629,7 @@ export default function Navbar() {
               {mounted && (
                 <button
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  aria-label="Toggle dark mode"
                   className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   {theme === "dark" ? (
@@ -635,6 +645,7 @@ export default function Navbar() {
           {/* Upload Button - Both mobile and desktop */}
           <button
             onClick={() => openPreUpload()}
+            aria-label="Upload events"
             className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-[#232733] transition-colors"
           >
             <FiUpload className="text-gray-600 dark:text-gray-300" size={20} />

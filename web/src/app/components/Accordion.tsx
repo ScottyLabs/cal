@@ -37,7 +37,7 @@ const Accordion: React.FC<AccordionProps> = ({ title, subtitle, children, onRemo
           {onRemove && (
             <Menu as="div" className="relative inline-block text-left">
               <div>
-                <Menu.Button className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" onClick={(e) => e.stopPropagation()}>
+                <Menu.Button aria-label={`More options for ${title}`} className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" onClick={(e) => e.stopPropagation()}>
                   <FiMoreVertical className="w-5 h-5 text-gray-600" />
                 </Menu.Button>
               </div>

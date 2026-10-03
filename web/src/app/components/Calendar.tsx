@@ -46,8 +46,6 @@ const Calendar: FC<Props> = ({ events }) => {
   const mergedEvents = Array.from(mergedEventsMap.values());
 
 
-  console.log("Merged Events:", mergedEvents);
-
   const handleEventClick = (info: EventClickArg) => {
     const { event, el } = info;
     // FullCalendar types extendedProps loosely; these are the props page.tsx sets.
@@ -95,6 +93,7 @@ const Calendar: FC<Props> = ({ events }) => {
         selectable={true}
         eventClick={handleEventClick}
         eventContent={FullCalendarCard} 
+        eventTimeFormat={{ hour: "numeric", minute: "2-digit", meridiem: "short" }}
         // height="auto"
         // height={600}
         height="100%"

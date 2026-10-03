@@ -101,13 +101,10 @@ export default function ModalEventLink({
           category_id: selectedCategory.id,
         };
 
-        console.log("Submitting payload:", payload);
-
         try {
           setIsSubmitting(true);
 
-          const res = await readIcalLink(payload);
-          console.log("Response from readIcalLink:", res);
+          await readIcalLink(payload);
 
           alert("Events created successfully!");
           onClose(); // close modal on success

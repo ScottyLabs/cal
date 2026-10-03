@@ -65,7 +65,6 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           withCredentials: true,
         });
         setSavedEventIds(new Set(response.data));
-        console.log("😄Saved Event IDs: ", response.data)
       } catch (err) {
         console.error("😔Error loading saved events", err);
       }
@@ -83,8 +82,6 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (!event) return;
     const isCurrentlySaved = savedEventIds.has(event.id)
 
-    console.log("👀toggling event, ", savedEventIds.has(event.id), event);
-
     // 1. Toggle locally - update attribute
     // event.user_saved = !event.user_saved;
     // setEvents(updatedEvents);
@@ -95,15 +92,11 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         newSet.delete(event.id)
         return newSet
       })
-      console.log("(remove) updated saved ids: ", savedEventIds)
     } else {
       // Add the event to saved Ids Set
       setSavedEventIds(prevSet => new Set(prevSet).add(event.id))
-      console.log("(add) updated saved ids: ", savedEventIds)
     }
     
-    console.log("❓❓❓id in saved set? ", savedEventIds.has(event.id))
-
     // 2. Update the User_saved_events table in database
     try {
       if (!isCurrentlySaved) {
@@ -134,7 +127,6 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (isGoogleConnected) {
       try {
         if (!isCurrentlySaved) {
-          console.log("Adding event to Google Calendar");
           // Add to Google Calendar via backend
           await axios.post(`${API_BASE_URL}/google/calendar/events/add`, {
             local_event_id: event.id,
@@ -158,8 +150,6 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         const action = isCurrentlySaved ? "remove from" : "add to";
         console.warn(`Failed to ${action} Google Calendar. Event saved locally only.`);
       }
-    } else {
-      console.log("Google Calendar not connected. Event saved locally only.");
     }
   };
 
@@ -197,7 +187,6 @@ export const useEventState = () => {
     // context.setSelectedEvent(event_id);// no need since always routed from the details modal
     
     context.setModalData({"eventInfo": eventInfo, "selectedTags": selectedTags})
-    console.log("opening update.... setting modal data", eventInfo)
     context.setModalView("update");
   };
   const openPreUpload = () => {

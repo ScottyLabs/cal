@@ -10,13 +10,6 @@ const config = {
   // Standalone output traces the exact dependency set into a self-contained
   // server, instead of shipping the whole node_modules tree.
   output: "standalone",
-  typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
-    ignoreBuildErrors: true,
-  },
 };
 
 export default config;

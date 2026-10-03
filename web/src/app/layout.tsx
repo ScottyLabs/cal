@@ -33,7 +33,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "CMUCal",
   description: "A scheduling app that consolidates resources and events on campus.",
-  icons: [{ rel: "icon", url: "/Favicon.png" }],
+  icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png" },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -43,8 +43,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <AuthProvider initialUser={profile}>
-      <html lang="en" className="h-full">
-        <body className={`${inter.variable} ${GeistMono.variable} font-sans antialiased dark:#0F1115 h-full`}>
+      <html lang="en" className="h-full" suppressHydrationWarning>
+        <body className={`${inter.variable} ${GeistMono.variable} font-sans antialiased dark:bg-[#0F1115] h-full`}>
           <GcalEventsProvider>
             <EventStateProvider>
               <UserProvider>
@@ -62,7 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <SignedOut>
                     <SignedOutNav />
                     <main>
-                      <div className="flex justify-center items-center h-[90vh] dark:bg-gray-700">
+                      <div className="flex justify-center items-center h-[calc(100vh-5rem)] dark:bg-gray-700">
                         <Welcome />
                       </div>
                     </main>

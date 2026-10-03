@@ -1,5 +1,5 @@
 "use client";
-import { formatDate } from "~/app/utils/dateService";
+import { formatTimeRange } from "~/app/utils/dateService";
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useAuth } from "~/context/AuthContext";
@@ -14,9 +14,13 @@ import { EventType } from "../types/EventType";
 import { useEventState } from "../../context/EventStateContext";
 
 import React from 'react'
-import Select from 'react-select'
+import dynamic from "next/dynamic";
 import { fetchAllTags } from "../utils/api/events";
 import { API_BASE_URL, api } from "../utils/api/api";
+
+// The control's styles depend on the theme, which is only known in the
+// browser, so it is not server-rendered.
+const Select = dynamic(() => import("react-select"), { ssr: false });
 
 type Props = {
   events: EventType[];
@@ -55,16 +59,16 @@ function useDebounce<T>(value: T, delay: number): T {
 
 function SkeletonEventCard() { 
   return (
-    <div className="animate-pulse p-4 border rounded-lg mb-2 bg-white space-y-3">
+    <div className="animate-pulse p-4 border rounded-lg mb-2 bg-white dark:bg-transparent space-y-3">
       <p className="text-sm text-gray-400">EVENT</p>
       {/* <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
       <div className="h-3 bg-gray-200 rounded w-1/2"></div> */}      
-      <p className="h-5 bg-gray-200 rounded w-1/2"></p> 
-      <p className="h-4 bg-gray-200 rounded w-3/4"></p>
-      <p className="h-4 bg-gray-200 rounded w-2/5"></p>
+      <p className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></p> 
+      <p className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></p>
+      <p className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/5"></p>
       <div className="flex">
-      <p className="h-6 bg-gray-200 rounded w-1/5 mr-2"></p>
-      <p className="h-6 bg-gray-200 rounded w-1/5"></p></div>      
+      <p className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/5 mr-2"></p>
+      <p className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/5"></p></div>      
     </div>
   );
 }
@@ -193,7 +197,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
         <FiSearch className="absolute left-3 text-gray-500 dark:text-gray-300" size={16} />
         <input
           type="text"
-          placeholder="Search for a schedule or event..."
+          placeholder="Search events..."
           className="w-full h-10 px-4 pl-10 py-2 text-sm border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-1 focus:ring-gray-400"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -324,9 +328,9 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
         )}
         {paginatedEvents.map((event) => (
           <li key={event.id} className="p-3 rounded border">
-            <p className="text-sm text-gray-400">EVENT</p>
+            {event.event_type && <p className="text-sm text-gray-400">{event.event_type}</p>}
             <p className="text-lg">{event.title}</p>
-            <p className="text-base text-gray-500">{formatDate(event.start_datetime)} - {formatDate(event.end_datetime)}</p>
+            <p className="text-base text-gray-500">{formatTimeRange(event.start_datetime, event.end_datetime)}</p>
             <p className="text-base text-gray-500">{event.location}</p>
             <button
               // onClick={() => toggleAdded(event.id)}
