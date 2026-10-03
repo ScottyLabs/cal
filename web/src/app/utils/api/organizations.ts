@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "./api";
-import { AdminInOrg, ClubOrganization, CourseOption, Org, Course, Club, CalendarSourceType } from "../types";
+import { AdminInOrg, ClubOrganization, CourseOption, Org, Course, Club, CalendarSourceType, BulkCreateAdminsResponse } from "../types";
 
 
 export const getClubOrganizations = async (): Promise<ClubOrganization[]> => {
@@ -58,8 +58,8 @@ export const getOrganizationData = async (
 export const bulkCreateAdmins = async (
   userEmails: string,
   organizationName: string,
-  role: string = "admin"
-): Promise<any> => {
+  role = "admin"
+): Promise<BulkCreateAdminsResponse> => {
   return apiPost("/organizations/bulk_create_admins", {
     user_emails: userEmails,
     organization_name: organizationName,
@@ -72,7 +72,7 @@ export const updateAdmin = async (
   orgId: number,
   role?: string,
   categoryId?: number
-): Promise<any> => {
+): Promise<{ status: string; user: number; org: number; role: string; category_id: number | null }> => {
   return apiPatch("/organizations/update_admin", {
     user_id: userId,
     org_id: orgId,
@@ -84,7 +84,7 @@ export const updateAdmin = async (
 export const deleteAdmin = async (
   userId: number,
   orgId: number
-): Promise<any> => {
+): Promise<{ status: string; user: number; org: number }> => {
   return apiDelete("/organizations/delete_admin", {
     data: { user_id: userId, org_id: orgId },
   });
@@ -109,7 +109,7 @@ export const toggleCalendarSource = async (
 export const deleteCalendarSource = async (
   orgId: number,
   csId: number
-): Promise<any> => {
+): Promise<{ status: string; deleted_calendar_source_id: number }> => {
   return apiDelete(`/organizations/${orgId}/calendar_sources/${csId}`);
 };
 

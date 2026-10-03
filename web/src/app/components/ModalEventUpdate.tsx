@@ -19,7 +19,7 @@ import axios from 'axios';
 import { fetchAllTags } from '../utils/api/events';
 import { API_BASE_URL } from '../utils/api/api';
 
-type Tag = { id?: string; name: string };
+type Tag = { id?: number; name: string };
 
 type ModalEventProps = {
     show: boolean;
@@ -42,9 +42,9 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
     const [locationError, setLocationError] = useState(false);
     const [selectedTags, setSelectedTags] = useState<Tag[]>(savedEventTags || []);
     const [predefinedTags, setPredefinedTags] = useState<Tag[]>([]);
-    const [sourceURL, setSourceURL] = useState(oldEventInfo?.source_url || "");
+    const [sourceURL, setSourceURL] = useState(oldEventInfo?.source_url ?? "");
     const [sourceURLError, setSourceURLError] = useState(false);
-    const [description, setDescription] = useState(oldEventInfo?.description || "");
+    const [description, setDescription] = useState(oldEventInfo?.description ?? "");
 
     const [date, setDate] = useState<Dayjs | null>(null);
     const [startTime, setStartTime] = useState<Dayjs | null>(null);
@@ -58,8 +58,9 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
 
     // by default timezone is set to the user's current local time zone as detected by the browser.
     const [timezone, setTimezone] = useState(
-      oldEventInfo?.event_timezone ||
-      Intl.DateTimeFormat().resolvedOptions().timeZone
+      oldEventInfo?.event_timezone == null || oldEventInfo.event_timezone === ""
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone
+        : oldEventInfo.event_timezone
     );
     const timezones = Intl.supportedValuesOf?.('timeZone') || [
         "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
@@ -115,7 +116,7 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
             try {
                 const tags = await fetchAllTags(); // e.g. [{ id: "1", name: "computer science" }, ...]
                 setPredefinedTags(
-                    tags.map((tag: any) => ({
+                    tags.map((tag) => ({
                         id: tag.id,
                         name: tag.name.toLowerCase(),
                     }))
@@ -125,7 +126,7 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
                 console.error("Failed to fetch predefined tags", err);
             }
         };
-        fetchTags();
+        void fetchTags();
 
         if (oldEventInfo?.event_timezone) {
           setTimezone(oldEventInfo.event_timezone);
@@ -150,8 +151,8 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
         setTitle(oldEventInfo.title || "");
         setLocation(oldEventInfo.location || "");
         setSelectedTags(savedEventTags || []);
-        setSourceURL(oldEventInfo?.source_url || "");
-        setDescription(oldEventInfo.description || "");
+        setSourceURL(oldEventInfo?.source_url ?? "");
+        setDescription(oldEventInfo.description ?? "");
 
         const start_datetime = dayjs(oldEventInfo.start_datetime);
         setDate(start_datetime);
@@ -552,7 +553,7 @@ export default function ModalEventUpdate({ show, onClose, oldEventInfo, savedEve
                 type="button"
                 onClick={() => {
                     console.log("clicked update submit button!");
-                    handleSubmit();
+                    void handleSubmit();
                 }}
                 >
                 Save Changes

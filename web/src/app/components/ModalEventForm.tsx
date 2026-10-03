@@ -37,7 +37,7 @@ import { useAuth } from "~/context/AuthContext";
 import CustomRecurrenceModal from "./CustomRecurrenceModal"; 
 import { set } from "lodash";
 import { start } from "repl";
-import { RecurrenceInput, EventPayloadType, CourseOption } from "../utils/types";
+import { RecurrenceInput, EventPayloadType, CourseOption, CategoryOrg } from "../utils/types";
 import { createEvent, fetchAllTags } from "../utils/api/events";
 import { getCourseOrgs } from "../utils/api/organizations";
 import { formatRecurrence, toDBRecurrenceEnds, toRRuleFrequency, getNthDayOfWeekInMonth, isLastWeekdayInMonth } from "../utils/dateService";
@@ -48,11 +48,11 @@ import Modal from './Modal';
 interface ModalProps {
   show: boolean;
   onClose: () => void;
-  selectedCategory?: any; // Optional prop for selected category
+  selectedCategory: CategoryOrg;
   eventType?: string; // Optional prop for event type
 }
 
-type Tag = { id?: string; name: string };
+type Tag = { id?: number; name: string };
 
 const eventTypesDict = {"Academic": "ACADEMIC", "Career": "CAREER", "Club": "CLUB"};
 type EventTypeLabel = keyof typeof eventTypesDict;
@@ -68,7 +68,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
   const containerRef = useRef<HTMLDivElement>(null);
   const { isSignedIn } = useAuth();
 
-  const [selectedEventType, setSelectedEventType] = useState<string>(eventType || "");
+  const [selectedEventType, setSelectedEventType] = useState<string>(eventType ?? "");
   const [eventTypeError, setEventTypeError] = useState(false);
 
   const [title, setTitle] = useState("");
@@ -303,7 +303,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
               let localFrequency: RecurrenceInput["frequency"] = "DAILY";
               let localSelectedDays: number[] = [];
               let localNthWeek: number | null = null;
-              let localInterval = 1;
+              const localInterval = 1;
 
               if (repeat === "daily") {
                 localFrequency = "DAILY";
@@ -369,14 +369,12 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
   };
 
 
-  if (!show || !selectedCategory || !isSignedIn) return null;
-
   useEffect(() => {
     const fetchTags = async () => {
       try {
         const tags = await fetchAllTags(); // e.g. [{ id: "1", name: "computer science" }, ...]
         setPredefinedTags(
-          tags.map((tag: any) => ({
+          tags.map((tag) => ({
             id: tag.id,
             name: tag.name.toLowerCase(),
           }))
@@ -399,12 +397,13 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
       }
     };
 
-    fetchTags();
+    void fetchTags();
 
     if (selectedEventType === "Academic") {
-      fetchCourses();
-      const potentialCourseNum = selectedCategory.organization_name.split(" ")[0] || "none";
-      const match = potentialCourseNum.match(/\d\d-\d\d\d/);
+      void fetchCourses();
+      const firstWord = selectedCategory.organization_name.split(" ")[0];
+      const potentialCourseNum = firstWord == null || firstWord === "" ? "none" : firstWord;
+      const match = /\d\d-\d\d\d/.exec(potentialCourseNum);
         
       if (match) {
         setCourse(selectedCategory.organization_name);
@@ -414,6 +413,8 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
     }
     
   }, [selectedEventType]);
+
+  if (!show || !selectedCategory || !isSignedIn) return null;
 
 
   const handleInstructorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -709,7 +710,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
                 options={courses}
                 getOptionLabel={(option) => option.label}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
-                value={courses.find(c => c.label === course) || null}
+                value={courses.find(c => c.label === course) ?? null}
                 onChange={(event, newValue) => {
                   if (newValue) {
                     setCourse(newValue.label);
@@ -907,7 +908,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
             <button
               className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
               onClick={() => {
-                handleSubmit();
+                void handleSubmit();
               }}
             >
               Continue

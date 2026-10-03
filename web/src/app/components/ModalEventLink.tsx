@@ -12,14 +12,14 @@ import axios from "axios";
 import { useAuth } from "~/context/AuthContext";
 import { useEventState } from "../../context/EventStateContext";
 import Modal from "./Modal";
-import { GCalLinkPayloadType } from "../utils/types";
+import { GCalLinkPayloadType, CategoryOrg } from "../utils/types";
 import { readIcalLink } from "../utils/api/events";
 import Spinner from "./Spinner";
 
 interface ModalProps {
   show: boolean;
   onClose: () => void;
-  selectedCategory?: any; // Optional prop for selected category
+  selectedCategory: CategoryOrg;
 }
 
 const eventTypesDict = { Academic: "ACADEMIC", Career: "CAREER", Club: "CLUB" };
@@ -111,7 +111,7 @@ export default function ModalEventLink({
 
           alert("Events created successfully!");
           onClose(); // close modal on success
-        } catch (err: any) {
+        } catch (err) {
           console.error("readIcalLink failed:", err);
           alert("Unable to upload: Something went wrong while submitting.");
         } finally {
@@ -187,13 +187,13 @@ export default function ModalEventLink({
 
         <p className="mb-4 text-xs text-gray-400">
           Need help? Go to Google Calendar &gt; Calendar Settings &gt; select
-          "Make available to public" and "See all event details" &gt; copy and
-          paste the "Public address in iCal format".
+          &quot;Make available to public&quot; and &quot;See all event details&quot; &gt; copy and
+          paste the &quot;Public address in iCal format&quot;.
         </p>
         {optionError && (
           <p className="mb-4 text-sm text-red-500">
-            Please provide a Google Calendar link or select "Manually fill out
-            the form".
+            Please provide a Google Calendar link or select &quot;Manually fill out
+            the form&quot;.
           </p>
         )}
         {gcalLinkError && !optionError && (
@@ -231,7 +231,7 @@ export default function ModalEventLink({
         <button
           className="rounded-md bg-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
           onClick={() => {
-            handleSubmit();
+            void handleSubmit();
           }}
           disabled={isSubmitting}
         >

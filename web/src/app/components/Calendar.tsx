@@ -30,7 +30,7 @@ const Calendar: FC<Props> = ({ events }) => {
   // First add gcalEvents (lower priority)
   gcalEvents.forEach(event => {
     // mergedEventsMap.set(event.id as string, event);
-    const key = event.id?.toString() || `${event.title}-${event.start}`;
+    const key = event.id?.toString() || `${event.title}-${String(event.start)}`;
     mergedEventsMap.set(key, event);
   });
 
@@ -39,7 +39,7 @@ const Calendar: FC<Props> = ({ events }) => {
     // if (event.title === "15210 A") {
     //   console.log(event.title, event.start);
     // }
-    const key = event.id?.toString() || `${event.title}-${event.start}`;
+    const key = event.id == null || event.id === "" ? `${event.title}-${String(event.start)}` : event.id.toString();
     mergedEventsMap.set(key, event);
   });
 
@@ -50,7 +50,9 @@ const Calendar: FC<Props> = ({ events }) => {
 
   const handleEventClick = (info: EventClickArg) => {
     const { event, el } = info;
-    const eventId = event.extendedProps.event_id;
+    // FullCalendar types extendedProps loosely; these are the props page.tsx sets.
+    const extendedProps = event.extendedProps as Partial<EventType> & { event_id: number };
+    const eventId = extendedProps.event_id;
 
     // Construct event data from FullCalendar event to avoid API fetch
     const eventData: Partial<EventType> = {
@@ -59,11 +61,11 @@ const Calendar: FC<Props> = ({ events }) => {
       start_datetime: event.start?.toISOString() ?? '',
       end_datetime: event.end?.toISOString() ?? '',
       is_all_day: event.allDay,
-      location: event.extendedProps.location ?? '',
-      description: event.extendedProps.description ?? '',
-      source_url: event.extendedProps.source_url,
-      org_id: event.extendedProps.org_id,
-      category_id: event.extendedProps.category_id,
+      location: extendedProps.location ?? '',
+      description: extendedProps.description ?? '',
+      source_url: extendedProps.source_url,
+      org_id: extendedProps.org_id,
+      category_id: extendedProps.category_id,
     };
 
     // Get position of clicked event for popover placement

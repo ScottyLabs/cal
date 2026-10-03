@@ -141,11 +141,12 @@ export async function apiDelete<T = unknown>(
     const res = await api.delete<T>(path, config);
     return res.data;
   } catch (err) {
-    const e = err as AxiosError<any>;
+    const e = err as AxiosError<{ message?: string; error?: string }>;
     const status = e.response?.status;
     const statusText = e.response?.statusText;
+    const data = e.response?.data;
     const serverMsg =
-      (e.response?.data && (e.response.data.message || e.response.data.error)) ??
+      (data && (data.message == null || data.message === "" ? data.error : data.message)) ??
       undefined;
 
     const parts = [

@@ -173,7 +173,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isSignedIn) return;
     setEventsLoading(true);
     try {
-      const res = await api.get(`/events/`, {
+      const res = await api.get<EventType[]>(`/events/`, {
         params: {
           term: '',
           tags: '',

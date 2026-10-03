@@ -83,7 +83,7 @@ export interface AccordionProps {
 export interface GCalLinkPayloadType {
   gcal_link: string;
   org_id: string;
-  category_id: string;
+  category_id: string | number;
   course_num?: string;
   course_name?: string;
   instructors?: string[];
@@ -176,9 +176,7 @@ export interface Organization {
     org_id: number;
     name: string;
     categories: Category[];
-    events: {
-        [category_name: string]: EventOccurrence[];
-    };
+    events: Record<string, EventOccurrence[]>;
 }
 
 export interface Course extends Organization {
@@ -212,7 +210,7 @@ export interface CalendarFields {
   selected?: boolean;
   accessRole?: string;
   defaultReminders?: { method: string; minutes: number }[];
-  conferenceProperties?: any;
+  conferenceProperties?: { allowedConferenceSolutionTypes: string[] };
 }
 
 export interface GCalEvent {
@@ -264,6 +262,17 @@ export interface TagType {
 }
 
 export type ReadIcalLinkResponse = { message: string; calendar_source_id: number };
+
+export type CreateEventResponse = { status: string; event_id: number };
+
+export interface BulkCreateAdminsResponse {
+  status: string;
+  organization: { id: number; name: string };
+  categories: { id: number; name: string }[];
+  created_users: string[];
+  created_admins: { user_email: string; user_id: number; org_id: number; category_id: number | null }[];
+  errors: string[];
+}
 
 export interface CalendarSourceType {
   id: number;

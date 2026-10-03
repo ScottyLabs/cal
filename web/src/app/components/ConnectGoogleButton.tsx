@@ -30,57 +30,13 @@ export function ConnectGoogleButton() {
   const [loading, setLoading] = useState(true);
   const hasFetchedCalendars = React.useRef(false); // Track if we've already fetched calendars
 
-  const [availableCalendars, setAvailableCalendars] = useState<any[]>([]); // full objects with id & summary
+  const [availableCalendars, setAvailableCalendars] = useState<CalendarFields[]>([]); // full objects with id & summary
   const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>([]); // selected calendar IDs from dropdown
   const { gcalEvents, setGcalEvents, isGoogleConnected, setIsGoogleConnected, cmuCalendarId, setCmuCalendarId } = useGcalEvents();
   const [cmuCalIds, setCMUCalIds] = useState<string[]>([]);
   const [showImportSummary, setShowImportSummary] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showCalendarSelector, setShowCalendarSelector] = useState(false);
-
-  useEffect(() => {
-    // Only runs on mount
-
-    // url params
-    const url = new URL(window.location.href);
-    const justConnected = url.searchParams.get('justConnected');
-    const welcome = url.searchParams.get('welcome');
-
-    const checkAuthStatus = async () => {
-      try {
-        const { authorized } = await checkGoogleAuthStatus();
-        setIsGoogleConnected(authorized);
-
-        // Show import summary modal if just connected
-        if (justConnected) {
-          if (authorized) {
-            setShowImportSummary(true);
-          }
-          url.searchParams.delete('justConnected');
-          window.history.replaceState({}, '', url.toString());
-        }
-
-        // Show welcome modal if welcome param is present and not connected
-        if (welcome) {
-          if (!authorized) {
-            setShowWelcomeModal(true);
-          }
-          url.searchParams.delete('welcome');
-          window.history.replaceState({}, '', url.toString());
-        }
-
-        if (authorized && availableCalendars.length === 0 && !hasFetchedCalendars.current) {
-          hasFetchedCalendars.current = true; // Mark as fetched to prevent duplicate calls
-          await fetchCalendars();
-        }
-      } catch (err) {
-        console.error("Error checking Google auth status:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    void checkAuthStatus();
-  }, []);
 
 
   function handleSelectOpen() {
@@ -89,15 +45,6 @@ export function ConnectGoogleButton() {
       authorizeGoogle();
     }
   }
-
-  useEffect(() => {
-    console.log("Selected calendar IDs:", selectedCalendarIds);
-    if (selectedCalendarIds.length > 0) {
-      void fetchEventsFromCalendars(selectedCalendarIds);
-    } else {
-      setGcalEvents([]);
-    }
-  }, [selectedCalendarIds, setGcalEvents]);
 
   const fetchEventsFromCalendars = async (calendarIds: string[]) => {
     // const res = await fetch("http://localhost:5001/api/google/calendar/events/bulk", {
@@ -108,7 +55,7 @@ export function ConnectGoogleButton() {
     // });
     const data = await fetchBulkEventsFromCalendars(calendarIds);
 
-    const formattedGCalEvents = data.map((event: any) => (formatGCalEvent(event, cmuCalIds)));
+    const formattedGCalEvents = data.map((event) => (formatGCalEvent(event, cmuCalIds)));
 
     setGcalEvents(formattedGCalEvents);
     // console.log("Fetched events:", data);
@@ -195,6 +142,59 @@ export function ConnectGoogleButton() {
     setSelectedCalendarIds(defaultSelectedIds);
     setCMUCalIds(defaultSelectedIds);
   };
+
+  useEffect(() => {
+    // Only runs on mount
+
+    // url params
+    const url = new URL(window.location.href);
+    const justConnected = url.searchParams.get('justConnected');
+    const welcome = url.searchParams.get('welcome');
+
+    const checkAuthStatus = async () => {
+      try {
+        const { authorized } = await checkGoogleAuthStatus();
+        setIsGoogleConnected(authorized);
+
+        // Show import summary modal if just connected
+        if (justConnected) {
+          if (authorized) {
+            setShowImportSummary(true);
+          }
+          url.searchParams.delete('justConnected');
+          window.history.replaceState({}, '', url.toString());
+        }
+
+        // Show welcome modal if welcome param is present and not connected
+        if (welcome) {
+          if (!authorized) {
+            setShowWelcomeModal(true);
+          }
+          url.searchParams.delete('welcome');
+          window.history.replaceState({}, '', url.toString());
+        }
+
+        if (authorized && availableCalendars.length === 0 && !hasFetchedCalendars.current) {
+          hasFetchedCalendars.current = true; // Mark as fetched to prevent duplicate calls
+          await fetchCalendars();
+        }
+      } catch (err) {
+        console.error("Error checking Google auth status:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void checkAuthStatus();
+  }, []);
+
+  useEffect(() => {
+    console.log("Selected calendar IDs:", selectedCalendarIds);
+    if (selectedCalendarIds.length > 0) {
+      void fetchEventsFromCalendars(selectedCalendarIds);
+    } else {
+      setGcalEvents([]);
+    }
+  }, [selectedCalendarIds, setGcalEvents]);
   
 
   return (

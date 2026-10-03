@@ -115,7 +115,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
     const selectedTagIds = selectedTags.map((tag) => tag.value).join(",");
     const fetchEvents = async () => {
       try {
-        const res = await api.get(`/events/`, {
+        const res = await api.get<EventType[]>(`/events/`, {
           params: {
             term: '',
             tags: selectedTagIds,

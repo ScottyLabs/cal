@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiDelete } from "./api";
-import { AuthStatus, CalendarFields } from "../types";
+import { AuthStatus, CalendarFields, GCalEvent } from "../types";
 
 export const checkGoogleAuthStatus = () =>
   apiGet<AuthStatus>("/google/calendar/status");
@@ -16,15 +16,15 @@ export const ensureCalendarExists = () =>
     null,
   );
 
-export const listGoogleCalendars = () => apiGet<any[]>("/google/calendar/list");
+export const listGoogleCalendars = () => apiGet<CalendarFields[]>("/google/calendar/list");
 
 export const unauthorizeGoogle = () => apiDelete("/google/unauthorize");
 
 export const fetchBulkEventsFromCalendars = async (
   calendarIds: string[],
-): Promise<any[]> => {
+): Promise<GCalEvent[]> => {
   try {
-    return await apiPost<any[], { calendarIds: string[] }>(
+    return await apiPost<GCalEvent[], { calendarIds: string[] }>(
       "/google/calendar/events/bulk",
       { calendarIds: calendarIds },
     );

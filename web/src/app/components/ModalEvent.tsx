@@ -18,7 +18,7 @@ type ModalEventProps = {
     // eventId?: number|null;
     savedEventDetails?: EventType;
 }
-type Tag = { id?: string; name: string };
+type Tag = { id?: number; name: string };
 
 function SkeletonEventDetails() { 
     return (
@@ -42,7 +42,7 @@ function SkeletonEventDetails() {
 export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEventProps) {    
     const { selectedEvent, openUpdate, toggleAdded, savedEventIds } = useEventState();
     const { isGoogleConnected } = useGcalEvents();
-    const [eventDetails, setEventDetails] = useState<EventType | null>(savedEventDetails || null);
+    const [eventDetails, setEventDetails] = useState<EventType | null>(savedEventDetails ?? null);
     const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
     console.log("🤔🤔🤔savedEventDetails", savedEventDetails, eventDetails)
     const [loadingEvent, setLoadingEvent] = useState(false);
@@ -60,7 +60,7 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
         setLoadingEvent(true);
         const fetchEventDetails = async() => {
             try {
-                const eventRes = await axios.get(`${API_BASE_URL}/events/${eventId}`, {
+                const eventRes = await axios.get<EventType>(`${API_BASE_URL}/events/${eventId}`, {
                     withCredentials: true,
                 });
                 setEventDetails(eventRes.data)
@@ -71,7 +71,7 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
                 setLoadingEvent(false);
             }
         }
-        fetchEventDetails();
+        void fetchEventDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [eventId])
 
@@ -83,7 +83,7 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
             try {
                 const tags = await fetchTagsForEvent(eventId); // e.g. [{ id: "1", name: "computer science" }, ...]
                 setSelectedTags(
-                    tags.map((tag: any) => ({
+                    tags.map((tag) => ({
                         id: tag.id,
                         name: tag.name.toLowerCase(),
                     }))
@@ -94,7 +94,7 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
                 setLoadingTags(false);
             }
         }
-        fetchTag();
+        void fetchTag();
     }, [eventId])
 
     console.log("show edit modal!!", show, eventDetails)
@@ -113,7 +113,7 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
                 <p className="text-base text-gray-500">{formatDate(eventDetails.start_datetime)} - {formatDate(eventDetails.end_datetime)}</p>
                 <p className="text-base text-gray-500">{eventDetails.location}</p>
                 {eventDetails.org && (<p className="text-base text-gray-500">Hosted by {eventDetails.org}</p>)}
-                <p className="text-base text-gray-500 py-4">{eventDetails.description || "No additional details available."}</p>
+                <p className="text-base text-gray-500 py-4">{eventDetails.description == null || eventDetails.description === "" ? "No additional details available." : eventDetails.description}</p>
                 
                 {/* Tags */}
                 {!loadingTags && selectedTags.length > 0 && (
@@ -143,7 +143,7 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
                 className={`px-4 py-2 rounded-md ${ isAdmin ? "flex-1" : "w-full"} ${
                     savedEventIds.has(eventDetails.id) ? "bg-blue-300" : "bg-blue-500"
                 } text-white`}
-                    onClick={() => {toggleAdded(eventDetails); onClose()}}>
+                    onClick={() => {void toggleAdded(eventDetails); onClose()}}>
                    { savedEventIds.has(eventDetails.id) ? "Remove" : "Add" }
                 </button> 
 

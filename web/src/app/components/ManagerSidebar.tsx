@@ -47,7 +47,7 @@ export default function ManagerSidebar({
   };
 
   useEffect(() => {
-    fetchOrganizations();
+    void fetchOrganizations();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 

@@ -16,12 +16,12 @@ type EventPopoverProps = {
   savedEventDetails?: EventType;
 };
 
-type Tag = { id?: string; name: string };
+type Tag = { id?: number; name: string };
 
 export default function EventPopover({ show, onClose, position, savedEventDetails }: EventPopoverProps) {
   const { selectedEvent, toggleAdded, savedEventIds, openUpdate } = useEventState();
   const { isGoogleConnected } = useGcalEvents();
-  const [eventDetails, setEventDetails] = useState<EventType | null>(savedEventDetails || null);
+  const [eventDetails, setEventDetails] = useState<EventType | null>(savedEventDetails ?? null);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [loadingTags, setLoadingTags] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -55,7 +55,7 @@ export default function EventPopover({ show, onClose, position, savedEventDetail
       try {
         const tags = await fetchTagsForEvent(eventId);
         setSelectedTags(
-          tags.map((tag: any) => ({
+          tags.map((tag) => ({
             id: tag.id,
             name: tag.name.toLowerCase(),
           }))
@@ -66,7 +66,7 @@ export default function EventPopover({ show, onClose, position, savedEventDetail
         setLoadingTags(false);
       }
     };
-    fetchTag();
+    void fetchTag();
   }, [eventId]);
 
   if (!position) return null;
@@ -153,7 +153,7 @@ export default function EventPopover({ show, onClose, position, savedEventDetail
                       savedEventIds.has(eventDetails.id) ? "bg-blue-400" : "bg-blue-500 hover:bg-blue-600"
                     }`}
                     onClick={() => {
-                      toggleAdded(eventDetails);
+                      void toggleAdded(eventDetails);
                       onClose();
                     }}
                   >

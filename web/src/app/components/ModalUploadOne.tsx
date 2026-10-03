@@ -23,8 +23,6 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
   const [adminCategories, setAdminCategories] = useState<CategoryOrg[]>([]);
   const { openUploadLink } = useEventState();
 
-  if (!isSignedIn) return null;
-
   useEffect(() => {
     const fetchAdminCategories = async () => {
       if (!isSignedIn) return;
@@ -35,9 +33,11 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
       }
     };
 
-    fetchAdminCategories();
+    void fetchAdminCategories();
     setLoading(false);
   }, [isSignedIn]);
+
+  if (!isSignedIn) return null;
 
   if (loading) {
     return (
@@ -59,7 +59,7 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
         value={selectedOption?.id ?? ""}
         onChange={(e) => {
           const selected = adminCategories.find((cat) => String(cat.id) === e.target.value);
-          setSelectedOption(selected || null);
+          setSelectedOption(selected ?? null);
         }}
       >
         <option value="" disabled>Select a calendar</option>
@@ -72,7 +72,7 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
         No available calendars? Please fill out this
         <a href='https://forms.gle/DaaShMuQpbYiSNLn6' target='_blank' className="text-blue-600 hover:underline"> google form </a>
-        to request edit access to an organization's calendar.
+        to request edit access to an organization&apos;s calendar.
       </p>
       <button
         className="px-4 py-2 bg-blue-500 text-white rounded-md w-full"

@@ -49,9 +49,10 @@ export function parseEventTitle(title: string, clubs: Club[]): { entityId?: stri
   if (title.includes(":")) {
     // Format: "entityId: eventType"
     const titleParts = title.split(':');
+    const eventType = titleParts[1]?.trim();
     return {
       entityId: titleParts[0]?.trim(),
-      eventType: titleParts[1]?.trim() || title
+      eventType: eventType == null || eventType === "" ? title : eventType
     };
   } 
 
@@ -59,7 +60,7 @@ export function parseEventTitle(title: string, clubs: Club[]): { entityId?: stri
   const words = title.split(' ');
 
   // Check if first word looks like a course ID (contains a dash)
-  if (words[0] && words[0].includes('-')) {
+  if (words[0]?.includes('-')) {
     return {
       entityId: words[0],
       eventType: words.slice(1).join(' ')

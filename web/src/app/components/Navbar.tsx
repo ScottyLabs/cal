@@ -21,7 +21,7 @@ import UserMenu from "./UserMenu";
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { getUserID } from "../utils/api/users";
 import { API_BASE_URL } from "../utils/api/api";
 import { fetchRole } from "../utils/authService";
@@ -77,7 +77,7 @@ export default function Navbar() {
     setIsCreatingSchedule(true);
     try {
       // Create schedule (the API takes the owner from the access token)
-      const response = await axios.post(`${API_BASE_URL}/users/create_schedule`, {
+      const response = await axios.post<{ status: string; user_id: number; schedule_id: number }>(`${API_BASE_URL}/users/create_schedule`, {
         name: newScheduleName.trim()
       }, {
         withCredentials: true,
@@ -96,8 +96,10 @@ export default function Navbar() {
         // Update context directly (triggers refetch)
         setCurrentScheduleId(newScheduleId);
       }
-    } catch (error: any) {
-      console.error("Failed to create schedule:", error.response?.data?.error || error.message);
+    } catch (error) {
+      const err = error as AxiosError<{ error?: string }>;
+      const serverError = err.response?.data?.error;
+      console.error("Failed to create schedule:", serverError == null || serverError === "" ? err.message : serverError);
       alert("Failed to create schedule. Please try again.");
     } finally {
       setIsCreatingSchedule(false);

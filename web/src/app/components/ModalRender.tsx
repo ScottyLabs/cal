@@ -40,7 +40,7 @@ export default function ModalRender() {
                     </div>
                 </>
             )}
-            {modalView === "update" && (
+            {modalView === "update" && modalData.eventInfo && modalData.selectedTags && (
                 <ModalEventUpdate
                     show={true}
                     onClose={closeModal}
@@ -51,14 +51,14 @@ export default function ModalRender() {
             {modalView === "pre_upload" && (
                 <ModalUploadOne show={true} onClose={closeModal} />
             )}
-            {modalView === "uploadLink" && (
+            {modalView === "uploadLink" && modalData.selectedCategory && (
                 <ModalEventLink
                     show={true}
                     onClose={closeModal}
                     selectedCategory={modalData.selectedCategory}
                 />
             )}
-            {modalView === "upload" && (
+            {modalView === "upload" && modalData.selectedCategory && (
                 <ModalEventForm
                     show={true}
                     onClose={closeModal}

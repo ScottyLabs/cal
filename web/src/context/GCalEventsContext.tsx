@@ -1,9 +1,10 @@
 "use client";
 import React, { createContext, useContext, useState } from "react";
+import { FullCalendarEvent } from "~/app/utils/types";
 
 type GcalEventsContextType = {
-  gcalEvents: any[];
-  setGcalEvents: React.Dispatch<React.SetStateAction<any[]>>;
+  gcalEvents: FullCalendarEvent[];
+  setGcalEvents: React.Dispatch<React.SetStateAction<FullCalendarEvent[]>>;
   isGoogleConnected: boolean;
   setIsGoogleConnected: React.Dispatch<React.SetStateAction<boolean>>;
   cmuCalendarId: string | null;
@@ -13,7 +14,7 @@ type GcalEventsContextType = {
 const GcalEventsContext = createContext<GcalEventsContextType | undefined>(undefined);
 
 export const GcalEventsProvider = ({ children }: { children: React.ReactNode }) => {
-  const [gcalEvents, setGcalEvents] = useState<any[]>([]);
+  const [gcalEvents, setGcalEvents] = useState<FullCalendarEvent[]>([]);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [cmuCalendarId, setCmuCalendarId] = useState<string | null>(null);
   

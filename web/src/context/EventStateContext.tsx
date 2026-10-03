@@ -7,9 +7,18 @@ import { EventInput } from "@fullcalendar/core";
 import { List } from "lucide-react";
 import { API_BASE_URL } from "~/app/utils/api/api";
 import { useGcalEvents } from "./GCalEventsContext";
+import { CategoryOrg } from "~/app/utils/types";
 
 export type ModalView = "details" | "update" | "pre_upload" | "upload" | "uploadLink" | null;
-type Tag = { id?: string; name: string };
+type Tag = { id?: number; name: string };
+
+type ModalData = {
+  savedEventDetails?: EventType;
+  eventInfo?: EventType;
+  selectedTags?: Tag[];
+  selectedCategory?: CategoryOrg;
+  eventType?: string;
+};
 
 export type PopoverPosition = {
   x: number;
@@ -22,10 +31,10 @@ type EventStateContextType = {
   setSelectedEvent: (id: number|null) => void;
   modalView: ModalView;
   setModalView: (view: ModalView) => void;
-  modalData: Record<string, any>;
-  setModalData: (data: Record<string, any>) => void;
+  modalData: ModalData;
+  setModalData: (data: ModalData) => void;
   savedEventIds: Set<number>;
-  toggleAdded: (event: EventType) => void;
+  toggleAdded: (event: EventType) => Promise<void>;
   calendarEvents: EventInput[];
   setCalendarEvents: (events: EventInput[]) => void;
   popoverPosition: PopoverPosition;
@@ -39,7 +48,7 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const { isGoogleConnected, cmuCalendarId } = useGcalEvents();
   const [selectedEvent, setSelectedEvent] = useState<number|null>(null);
   const [modalView, setModalView] = useState<ModalView>(null);
-  const [modalData, setModalData] = useState<Record<string, any>>({});
+  const [modalData, setModalData] = useState<ModalData>({});
   const [savedEventIds, setSavedEventIds] = useState(new Set<number>());
   const [calendarEvents, setCalendarEvents] = useState<EventInput[]>([]);
   const [popoverPosition, setPopoverPosition] = useState<PopoverPosition>(null); 
@@ -52,7 +61,7 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async function fetchSaved() {
       try {
         // console.log("😮Fetching saved events for user:", user?.id);
-        const response = await axios.get(`${API_BASE_URL}/events/user_saved_events`, {
+        const response = await axios.get<number[]>(`${API_BASE_URL}/events/user_saved_events`, {
           withCredentials: true,
         });
         setSavedEventIds(new Set(response.data));
@@ -61,7 +70,7 @@ export const EventStateProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         console.error("😔Error loading saved events", err);
       }
     }
-    fetchSaved();
+    void fetchSaved();
   }, [isSignedIn]);
 
 
@@ -195,13 +204,13 @@ export const useEventState = () => {
     context.setSelectedEvent(null);
     context.setModalView("pre_upload");
   }
-  const openUploadLink = (selectedCategory: any) => {
+  const openUploadLink = (selectedCategory: CategoryOrg) => {
     // context.setSelectedEvent(null); // no need since always routed from pre-upload
     context.setModalData({"selectedCategory": selectedCategory})
     // need to add modalData
     context.setModalView("uploadLink");
   };
-  const openUpload = (selectedCategory: any, eventType: any) => {
+  const openUpload = (selectedCategory: CategoryOrg, eventType: string) => {
     // context.setSelectedEvent(null); // no need since always routed from pre-upload
     context.setModalData({"selectedCategory": selectedCategory, "eventType": eventType})
     context.setModalView("upload");
