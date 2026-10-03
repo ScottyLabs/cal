@@ -18,6 +18,7 @@ dependencies = [
     "Flask-JWT-Extended",
     "Flask-PyMongo",
     "gunicorn",
+    "sentry-sdk[flask]",
 
     # Database
     "SQLAlchemy>=2.0",

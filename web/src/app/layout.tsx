@@ -13,6 +13,7 @@ import { GcalEventsProvider } from "../context/GCalEventsContext";
 import { EventStateProvider } from "~/context/EventStateContext";
 import { UserProvider } from "~/context/UserContext";
 import ModalRender from "@components/ModalRender";
+import PostHogPageViews from "@components/PostHogPageViews";
 import { getSessionProfile } from "~/server/auth/current";
 
 // next/font/google downloads at build time, which fails in the Nix sandbox on
@@ -45,6 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <AuthProvider initialUser={profile}>
       <html lang="en" className="h-full" suppressHydrationWarning>
         <body className={`${inter.variable} ${GeistMono.variable} font-sans antialiased dark:bg-[#0F1115] h-full`}>
+          <PostHogPageViews apiKey={process.env.POSTHOG_KEY} apiHost={process.env.POSTHOG_HOST} />
           <GcalEventsProvider>
             <EventStateProvider>
               <UserProvider>

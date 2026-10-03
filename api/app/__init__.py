@@ -20,6 +20,21 @@ from app.services.db import init_db
 
 
 def create_app():
+    # Governance writes SENTRY_DSN for the prod profile only, so dev, CI and
+    # tests run without it and never report.
+    sentry_dsn = os.getenv("SENTRY_DSN")
+    if sentry_dsn:
+        import sentry_sdk
+        from sentry_sdk.integrations.flask import FlaskIntegration
+
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            environment=ENV,
+            release=os.getenv("COMMIT_HASH"),
+            integrations=[FlaskIntegration()],
+            send_default_pii=False,
+        )
+
     app = Flask(__name__)
 
     if ENV == "production":
