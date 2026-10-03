@@ -10,6 +10,7 @@ from sqlalchemy import (
     Float,
     ForeignKeyConstraint,
     Identity,
+    Index,
     PrimaryKeyConstraint,
     SmallInteger,
     Text,
@@ -667,6 +668,7 @@ class EventOccurrence(Base):
             ondelete="CASCADE",
             name="event_occurrences_event_id_fkey",
         ),
+        Index("event_occurrences_event_id_idx", "event_id"),
         ForeignKeyConstraint(
             ["org_id"],
             ["organizations.id"],
@@ -750,6 +752,7 @@ class RecurrenceRule(Base):
             ondelete="CASCADE",
             name="recurrence_rules_event_id_fkey",
         ),
+        Index("recurrence_rules_event_id_idx", "event_id"),
         # PrimaryKeyConstraint('id', name='recurrence_rules_pkey')
     )
 
