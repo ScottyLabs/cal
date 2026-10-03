@@ -1,8 +1,11 @@
 # app/services/db.py
+import logging
 import os
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+
+log = logging.getLogger(__name__)
 
 Base = declarative_base()
 
@@ -12,7 +15,7 @@ _SessionLocal = None
 
 def get_database_url():
     env = os.getenv("APP_ENV", "development")
-    print(f"[DB] Current APP_ENV: {env}")
+    log.debug("Current APP_ENV: %s", env)
     return os.getenv("SUPABASE_DB_URL")
 
 
@@ -57,5 +60,4 @@ def get_session():
     if _SessionLocal is None:
         raise RuntimeError("DB not initialized. Call init_db() first.")
     session = _SessionLocal()
-    # print(f"[DB] Session opened {id(session)}")
     return session

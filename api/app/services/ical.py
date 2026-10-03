@@ -102,7 +102,6 @@ def import_ical_feed_using_helpers(
         str
     ] = None,  # e.g. "CLUB"/"ACADEMIC"/"CAREER"/"OH"/NONE
     source_url: Optional[str] = None,
-    # user_edited: Optional[List[int]] = None,
     user_id: Optional[int] = None,
     delete_missing_uids: bool = False,  # if True, remove events that disappeared from feed
 ):
@@ -377,7 +376,6 @@ def _process_uid_group_with_helpers(
 
     # Upsert the Event by UID (using your helper flow)
     # We mirror the /create_event argument structure and then set iCal metadata after flush.
-    # existing = db_session.query(Event).filter_by(ical_uid=uid).first()
     if adopted:
         event_row.calendar_source_id = calendar_source_id
         event_row.ical_uid = uid

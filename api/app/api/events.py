@@ -1,4 +1,4 @@
-import pprint
+import logging
 import threading
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
@@ -48,6 +48,8 @@ from app.utils.auth import (
     site_admin_required,
 )
 from app.utils.date import _parse_iso_aware
+
+log = logging.getLogger(__name__)
 
 events_bp = Blueprint("events", __name__)
 
@@ -112,9 +114,7 @@ def _import_ical_background(
                 cs.last_fetched_at = datetime.now(timezone.utc)
             db.commit()
     except Exception:
-        import traceback
-
-        print("Background iCal import error:", traceback.format_exc())
+        log.exception("Background iCal import failed for calendar source %s", source_id)
         try:
             cs = db.query(CalendarSource).filter(CalendarSource.id == source_id).first()
             if cs:
@@ -131,7 +131,6 @@ def create_event_record():
     db = g.db
     try:
         data = request.get_json()
-        pprint.pprint(data)
 
         if not request.is_json:
             return jsonify({"error": "Invalid JSON body"}), 400
@@ -250,9 +249,7 @@ def create_event_record():
         db.commit()  # Only commit if all succeeded
         return jsonify({"status": "event created", "event_id": event.id}), 201
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("create_event_record failed")
 
         return jsonify({"error": str(e)}), 500
 
@@ -341,9 +338,7 @@ def read_gcal_link():
         ), 201
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("read_gcal_link failed")
 
         return jsonify(
             {
@@ -352,16 +347,6 @@ def read_gcal_link():
                 "message": str(e),
             }
         ), 500
-
-
-# @events_bp.route("/generate_more_occurrences", methods=["POST"])
-# def generate_more_occurrences():
-#     db = g.db
-#         try:
-#             data = request.get_json()
-#             event_id = data.get("event_id")
-#             event = db.query(Event).filter(Event.id == event_id).first()
-#             populate_event_occurrences(db, event_id=event_id)
 
 
 # should only be used for testing purposes
@@ -403,9 +388,7 @@ def create_recurrence_rules():
         db.commit()  # Only commit if all succeeded
         return jsonify({"status": f"recurrence rules created. {occurrence_msg}"}), 201
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("create_recurrence_rules failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -477,9 +460,7 @@ def create_single_event_occurrence():
             {"status": f"event occurrence {event_occurrence.id} created."}
         ), 201
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("create_single_event_occurrence failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -498,8 +479,6 @@ def regenerate_occurrences_by_events():
 
         regenerated, skipped = regenerate_event_occurrences_by_event_ids(db, event_ids)
 
-        print("Before commit, occurrences count:", db.query(EventOccurrence).count())
-
         db.commit()
 
         return jsonify(
@@ -511,24 +490,19 @@ def regenerate_occurrences_by_events():
         ), 201
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("regenerate_occurrences_by_events failed")
         return jsonify({"error": str(e)}), 500
 
 
 @events_bp.route("/tags", methods=["GET"])
 @public
 def get_tags():
-    # print("🙇 geting tags 🙇")
     db = g.db
     try:
-        # print("here we go")
         tags = get_all_tags(db)
-        # print("tags, ", tags)
         return jsonify([{"name": tag.name, "id": tag.id} for tag in tags]), 200
     except Exception as e:
-        print("Exception:", e)
+        log.exception("get_tags failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -541,14 +515,10 @@ def get_event_tags(event_id):
 
         tag_names = [{"id": t.id, "name": t.name} for t in tags]
 
-        print("👉🏷🏷🏷🏷 👈 ", tag_names)
-
         return tag_names
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_event_tags failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -561,7 +531,6 @@ def get_all_events():
     tag_ids = tag_ids_raw.split(",") if tag_ids_raw else []
     date = request.args.get("date")
     event_type = request.args.get("event_type")
-    # print("🔗🔗🔗😄 ", request.url)
     db = g.db
     try:
         user = current_user()
@@ -635,9 +604,7 @@ def get_all_events():
         ]
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_all_events failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -704,7 +671,7 @@ def batch_delete_events_by_params():
         # --------------------------------------------------
         # 2. Delete Event-level children
         # --------------------------------------------------
-        print(f"Deleting dependent rows for {len(event_id_list)} events")
+        log.info("Deleting dependent rows for %d events", len(event_id_list))
         db.execute(
             delete(EventOccurrence).where(EventOccurrence.event_id.in_(event_id_subq))
         )
@@ -750,9 +717,7 @@ def batch_delete_events_by_params():
         ), 200
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("batch_delete_events_by_params failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -790,21 +755,17 @@ def delete_event(event_id: int):
         return jsonify({"status": "ok", "deleted_event_id": event_id}), 200
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("delete_event failed")
         return jsonify({"error": str(e)}), 500
 
 
 @events_bp.route("/<event_id>", methods=["GET"])
 @public
 def get_specific_events(event_id):
-    print("🍎🍎🍎🍎", request.url)
     db = g.db
     try:
         user = current_user()
 
-        # event = db.query(Event).filter_by(id=event_id).first()
         event = get_event_by_id(db, event_id)
         if not event:
             return jsonify({"error": "Event not found"}), 404
@@ -830,19 +791,15 @@ def get_specific_events(event_id):
         return jsonify(event_dict)
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_specific_events failed")
         return jsonify({"error": str(e)}), 500
 
 
 @events_bp.route("/<event_id>", methods=["PATCH"])
 def update_event(event_id):
-    print("🔗🔢", request.url)
     db = g.db
     try:
         data = request.get_json()
-        print("🔢🔢🔢🔢🔢DATA ", data)
 
         event_data = data.get("updated_event", None)
         tag_data = data.get("updated_tags", None)
@@ -873,12 +830,10 @@ def update_event(event_id):
 
         # update event tag
         if tag_data:
-            # desired_tags = [t.strip().lower() for t in tag_data]
             desired_tags = [t["name"].strip().lower() for t in tag_data]
             current_tags = [
                 t.name.strip().lower() for t in get_tags_by_event(db, event_id)
             ]  # returns list of tag names
-            # print("👑", desired_tags, "🥒", current_tags)
             for tag_name in desired_tags:
                 tag = get_tag_by_name(db, tag_name)
                 if not tag:
@@ -902,9 +857,7 @@ def update_event(event_id):
         return jsonify(event_dict), 200
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("update_event failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -923,20 +876,9 @@ def get_all_saved_events():
         )
 
         return jsonify([e[0] for e in events])
-        # [
-        #     {
-        #         "id": e[0],
-        #         # "title": e[1],
-        #         # "start": e[2].isoformat(),
-        #         # "end": e[3].isoformat(),
-        #     }
-        #     for e in events
-        # ]
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_all_saved_events failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -972,9 +914,7 @@ def get_all_saved_events_occurrences():
         ]
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_all_saved_events_occurrences failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -996,9 +936,7 @@ def user_save_event():
         return jsonify({"message": "Event added to user's saved events."}), 200
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("user_save_event failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -1019,30 +957,20 @@ def user_unsave_event(event_id):
         return jsonify({"message": "Event removed from user's saved events."}), 200
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("user_unsave_event failed")
         return jsonify({"error": str(e)}), 500
 
 
 @events_bp.route("/<category_id>/category", methods=["GET"])
 @public
 def get_event_category(category_id):
-    print("👀👀👀 ", request.url)
     db = g.db
     try:
         category = get_category_by_id(db, category_id)
-        print(
-            "-------------------\n",
-            jsonify(category_to_dict(category)),
-            "-------------------\n",
-        )
         return jsonify(category_to_dict(category))
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_event_category failed")
         return jsonify({"error": str(e)}), 500
 
 

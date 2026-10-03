@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 
 from flask import Blueprint, g, jsonify, request
@@ -46,6 +47,8 @@ from app.utils.auth import (
     site_admin_required,
 )
 from app.utils.course_data import get_course_data
+
+log = logging.getLogger(__name__)
 
 orgs_bp = Blueprint("orgs", __name__)
 
@@ -172,9 +175,7 @@ def get_organization_data(org_id):
         return jsonify(org_data)
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_organization_data failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -198,9 +199,7 @@ def get_all_orgs():
 
         return jsonify(orgs_list), 200
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_all_orgs failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -210,7 +209,7 @@ def get_course_orgs():
     db = g.db
     try:
         orgs = get_orgs_by_type(db, org_type="COURSE")
-        print(f"Found {len(orgs)} COURSE organizations")
+        log.debug("Found %d COURSE organizations", len(orgs))
         orgs_list = []
         for org in orgs:
             parts = org.name.split(" ")
@@ -227,9 +226,7 @@ def get_course_orgs():
 
         return jsonify(orgs_list), 200
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_course_orgs failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -238,14 +235,8 @@ def get_course_orgs():
 def get_club_orgs():
     db = g.db
     try:
-        # Debug: Check all organizations first
-        all_orgs = db.query(Organization).all()
-        print(f"Total organizations in database: {len(all_orgs)}")
-        for org in all_orgs[:5]:  # Print first 5 for debugging
-            print(f"Org ID: {org.id}, Name: {org.name}, Type: {org.type}")
-
         orgs = get_orgs_by_type(db, org_type="CLUB")
-        print(f"Found {len(orgs)} CLUB organizations")
+        log.debug("Found %d CLUB organizations", len(orgs))
 
         if not orgs:
             # Return empty list instead of 404 for better UX
@@ -263,9 +254,7 @@ def get_club_orgs():
 
         return jsonify(orgs_list), 200
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_club_orgs failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -303,9 +292,7 @@ def create_org_record():
         db.commit()
         return jsonify({"status": "created", "org_id": org.id}), 201
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("create_org_record failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -327,9 +314,7 @@ def create_category_record():
         db.commit()
         return jsonify({"status": "category created", "category_id": category.id}), 201
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("create_category_record failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -358,9 +343,7 @@ def delete_category_record(org_id: int, cat_id: int):
         db.commit()
         return jsonify({"status": "category deleted", "category_id": cat_id}), 200
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("delete_category_record failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -409,78 +392,8 @@ def delete_events_and_deactivate_calendar(org_id: int, calendar_source_id: int):
         return jsonify({"error": str(e)}), 404
 
     except Exception:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("delete_events_and_deactivate_calendar failed")
         return jsonify({"error": "Internal server error"}), 500
-
-
-@orgs_bp.route("/create_test_clubs", methods=["POST"])
-@site_admin_required
-def create_test_clubs():
-    """Create some test club organizations for development"""
-    db = g.db
-    try:
-        test_clubs = [
-            {
-                "name": "ScottyLabs",
-                "description": "A community of passionate, interdisciplinary leaders that use design and technology to achieve more.",
-            },
-            {
-                "name": "UXA",
-                "description": "User Experience Association - Exploring the intersection of design and technology",
-            },
-            {
-                "name": "Activities Board",
-                "description": "Programming events and activities for the CMU community",
-            },
-            {
-                "name": "Badminton Club",
-                "description": "CMU Badminton Club for recreational and competitive play",
-            },
-            {
-                "name": "Robotics Club",
-                "description": "Building and programming robots for competitions and fun",
-            },
-            {
-                "name": "Photography Club",
-                "description": "Capturing moments and exploring creative photography",
-            },
-        ]
-
-        created_clubs = []
-        for club_data in test_clubs:
-            # Check if club already exists
-            existing = (
-                db.query(Organization)
-                .filter(
-                    Organization.name == club_data["name"], Organization.type == "CLUB"
-                )
-                .first()
-            )
-
-            if not existing:
-                org = create_organization(
-                    db,
-                    name=club_data["name"],
-                    description=club_data["description"],
-                    type="CLUB",
-                )
-                created_clubs.append(org.name)
-                db.commit()
-        return jsonify(
-            {
-                "status": "success",
-                "created_clubs": created_clubs,
-                "message": f"Created {len(created_clubs)} new clubs",
-            }
-        ), 201
-
-    except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
-        return jsonify({"error": str(e)}), 500
 
 
 @orgs_bp.route("/create_admin", methods=["POST"])
@@ -509,9 +422,7 @@ def create_admin_record():
             {"status": "admin created", "user": admin.user_id, "org": admin.org_id}
         ), 200
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("create_admin_record failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -552,9 +463,7 @@ def update_admin_record():
             }
         ), 200
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("update_admin_record failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -578,9 +487,7 @@ def delete_admin_record():
         db.commit()
         return jsonify({"status": "admin deleted", "user": user_id, "org": org_id}), 200
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("delete_admin_record failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -696,9 +603,7 @@ def bulk_create_admins():
         return jsonify(response_data), 201
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("bulk_create_admins failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -719,7 +624,6 @@ def get_admins_in_org():
             user = get_user_by_id(db, admin.user_id)
             org = get_organization_by_id(db, admin.org_id)
             andrew_id = user.email.split("@")[0] if user.email else "N/A"
-            print(f"Admin User: {andrew_id}, Org: {org.name}, Role: {admin.role}")
             admins_list.append(
                 {
                     "user_id": user.id,
@@ -734,9 +638,7 @@ def get_admins_in_org():
 
         return jsonify(admins_list), 200
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_admins_in_org failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -756,9 +658,7 @@ def get_user_role_in_org():
 
         return jsonify({"role": admin.role}), 200
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_user_role_in_org failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -856,9 +756,7 @@ def delete_calendar_source(org_id: int, cs_id: int):
         return jsonify({"status": "ok", "deleted_calendar_source_id": cs_id}), 200
 
     except Exception:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("delete_calendar_source failed")
         return jsonify({"error": "Internal server error"}), 500
 
 

@@ -1,3 +1,5 @@
+import logging
+
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import or_
 
@@ -9,6 +11,8 @@ from app.models.models import (
     Schedule,
 )
 from app.utils.auth import current_user
+
+log = logging.getLogger(__name__)
 
 schedule_bp = Blueprint("schedule_bp", __name__)
 
@@ -163,7 +167,5 @@ def get_schedule_route():
             }
         )
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_schedule_route failed")
         return jsonify({"error": str(e)}), 500

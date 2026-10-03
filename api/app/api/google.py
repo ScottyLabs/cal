@@ -1,4 +1,6 @@
 # routes requests and coordinates services/models
+import logging
+
 from flask import Blueprint, current_app, g, jsonify, redirect, request, session
 
 from app.models.google_event import (
@@ -20,6 +22,8 @@ from app.services.google_service import (
 )
 from app.utils.auth import current_user, public
 from app.utils.date import convert_to_iso8601
+
+log = logging.getLogger(__name__)
 
 google_bp = Blueprint("google", __name__)
 
@@ -44,7 +48,7 @@ def authorize():
     session.pop("credentials", None)
     session.pop("oauth_code_verifier", None)
     redirect_url = _safe_redirect(request.args.get("redirect"))
-    print("---authorize redirect URL:", redirect_url)
+    log.debug("Google authorize, post-auth redirect: %s", redirect_url)
     flow = create_google_flow(current_app.config)
     authorization_url, state = flow.authorization_url(
         access_type="offline", include_granted_scopes="true", prompt="consent"
@@ -75,13 +79,8 @@ def oauth2callback():
     flow = create_google_flow(
         current_app.config, state=state, code_verifier=code_verifier
     )
-    print("---oauth2callback redirect URL:", request.url)
     flow.fetch_token(authorization_response=request.url)
     session["credentials"] = credentials_to_dict(flow.credentials)
-    print(
-        "---oauth2callback frontend_redirect:",
-        current_app.config["FRONTEND_REDIRECT_URI"],
-    )
     return redirect(
         session.pop("post_auth_redirect", current_app.config["FRONTEND_REDIRECT_URI"])
     )
@@ -105,7 +104,7 @@ def ensure_calendar():
             calendar_id = create_cmucal_calendar(creds)
             update_user_calendar_id(user, calendar_id)
             created = True
-            print("-> Created calendar for user:", calendar_id)
+            log.info("Created a CMUCal Google calendar for users.id=%s", user.id)
             db.commit()
         return jsonify({"calendar_id": user.calendar_id, "created": created}), 200
 
@@ -151,10 +150,6 @@ def add_event_route():
         event = add_event(creds, data, calendar_id)
 
         ## double check that the event was not already saved, otherwise would cause duplicates
-        # existing = db.query(UserSavedEvent or SyncedEvent).filter_by(
-        #         user_id=user_id,
-        #         google_event_id=google_event_id
-        #     ).first()
 
         save_google_event(
             db=db,

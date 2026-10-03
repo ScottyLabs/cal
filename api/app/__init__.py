@@ -1,4 +1,5 @@
 # Initializes the Flask app, database, and Keycloak bearer-token authentication.
+import logging
 import os
 
 from flask import Flask, g
@@ -7,14 +8,12 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.env import load_env
 from app.services.db import get_session
 
-ENV = load_env()
-
-import logging
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
+
+ENV = load_env()
 
 from app.config import DevelopmentConfig, ProductionConfig, TestingConfig
 from app.services.db import init_db
@@ -53,7 +52,6 @@ def create_app():
             if exc:
                 db.rollback()
             db.close()
-            # print(f"[DB] Session closed {id(db)}")
 
     if not os.getenv("ALEMBIC_RUNNING"):  # skip during Alembic
         from flask_cors import CORS

@@ -1,4 +1,5 @@
 # # handles API logic (Google Calendar)
+import logging
 from datetime import datetime, timedelta
 
 import requests
@@ -6,6 +7,8 @@ from flask import session
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
+
+log = logging.getLogger(__name__)
 
 SCOPES = [
     "https://www.googleapis.com/auth/calendar.events",
@@ -101,8 +104,8 @@ def fetch_events_for_calendars(credentials, calendar_ids):
                         "calendarId": cal_id,
                     }
                 )
-        except Exception as e:
-            print(f"Error fetching calendar {cal_id}: {e}")
+        except Exception:
+            log.exception("Error fetching a Google calendar")
             continue
     return all_events
 
@@ -122,8 +125,8 @@ def delete_event(credentials, event_id, calendar_id):
     try:
         service = build_calendar_service(credentials)
         service.events().delete(calendarId=calendar_id, eventId=event_id).execute()
-    except Exception as e:
-        print(f"Google API error deleting event {event_id} from {calendar_id}:", e)
+    except Exception:
+        log.exception("Google API error deleting event %s", event_id)
         raise
 
 

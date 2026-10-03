@@ -1,7 +1,10 @@
 # app/env.py
+import logging
 import os
 
 from dotenv import load_dotenv
+
+log = logging.getLogger(__name__)
 
 
 # Load environment variables from .env file BEFORE other imports
@@ -19,7 +22,7 @@ def detect_env() -> str:
 
 def load_env():
     ENV = detect_env()
-    print(f"[init] Detected APP_ENV={ENV}")
+    log.info("Detected APP_ENV=%s", ENV)
     dotfile = f".env.{ENV}"
     load_dotenv(dotfile)
     return ENV

@@ -1,5 +1,3 @@
-# from icalendar import Calendar, Event as IcalEvent
-# from recurring_ical_events import recurring_ical_events
 from typing import List
 
 from app.models.models import (

@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Union
 
@@ -21,6 +22,8 @@ from dateutil.rrule import (
 from app.models.enums import FrequencyType
 from app.models.models import RecurrenceRule
 from app.utils.date import _ensure_aware, ensure_aware_datetime
+
+log = logging.getLogger(__name__)
 
 
 def add_recurrence_rule(
@@ -110,11 +113,11 @@ def parse_by_day_array(
                 day_const = WEEKDAY_MAP[day]
                 byweekday.append(weekday(day_const.weekday, pos))
             else:
-                print(f"Skipping unrecognized day: {item}")
+                log.warning("Skipping unrecognized day: %s", item)
         elif item in WEEKDAY_MAP:
             byweekday.append(WEEKDAY_MAP[item])
         else:
-            print(f"Skipping unrecognized by_day entry: {item}")
+            log.warning("Skipping unrecognized by_day entry: %s", item)
 
     return byweekday if byweekday else None
 

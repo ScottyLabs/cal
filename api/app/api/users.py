@@ -1,3 +1,5 @@
+import logging
+
 from flask import Blueprint, g, jsonify, request
 
 from app.models.admin import get_categories_for_admin_user, get_role
@@ -7,6 +9,8 @@ from app.models.schedule import create_schedule, delete_schedule
 from app.models.schedule_org import create_schedule_org, remove_schedule_org
 from app.models.user import user_to_dict
 from app.utils.auth import current_user, is_site_admin
+
+log = logging.getLogger(__name__)
 
 users_bp = Blueprint("users", __name__)
 
@@ -59,9 +63,7 @@ def create_schedule_record():
             }
         ), 201
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("create_schedule_record failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -88,9 +90,7 @@ def delete_schedule_record():
         else:
             return jsonify({"error": "Schedule not found"}), 404
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("delete_schedule_record failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -116,9 +116,7 @@ def add_org_to_schedule():
             }
         ), 201
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("add_org_to_schedule failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -147,9 +145,7 @@ def remove_org_from_schedule():
         else:
             return jsonify({"error": "Organization not found in schedule"}), 404
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("remove_org_from_schedule failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -176,9 +172,7 @@ def get_user_schedules():
         return jsonify(schedules), 200
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_user_schedules failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -191,9 +185,7 @@ def get_admin_categories():
         return jsonify(results), 200
 
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_admin_categories failed")
         return jsonify({"error": str(e)}), 500
 
 
@@ -214,7 +206,5 @@ def get_user_role():
             }
         ), 200
     except Exception as e:
-        import traceback
-
-        print("Exception:", traceback.format_exc())
+        log.exception("get_user_role failed")
         return jsonify({"error": str(e)}), 500

@@ -53,7 +53,8 @@
                 makeWrapper ${venv}/bin/api $out/bin/api
               '';
 
-          # Next.js server. Clerk's middleware needs a Node runtime, so this is
+          # Next.js server. Keycloak sign-in (openid-client) runs server-side
+          # and needs a Node runtime, so this is
           # a kennel service rather than a static site - which also means it
           # cannot use a shared build helper, since kennel ships none for npm.
           web = pkgs.buildNpmPackage {

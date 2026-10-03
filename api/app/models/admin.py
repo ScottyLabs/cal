@@ -171,6 +171,3 @@ def get_categories_for_admin_user(db, user_id: int):
 
     categories = db.query(Category).filter(Category.id.in_(category_ids)).all()
     return categories
-    # Remove potential duplicates (if any)
-    # unique_categories = {category.id: category for category in categories}.values()
-    # return list(unique_categories)

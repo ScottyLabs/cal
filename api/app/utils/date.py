@@ -36,24 +36,6 @@ def parse_user_datetime(date_str: str, time_str: str, tz_str: str = "UTC") -> da
     # if want iso string:
     return aware_dt.isoformat()
 
-    # if want datetime object:
-    # return aware_dt
-
-
-# print(parse_user_datetime("2025-06-17", "13:37", "America/New_York"))
-
-# def _decoded_dt(component, key: str):
-#     """Return a timezone-aware datetime if present; if a DATE-only, convert to midnight UTC."""
-#     if not component.get(key):
-#         return None
-#     val = component.decoded(key)
-#     # val can be date or datetime
-#     if isinstance(val, date) and not isinstance(val, datetime):
-#         # All-day date -> normalize to midnight UTC
-#         return datetime(val.year, val.month, val.day, tzinfo=timezone.utc)
-#     # Ensure tz-aware
-#     return _ensure_aware(val)
-
 
 def decoded_dt_with_tz(component, key: str, default_tz: ZoneInfo = DEFAULT_TZ):
     prop = component.get(key)

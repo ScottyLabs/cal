@@ -38,7 +38,6 @@ MUTATING_ROUTES = [
     ("POST", "/api/organizations/create_category", {"org_id": "{org1}", "name": "x"}),
     ("DELETE", "/api/organizations/{org1}/categories/{cat1}", None),
     ("DELETE", "/api/organizations/{org1}/calendar-sources/{cs1}/events", None),
-    ("POST", "/api/organizations/create_test_clubs", None),
     (
         "POST",
         "/api/organizations/create_admin",
@@ -80,7 +79,6 @@ PRIVILEGED_ROUTES = [
     # Reads that expose other people's data or secret feed URLs.
     ("GET", "/api/organizations/get_admins_in_org?org_id={org1}", None),
     ("GET", "/api/organizations/{org1}/calendar_sources", None),
-    ("GET", "/test_rrule", None),
     (
         "POST",
         "/api/organizations/bulk_create_admins",

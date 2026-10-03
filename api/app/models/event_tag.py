@@ -1,4 +1,8 @@
+import logging
+
 from app.models.models import EventTag, Tag
+
+log = logging.getLogger(__name__)
 
 
 def save_event_tag(db, event_id: int, tag_id: int):
@@ -22,7 +26,6 @@ def get_tags_by_event(db, event_id: int):
     tags = (
         db.query(Tag.id, Tag.name)
         .join(Tag.event_tags)  # relationship set up in models
-        # .join(EventTag, Tag.id == EventTag.tag_id)  # explicit join condition
         .filter(EventTag.event_id == event_id)  # filter by the event id
         .all()
     )
@@ -31,4 +34,4 @@ def get_tags_by_event(db, event_id: int):
 
 def delete_event_tag(db, event_id, tag_id):
     db.query(EventTag).filter_by(event_id=event_id, tag_id=tag_id).delete()
-    print("🚮 deleting event tag", event_id, tag_id)
+    log.debug("Deleted event tag event_id=%s tag_id=%s", event_id, tag_id)

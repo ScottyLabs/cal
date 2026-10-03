@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
@@ -25,12 +26,14 @@ from app.utils.date import (
     normalize_set_to_tz,
 )
 
+log = logging.getLogger(__name__)
+
 TRACE_EVENT_ID = None  # Set to an event ID to enable tracing
 
 
 def trace(event, *msg):
     if event and event.id == TRACE_EVENT_ID:
-        print("🧭 TRACE:", *msg)
+        log.debug("TRACE: %s", " ".join(str(m) for m in msg))
 
 
 def apply_overrides(
@@ -299,8 +302,8 @@ def _build_occurrence_rows(
                 # If multiple patterns match the same date, later ones win
                 # (could add priority field later if needed)
                 recurrence_override_dates[ro_date] = ro
-        except Exception as e:
-            print(f"⚠️ Failed to expand RecurrenceOverride {ro.id}: {e}")
+        except Exception:
+            log.exception("Failed to expand RecurrenceOverride %s", ro.id)
 
     rows = []
     seen_starts = set()  # to avoid dupes when RDATE == RRULE date
@@ -313,7 +316,7 @@ def _build_occurrence_rows(
         occ_start = normalize_occurrence(occ_start, event_tz)
 
         if event.id == TRACE_EVENT_ID and len(rows) < 3:
-            print("🧭 TRACE: occ_start =", occ_start)
+            log.debug("TRACE: occ_start = %s", occ_start)
 
         if occ_start in exdates:
             continue
@@ -356,7 +359,7 @@ def populate_event_occurrences(db, event: Event, rule: RecurrenceRule):
         A message indicating the number of occurrences populated.
     """
     if event.id == TRACE_EVENT_ID:
-        print("🧭 TRACE: populate_event_occurrences()")
+        log.debug("TRACE: populate_event_occurrences()")
 
     rows = _build_occurrence_rows(
         event,
@@ -453,8 +456,8 @@ def regenerate_event_occurrences_by_event_ids(
 
         if rule.last_generated_at and rule.last_generated_at > event.last_updated_at:
             if event_id == TRACE_EVENT_ID:
-                print(
-                    "🧭 TRACE: SKIPPED due to timestamps",
+                log.debug(
+                    "TRACE: SKIPPED due to timestamps %s %s",
                     rule.last_generated_at,
                     event.last_updated_at,
                 )
@@ -484,8 +487,8 @@ def regenerate_event_occurrences_by_event_ids(
                         now_utc,
                     )
                 )
-            except Exception as e:
-                print(f"FAILED during populate for event {event.id}:", e)
+            except Exception:
+                log.exception("Failed to build occurrences for event %s", event.id)
                 raise
 
         db.query(EventOccurrence).filter(
@@ -502,7 +505,10 @@ def regenerate_event_occurrences_by_event_ids(
         regenerated = len(todo)
 
     total_time = (datetime.now(timezone.utc) - start).total_seconds() / 60
-    print(
-        f"Regenerated occurrences for {regenerated} events, skipped {skipped} events in {total_time} minutes."
+    log.info(
+        "Regenerated occurrences for %d events, skipped %d events in %s minutes.",
+        regenerated,
+        skipped,
+        total_time,
     )
     return regenerated, skipped
