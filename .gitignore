@@ -10,6 +10,7 @@ result-*
 .env.*
 !.env.example
 !web/.env.production
+!web/.env.development
 client_secret.json
 
 # Python
