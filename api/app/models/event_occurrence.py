@@ -416,6 +416,9 @@ def regenerate_event_occurrences_by_event_ids(
     occurrences are deleted in one statement and new ones inserted in one
     bulk insert. Round trips, not CPU, dominate when the database is remote.
 
+    An event without a recurrence rule gets exactly one ONETIME occurrence
+    built from the event row, replacing any it had.
+
     Args:
         db: Database session.
         event_ids: List of event IDs to regenerate occurrences for.
@@ -443,6 +446,7 @@ def regenerate_event_occurrences_by_event_ids(
             rules.setdefault(rule.event_id, rule)
 
     todo = []
+    one_time = []
     for event_id in ids:
         event = events.get(event_id)
         if not event:
@@ -451,7 +455,7 @@ def regenerate_event_occurrences_by_event_ids(
 
         rule = rules.get(event_id)
         if not rule:
-            skipped += 1
+            one_time.append(event)
             continue
 
         if rule.last_generated_at and rule.last_generated_at > event.last_updated_at:
@@ -503,6 +507,30 @@ def regenerate_event_occurrences_by_event_ids(
             event.last_updated_at = now
         db.flush()
         regenerated = len(todo)
+
+    if one_time:
+        db.query(EventOccurrence).filter(
+            EventOccurrence.event_id.in_([event.id for event in one_time])
+        ).delete(synchronize_session=False)
+        db.execute(
+            insert(EventOccurrence),
+            [
+                {
+                    **_occurrence_row(
+                        event,
+                        event.start_datetime,
+                        event.end_datetime,
+                        event.title,
+                        event.description,
+                        event.location,
+                    ),
+                    "recurrence": "ONETIME",
+                }
+                for event in one_time
+            ],
+        )
+        db.flush()
+        regenerated += len(one_time)
 
     total_time = (datetime.now(timezone.utc) - start).total_seconds() / 60
     log.info(

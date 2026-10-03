@@ -135,3 +135,34 @@ def test_batch_regeneration_skips_fresh_rules(
     db.flush()
     assert regenerate_event_occurrences_by_event_ids(db, ids) == (0, 0)
     assert _snapshot(db, ids) == first
+
+
+def test_batch_regeneration_builds_one_occurrence_for_one_time_events(
+    db, event_factory
+):
+    event = event_factory(
+        source_url="https://tartanconnect.cmu.edu/rsvp_boot?id=1",
+        description="Free Food",
+    )
+
+    # Reruns replace the occurrence instead of adding another.
+    for _ in range(2):
+        assert regenerate_event_occurrences_by_event_ids(db, [event.id]) == (1, 0)
+        db.flush()
+
+    rows = _snapshot(db, [event.id])
+    assert rows == [
+        (
+            event.id,
+            event.start_datetime,
+            event.end_datetime,
+            event.title,
+            "Free Food",
+            event.location,
+            event.org_id,
+            event.category_id,
+            False,
+            "https://tartanconnect.cmu.edu/rsvp_boot?id=1",
+            "RecurrenceType.ONETIME",
+        )
+    ]

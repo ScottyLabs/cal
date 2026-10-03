@@ -84,3 +84,30 @@ def ensure_lecture_category(db, org_id_by_key: dict) -> dict:
             if row["name"] == name:
                 result[org_id][key] = row["id"]
     return result
+
+
+def ensure_category(db, org_ids, name: str) -> dict:
+    """Return {org_id: category_id} for each org's category called `name`,
+    creating the ones that are missing."""
+    org_ids = sorted(set(org_ids))
+    category_id_by_org = {}
+    for batch in chunked(org_ids, 200):
+        res = (
+            db.table("categories")
+            .select("id, org_id")
+            .in_("org_id", batch)
+            .eq("name", name)
+            .execute()
+        )
+        category_id_by_org.update({row["org_id"]: row["id"] for row in res.data})
+
+    missing = [
+        {"org_id": org_id, "name": name}
+        for org_id in org_ids
+        if org_id not in category_id_by_org
+    ]
+    for batch in chunked(missing, 200):
+        res = db.table("categories").insert(batch).execute()
+        category_id_by_org.update({row["org_id"]: row["id"] for row in res.data})
+
+    return category_id_by_org

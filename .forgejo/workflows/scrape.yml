@@ -22,6 +22,7 @@ on:
           - soc
           - peer_tutoring
           - supplemental_instruction
+          - tartanconnect
           - all
         default: soc
       profile:
@@ -38,7 +39,7 @@ on:
         type: string
         default: ""
       dry_run:
-        description: "SOC only: fetch and parse, write nothing"
+        description: "SOC and TartanConnect only: fetch and parse, write nothing"
         required: false
         type: boolean
         default: false
@@ -56,6 +57,8 @@ jobs:
       # Read by scraper/scripts/export_soc.py.
       SOC_SEMESTER: ${{ inputs.semester }}
       SOC_DRY_RUN: ${{ inputs.dry_run }}
+      # Read by scraper/scripts/export_tartanconnect.py.
+      TARTANCONNECT_DRY_RUN: ${{ inputs.dry_run }}
     steps:
       - uses: https://code.forgejo.org/actions/checkout@v7
       - uses: https://git.cmu.dev/ScottyLabs/kennel/.forgejo/actions/prepare@main
@@ -73,9 +76,11 @@ jobs:
             soc)                      run_one export_soc ;;
             peer_tutoring)            run_one export_peer_tutoring ;;
             supplemental_instruction) run_one export_supplemental_instruction ;;
+            tartanconnect)            run_one export_tartanconnect ;;
             all)
               run_one export_soc
               run_one export_peer_tutoring
               run_one export_supplemental_instruction
+              run_one export_tartanconnect
               ;;
           esac
