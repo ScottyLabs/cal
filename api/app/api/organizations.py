@@ -174,9 +174,9 @@ def get_organization_data(org_id):
 
         return jsonify(org_data)
 
-    except Exception as e:
+    except Exception:
         log.exception("get_organization_data failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route("/get_all_orgs", methods=["GET"])
@@ -198,9 +198,9 @@ def get_all_orgs():
             )
 
         return jsonify(orgs_list), 200
-    except Exception as e:
+    except Exception:
         log.exception("get_all_orgs failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route("/get_course_orgs", methods=["GET"])
@@ -225,9 +225,9 @@ def get_course_orgs():
             )
 
         return jsonify(orgs_list), 200
-    except Exception as e:
+    except Exception:
         log.exception("get_course_orgs failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route("/get_club_orgs", methods=["GET"])
@@ -253,9 +253,9 @@ def get_club_orgs():
             )
 
         return jsonify(orgs_list), 200
-    except Exception as e:
+    except Exception:
         log.exception("get_club_orgs failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route("/get_courses", methods=["GET"])
@@ -291,9 +291,9 @@ def create_org_record():
         )
         db.commit()
         return jsonify({"status": "created", "org_id": org.id}), 201
-    except Exception as e:
+    except Exception:
         log.exception("create_org_record failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route("/create_category", methods=["POST"])
@@ -313,9 +313,9 @@ def create_category_record():
         category = create_category(db, org_id=org_id, name=name)
         db.commit()
         return jsonify({"status": "category created", "category_id": category.id}), 201
-    except Exception as e:
+    except Exception:
         log.exception("create_category_record failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route("/<int:org_id>/categories/<int:cat_id>", methods=["DELETE"])
@@ -342,9 +342,9 @@ def delete_category_record(org_id: int, cat_id: int):
             return jsonify({"error": "Category not found"}), 404
         db.commit()
         return jsonify({"status": "category deleted", "category_id": cat_id}), 200
-    except Exception as e:
+    except Exception:
         log.exception("delete_category_record failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route(
@@ -421,9 +421,9 @@ def create_admin_record():
         return jsonify(
             {"status": "admin created", "user": admin.user_id, "org": admin.org_id}
         ), 200
-    except Exception as e:
+    except Exception:
         log.exception("create_admin_record failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route("/update_admin", methods=["PATCH"])
@@ -462,9 +462,9 @@ def update_admin_record():
                 "category_id": admin.category_id,
             }
         ), 200
-    except Exception as e:
+    except Exception:
         log.exception("update_admin_record failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route("/delete_admin", methods=["DELETE"])
@@ -486,9 +486,9 @@ def delete_admin_record():
             return jsonify({"error": "Admin not found"}), 404
         db.commit()
         return jsonify({"status": "admin deleted", "user": user_id, "org": org_id}), 200
-    except Exception as e:
+    except Exception:
         log.exception("delete_admin_record failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route("/bulk_create_admins", methods=["POST"])
@@ -533,7 +533,7 @@ def bulk_create_admins():
             return jsonify({"error": "No valid emails provided"}), 400
 
         # Find or create organization
-        organization = get_organization_by_name(db, organization_name)
+        organization = existing_org
         if not organization:
             # Create new organization
             organization = create_organization(db, name=organization_name, type="CLUB")
@@ -602,9 +602,9 @@ def bulk_create_admins():
         db.commit()
         return jsonify(response_data), 201
 
-    except Exception as e:
+    except Exception:
         log.exception("bulk_create_admins failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route("/get_admins_in_org", methods=["GET"])
@@ -637,9 +637,9 @@ def get_admins_in_org():
             )
 
         return jsonify(admins_list), 200
-    except Exception as e:
+    except Exception:
         log.exception("get_admins_in_org failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route("/get_user_role_in_org", methods=["GET"])
@@ -657,9 +657,9 @@ def get_user_role_in_org():
             return jsonify({"role": "member"}), 200
 
         return jsonify({"role": admin.role}), 200
-    except Exception as e:
+    except Exception:
         log.exception("get_user_role_in_org failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @orgs_bp.route("/<int:org_id>/calendar_sources", methods=["GET"])

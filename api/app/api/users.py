@@ -62,9 +62,9 @@ def create_schedule_record():
                 "schedule_id": schedule.id,
             }
         ), 201
-    except Exception as e:
+    except Exception:
         log.exception("create_schedule_record failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @users_bp.route("/delete_schedule", methods=["DELETE"])
@@ -89,9 +89,9 @@ def delete_schedule_record():
             ), 200
         else:
             return jsonify({"error": "Schedule not found"}), 404
-    except Exception as e:
+    except Exception:
         log.exception("delete_schedule_record failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @users_bp.route("/add_org_to_schedule", methods=["POST"])
@@ -115,9 +115,9 @@ def add_org_to_schedule():
                 "org_id": org_id,
             }
         ), 201
-    except Exception as e:
+    except Exception:
         log.exception("add_org_to_schedule failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @users_bp.route("/remove_org_from_schedule", methods=["POST"])
@@ -144,9 +144,9 @@ def remove_org_from_schedule():
             ), 200
         else:
             return jsonify({"error": "Organization not found in schedule"}), 404
-    except Exception as e:
+    except Exception:
         log.exception("remove_org_from_schedule failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @users_bp.route("/schedules", methods=["GET"])
@@ -171,9 +171,9 @@ def get_user_schedules():
         ]
         return jsonify(schedules), 200
 
-    except Exception as e:
+    except Exception:
         log.exception("get_user_schedules failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @users_bp.route("/get_admin_categories", methods=["GET"])
@@ -184,9 +184,9 @@ def get_admin_categories():
         results = [join_org_and_to_dict(db, category.id) for category in categories]
         return jsonify(results), 200
 
-    except Exception as e:
+    except Exception:
         log.exception("get_admin_categories failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @users_bp.route("/get_role", methods=["GET"])
@@ -205,6 +205,6 @@ def get_user_role():
                 ],
             }
         ), 200
-    except Exception as e:
+    except Exception:
         log.exception("get_user_role failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500

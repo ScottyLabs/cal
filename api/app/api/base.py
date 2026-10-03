@@ -1,7 +1,11 @@
+import logging
+
 from flask import Blueprint, g, jsonify
 from sqlalchemy import text
 
 from app.utils.auth import public
+
+log = logging.getLogger(__name__)
 
 base_bp = Blueprint("base", __name__)
 
@@ -30,5 +34,6 @@ def db_health_check():
     try:
         db.execute(text("SELECT 1"))
         return jsonify({"status": "connected"})
-    except Exception as e:
-        return jsonify({"status": "error", "details": str(e)}), 500
+    except Exception:
+        log.exception("db_health_check failed")
+        return jsonify({"status": "error"}), 500

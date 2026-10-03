@@ -57,4 +57,4 @@ def test_get_role_internal_error(client, world, bearer, mocker):
     resp = client.get("/api/users/get_role", headers=bearer(**ALICE))
 
     assert resp.status_code == 500
-    assert "DB exploded" in resp.get_json()["error"]
+    assert resp.get_json() == {"error": "Internal server error"}

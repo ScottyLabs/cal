@@ -166,6 +166,6 @@ def get_schedule_route():
                 "schedule_id": schedule.id,
             }
         )
-    except Exception as e:
+    except Exception:
         log.exception("get_schedule_route failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500

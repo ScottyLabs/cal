@@ -68,6 +68,7 @@ def unauthorize_google():
         revoke_user_google_credentials()
         return jsonify({"message": "Google account unauthorized"}), 200
     except Exception as e:
+        log.exception("unauthorize_google failed")
         return jsonify({"error": str(e)}), 400
 
 
@@ -108,8 +109,9 @@ def ensure_calendar():
             db.commit()
         return jsonify({"calendar_id": user.calendar_id, "created": created}), 200
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        log.exception("ensure_calendar failed")
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @google_bp.route("/calendars", methods=["GET"])
@@ -165,8 +167,9 @@ def add_event_route():
 
         return jsonify({"googleEventId": event["id"]})
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        log.exception("add_event_route failed")
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @google_bp.route("/calendar/events/<local_event_id>", methods=["DELETE"])
@@ -193,5 +196,6 @@ def delete_event_route(local_event_id):
 
         return jsonify({"status": "deleted"})
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        log.exception("delete_event_route failed")
+        return jsonify({"error": "Internal server error"}), 500

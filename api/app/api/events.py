@@ -248,10 +248,10 @@ def create_event_record():
             )
         db.commit()  # Only commit if all succeeded
         return jsonify({"status": "event created", "event_id": event.id}), 201
-    except Exception as e:
+    except Exception:
         log.exception("create_event_record failed")
 
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @events_bp.route("/read_gcal_link", methods=["POST"])
@@ -337,16 +337,10 @@ def read_gcal_link():
             }
         ), 201
 
-    except Exception as e:
+    except Exception:
         log.exception("read_gcal_link failed")
 
-        return jsonify(
-            {
-                "success": False,
-                "error": "INTERNAL_SERVER_ERROR",
-                "message": str(e),
-            }
-        ), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # should only be used for testing purposes
@@ -387,9 +381,9 @@ def create_recurrence_rules():
         occurrence_msg = populate_event_occurrences(db, event=event, rule=rule)
         db.commit()  # Only commit if all succeeded
         return jsonify({"status": f"recurrence rules created. {occurrence_msg}"}), 201
-    except Exception as e:
+    except Exception:
         log.exception("create_recurrence_rules failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # should only be used for testing purposes
@@ -459,9 +453,9 @@ def create_single_event_occurrence():
         return jsonify(
             {"status": f"event occurrence {event_occurrence.id} created."}
         ), 201
-    except Exception as e:
+    except Exception:
         log.exception("create_single_event_occurrence failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # The SOC scraper calls this after each import, with SCRAPER_API_TOKEN.
@@ -489,9 +483,9 @@ def regenerate_occurrences_by_events():
             }
         ), 201
 
-    except Exception as e:
+    except Exception:
         log.exception("regenerate_occurrences_by_events failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @events_bp.route("/tags", methods=["GET"])
@@ -501,12 +495,12 @@ def get_tags():
     try:
         tags = get_all_tags(db)
         return jsonify([{"name": tag.name, "id": tag.id} for tag in tags]), 200
-    except Exception as e:
+    except Exception:
         log.exception("get_tags failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
-@events_bp.route("/<event_id>/tags", methods=["GET"])
+@events_bp.route("/<int:event_id>/tags", methods=["GET"])
 @public
 def get_event_tags(event_id):
     db = g.db
@@ -517,9 +511,9 @@ def get_event_tags(event_id):
 
         return tag_names
 
-    except Exception as e:
+    except Exception:
         log.exception("get_event_tags failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # Event browsing is public; a signed-in caller also gets their saved flags.
@@ -603,9 +597,9 @@ def get_all_events():
             for e in events
         ]
 
-    except Exception as e:
+    except Exception:
         log.exception("get_all_events failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @events_bp.route("/batch_delete_events_by_params", methods=["DELETE"])
@@ -716,9 +710,9 @@ def batch_delete_events_by_params():
             }
         ), 200
 
-    except Exception as e:
+    except Exception:
         log.exception("batch_delete_events_by_params failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @events_bp.route("/<int:event_id>", methods=["DELETE"])
@@ -754,12 +748,12 @@ def delete_event(event_id: int):
 
         return jsonify({"status": "ok", "deleted_event_id": event_id}), 200
 
-    except Exception as e:
+    except Exception:
         log.exception("delete_event failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
-@events_bp.route("/<event_id>", methods=["GET"])
+@events_bp.route("/<int:event_id>", methods=["GET"])
 @public
 def get_specific_events(event_id):
     db = g.db
@@ -790,12 +784,12 @@ def get_specific_events(event_id):
 
         return jsonify(event_dict)
 
-    except Exception as e:
+    except Exception:
         log.exception("get_specific_events failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
-@events_bp.route("/<event_id>", methods=["PATCH"])
+@events_bp.route("/<int:event_id>", methods=["PATCH"])
 def update_event(event_id):
     db = g.db
     try:
@@ -811,7 +805,7 @@ def update_event(event_id):
         # update the event itself
         event = db.query(Event).filter_by(id=event_id).first()
         if not event:
-            return jsonify({"error": "Event not found"}), 400
+            return jsonify({"error": "Event not found"}), 404
         if not can_edit_category(db, event.org_id, event.category_id):
             return forbidden()
 
@@ -856,12 +850,12 @@ def update_event(event_id):
         event_dict = event.as_dict()
         return jsonify(event_dict), 200
 
-    except Exception as e:
+    except Exception:
         log.exception("update_event failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
-@events_bp.route("user_saved_events", methods=["GET"])
+@events_bp.route("/user_saved_events", methods=["GET"])
 def get_all_saved_events():
     db = g.db
     try:
@@ -877,12 +871,12 @@ def get_all_saved_events():
 
         return jsonify([e[0] for e in events])
 
-    except Exception as e:
+    except Exception:
         log.exception("get_all_saved_events failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
-@events_bp.route("user_saved_event_occurrences", methods=["GET"])
+@events_bp.route("/user_saved_event_occurrences", methods=["GET"])
 def get_all_saved_events_occurrences():
     db = g.db
     try:
@@ -913,9 +907,9 @@ def get_all_saved_events_occurrences():
             for e in event_occurrences
         ]
 
-    except Exception as e:
+    except Exception:
         log.exception("get_all_saved_events_occurrences failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @events_bp.route("/user_saved_events", methods=["POST"])
@@ -935,12 +929,12 @@ def user_save_event():
         db.commit()
         return jsonify({"message": "Event added to user's saved events."}), 200
 
-    except Exception as e:
+    except Exception:
         log.exception("user_save_event failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
-@events_bp.route("/user_saved_events/<event_id>", methods=["DELETE"])
+@events_bp.route("/user_saved_events/<int:event_id>", methods=["DELETE"])
 def user_unsave_event(event_id):
     db = g.db
     try:
@@ -956,12 +950,12 @@ def user_unsave_event(event_id):
             db.commit()
         return jsonify({"message": "Event removed from user's saved events."}), 200
 
-    except Exception as e:
+    except Exception:
         log.exception("user_unsave_event failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
-@events_bp.route("/<category_id>/category", methods=["GET"])
+@events_bp.route("/<int:category_id>/category", methods=["GET"])
 @public
 def get_event_category(category_id):
     db = g.db
@@ -969,9 +963,9 @@ def get_event_category(category_id):
         category = get_category_by_id(db, category_id)
         return jsonify(category_to_dict(category))
 
-    except Exception as e:
+    except Exception:
         log.exception("get_event_category failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @events_bp.route("/by_org/<int:org_id>", methods=["GET"])
