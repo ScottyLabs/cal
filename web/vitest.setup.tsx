@@ -1,7 +1,13 @@
 // vitest.setup.tsx
 import "@testing-library/jest-dom/vitest";
+import { cleanup } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { vi } from "vitest";
+import { afterEach, vi } from "vitest";
+
+// Testing Library only unmounts automatically when vitest globals are enabled.
+afterEach(() => {
+  cleanup();
+});
 
 vi.mock("~/context/AuthContext", () => {
   const value = {
