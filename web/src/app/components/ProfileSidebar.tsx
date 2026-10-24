@@ -7,12 +7,13 @@ import ToggleItem from "./ToggleItem";
 import { Course, Club, ClubOrganization, CourseOption } from "../utils/types";
 import { getClubOrganizations, addOrgToSchedule, removeOrgFromSchedule, getCourseOrgs } from "../utils/api/organizations";
 import { useUser } from "~/context/UserContext";
+import Link from "next/link";
 
 interface ProfileSidebarProps {
   courses: Course[];
   clubs: Club[];
   onCategoryToggle?: (categoryId: number, isVisible: boolean) => void;
-  currentScheduleId?: number;
+  currentScheduleId?: number | null;
   visibleCategories?: Set<number>;
 }
 
@@ -35,6 +36,8 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   const [courseSearchTerm, setCourseSearchTerm] = useState("");
   const [clubSearchTerm, setClubSearchTerm] = useState("");
   const accordionColors = ['red', 'green', 'purple', 'blue', 'orange'] as const;
+
+  const hasSchedule = currentScheduleId != null && currentScheduleId !== -1;
 
   // const handleToggle = (categoryId: number) => {
   //   setToggledCategories(prev => ({...prev, [categoryId]: !prev[categoryId]}));
@@ -226,14 +229,27 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
 
   return (
     <div className="h-full dark:text-gray-200 overflow-y-auto">
+
+      {!hasSchedule && (
+        <div className="mx-8 mt-6 rounded-md border border-gray-200
+                        bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-800">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+            Create a schedule to get started
+          </p>
+
+          <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-400">
+            You need a schedule before adding courses or clubs.
+            Select “Create Schedule” in the top navigation to create one.
+          </p>
+        </div>
+      )}
+
       <div className="my-6 px-8 ">
         <div className="flex justify-between items-center mb-2">
-          <h3>
-            <button type="button" aria-expanded={isCoursesOpen} className="flex items-center cursor-pointer" onClick={() => setIsCoursesOpen(!isCoursesOpen)}>
-              <span className="text-gray-600 dark:text-gray-400 mr-2">My Courses</span>
-              {isCoursesOpen ? <FiChevronUp className="w-5 h-5 text-gray-600 flex-shrink-0" /> : <FiChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />}
-            </button>
-          </h3>
+          <div className="flex items-center cursor-pointer" onClick={() => setIsCoursesOpen(!isCoursesOpen)}>
+            <h3 className="text-gray-600 dark:text-gray-400 mr-2">My Courses</h3>
+            {isCoursesOpen ? <FiChevronUp className="w-5 h-5 text-gray-600 flex-shrink-0" /> : <FiChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />}
+          </div>
           <div className="flex items-center">
             <button
               onClick={() => setIsCoursesEditMode(false)}
@@ -269,7 +285,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 </div>
               </div>
             )}
-            <div className="pr-1">
+            <div className="max-h-80 overflow-y-auto pr-1">
               {isCoursesEditMode ? (
                 <div className="space-y-3">
                   {loadingCourses ? (
@@ -319,7 +335,20 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 </div>
               ) : (
                 courses.length === 0 ? (
-                  <div className="text-gray-500 text-sm">No courses in your schedule</div>
+                  hasSchedule ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        No courses in your schedule yet. Add a course to get started.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setIsCoursesEditMode(true)}
+                        className="rounded bg-blue-500 px-3 py-2 text-sm text-white hover:bg-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      >
+                        Add a course
+                      </button>
+                    </div>
+                  ) : null
                 ) : (
                   courses.map((course, index) => (
                     <Accordion 
@@ -355,12 +384,10 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
 
       <div className="my-6 px-8 ">
         <div className="flex justify-between items-center mb-2">
-          <h3>
-            <button type="button" aria-expanded={isClubsOpen} className="flex items-center cursor-pointer" onClick={() => setIsClubsOpen(!isClubsOpen)}>
-              <span className="text-gray-600 dark:text-gray-400 mr-2">My Clubs</span>
-              {isClubsOpen ? <FiChevronUp className="w-5 h-5 text-gray-600 flex-shrink-0" /> : <FiChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />}
-            </button>
-          </h3>
+          <div className="flex items-center cursor-pointer" onClick={() => setIsClubsOpen(!isClubsOpen)}>
+            <h3 className="text-gray-600 dark:text-gray-400 mr-2">My Clubs</h3>
+            {isClubsOpen ? <FiChevronUp className="w-5 h-5 text-gray-600 flex-shrink-0" /> : <FiChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />}
+          </div>
           <div className="flex items-center">
             <button
               onClick={() => setIsClubsEditMode(false)}
@@ -396,7 +423,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 </div>
               </div>
             )}
-            <div className="pr-1">
+            <div className="max-h-80 overflow-y-auto pr-1">
               {isClubsEditMode ? (
                 <div className="space-y-3">
                   {loadingClubs ? (
@@ -448,7 +475,28 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 </div>
               ) : (
                 clubs.length === 0 ? (
-                  <div className="text-gray-500 text-sm">No clubs in your schedule</div>
+                  hasSchedule ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        No clubs in your schedule yet. Add a club or browse events to get started.
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setIsClubsEditMode(true)}
+                          className="rounded bg-blue-500 px-3 py-2 text-sm text-white hover:bg-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                        >
+                          Add a club
+                        </button>
+                        <Link
+                          href="/explore"
+                          className="rounded text-sm text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                        >
+                          Browse events
+                        </Link>
+                      </div>
+                    </div>
+                  ) : null
                 ) : (
                 clubs.map((club, index) => (
                 <Accordion
