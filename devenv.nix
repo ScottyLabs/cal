@@ -13,6 +13,13 @@
 
     python.enable = true;
 
+    # Sign-in locally: the dev Keycloak client returns to a relay on :8090,
+    # which forwards to the web app here.
+    ricochet = {
+      enable = true;
+      appUrl = "http://localhost:3000";
+    };
+
     kennel = {
       # The first cutover keeps the existing Supabase database, so every
       # deployment would share one database. Previews stay off until the data
@@ -61,6 +68,12 @@
   # api/.venv to exist in the shell, since the shared module only runs
   # `uv sync` for a pyproject.toml at the root. Tracked in README.md.
   git-hooks.hooks.ty.enable = lib.mkForce false;
+
+  # `devenv up` runs these with the dev secrets from OpenBao, next to ricochet.
+  processes = {
+    api.exec = "cd $DEVENV_ROOT/api && uv sync --quiet && uv run python run.py";
+    web.exec = "cd $DEVENV_ROOT/web && npm install --no-audit --no-fund && npm run dev";
+  };
 
   scripts = {
     api-dev.exec = "cd api && python run.py";

@@ -13,22 +13,14 @@ and built by the matching packages in `flake.nix`.
 
 ## Getting started
 
-No nix needed: Node 22, Python 3.10+, and [uv](https://docs.astral.sh/uv/).
-Full walkthrough in [`docs/getting-started.md`](docs/getting-started.md).
+On the CMUCal team, with Nix and devenv: log in to OpenBao once
+(`nix run git+https://git.cmu.dev/ScottyLabs/kennel#login`), then `devenv up`
+starts the API (http://localhost:8080), the web app (http://localhost:3000)
+and the sign-in relay with the dev secrets loaded.
 
-```bash
-cp api/.env.example api/.env.development   # fill in the secrets
-cd api && uv sync && uv run python run.py  # http://localhost:8080
-
-cp web/.env.example web/.env.local         # in a second terminal; sign-in
-                                           # also needs Ricochet (see docs)
-cd web && npm install && npm run dev       # http://localhost:3000
-```
-
-Nix and devenv are only needed to change the build and deploy config
-(`devenv.nix`, `flake.nix`, `secretspec.toml`): run
-`nix run git+https://git.cmu.dev/ScottyLabs/kennel#login` once, then
-`devenv allow`.
+Without Nix, or on Windows, see the manual setup in
+[`docs/getting-started.md`](docs/getting-started.md): Node 22, Python 3.10+,
+[uv](https://docs.astral.sh/uv/), local env files, and Ricochet for sign-in.
 
 ## Deployment
 

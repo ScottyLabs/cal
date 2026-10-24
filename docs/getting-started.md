@@ -1,7 +1,13 @@
 # Getting Started
 
-Run the CMUCal frontend and backend on your laptop. You do not need nix or
-devenv; only kennel and CI use them.
+Run the CMUCal frontend and backend on your laptop. There are two ways:
+
+- **devenv** (once you are on the CMUCal team): one command starts the API,
+  the web app and the sign-in relay, with the dev secrets loaded from OpenBao.
+  Needs Nix, so macOS, Linux or WSL.
+- **Manual**: install the tools yourself and keep the secrets in local env
+  files. Works anywhere, including Windows, and before governance has added
+  you.
 
 ## 1. Join the org
 
@@ -13,96 +19,45 @@ devenv; only kennel and CI use them.
    [idp.scottylabs.org](https://idp.scottylabs.org/realms/scottylabs/account/account-security/linked-accounts).
    Governance validation fails if one is missing.
 
-## 2. Prerequisites
+## 2. Run with devenv
 
-Node 22 with npm, Python 3.10 or newer, [uv](https://docs.astral.sh/uv/),
-and the OpenBao and secretspec CLIs:
-
-```bash
-brew install uv openbao secretspec
-```
-
-On Windows, install uv from its site and take `bao` and `secretspec` from the
-[OpenBao](https://github.com/openbao/openbao/releases) and
-[secretspec](https://github.com/cachix/secretspec/releases) releases.
-
-## 3. Secrets
-
-Dev secrets live in OpenBao. Once governance has added you to the CMUCal team,
-log in with your CMU account (it opens a browser):
+Install Nix and devenv ([devenv.sh/getting-started](https://devenv.sh/getting-started/)),
+then log in to OpenBao once per machine. It opens a browser; sign in with your
+CMU account:
 
 ```bash
-bao login -address=https://secrets.scottylabs.org -method=oidc
+nix run git+https://git.cmu.dev/ScottyLabs/kennel#login
 ```
 
-The token lasts a few weeks; run it again when secretspec reports permission
-denied. Then clone the repository and check that every secret resolves:
+Clone the repository and start everything:
 
 ```bash
 git clone git@git.cmu.dev:ScottyLabs/cal.git
 cd cal
-secretspec check -P dev
+devenv up
 ```
 
-`secretspec run -P dev -- <command>` starts a command with the secrets in its
-environment, so nothing secret is written to disk. If OpenBao does not work
-for you, use the [manual setup](#manual-setup) instead.
+`devenv up` runs the API on http://localhost:8080, the web app on
+http://localhost:3000, and [Ricochet](https://codeberg.org/anish/ricochet) on
+port 8090, the relay that Keycloak sends sign-ins back through. Open
+http://localhost:3000 and sign in with your CMU account. Ctrl-C stops all
+three.
 
-## 4. Backend
+For other commands, `devenv shell` opens a shell with the dev secrets in its
+environment.
 
-```bash
-cd api
-uv sync
-secretspec run -P dev -- uv run python run.py
-```
+## 3. Manual setup
 
-The API listens on http://localhost:8080; `curl localhost:8080/api/health`
-checks it.
+### Prerequisites
 
-## 5. Frontend
+Node 22 with npm, Python 3.10 or newer, [uv](https://docs.astral.sh/uv/), and
+[Rust](https://rustup.rs) (to install Ricochet).
 
-Sign-in goes through ScottyLabs Keycloak and the
-[Ricochet](https://codeberg.org/anish/ricochet) relay, which you run locally.
-Install it once (needs [Rust](https://rustup.rs)):
+### Secrets
 
 ```bash
-cargo install --git https://codeberg.org/anish/ricochet --rev ddc58bcad0bb2b898f900a3c13c94c263e797ad2 --locked
-```
-
-Then, in its own terminal:
-
-```bash
-RICOCHET_DEV=1 RICOCHET_BIND=127.0.0.1:8090 ricochet
-```
-
-In another terminal, from the repository root:
-
-```bash
-cd web
-npm install
-secretspec run -P dev -- npm run dev
-```
-
-Open http://localhost:3000 and sign in with your CMU account.
-
-## 6. Migrations
-
-When a pull request adds an Alembic migration:
-
-```bash
-cd api
-secretspec run -P dev -- uv run alembic upgrade head
-```
-
-Everyone shares one dev database. Never run `alembic downgrade` without asking
-the tech lead, and never point a local checkout at production.
-
-## Manual setup
-
-Without OpenBao, keep the secrets in local env files and run every command
-above without the `secretspec run -P dev --` prefix.
-
-```bash
+git clone git@git.cmu.dev:ScottyLabs/cal.git
+cd cal
 cp api/.env.example api/.env.development
 cp web/.env.example web/.env.local
 ```
@@ -114,20 +69,83 @@ values, or copy them from `secretspec/cal/dev` in the
 [OpenBao web UI](https://secrets.scottylabs.org/ui/) (sign in with OIDC). Never
 commit these files.
 
+If you have the `bao` and `secretspec` CLIs, you can skip the env files: run
+`bao login -address=https://secrets.scottylabs.org -method=oidc` once, then
+start the API and web app below with `secretspec run -P dev --` in front.
+
+### Backend
+
+```bash
+cd api
+uv sync
+uv run python run.py
+```
+
+The API listens on http://localhost:8080; `curl localhost:8080/api/health`
+checks it.
+
+### Sign-in relay
+
+Sign-in goes through ScottyLabs Keycloak, which only returns to the
+[Ricochet](https://codeberg.org/anish/ricochet) relay on port 8090. Install it
+once:
+
+```bash
+cargo install --git https://codeberg.org/anish/ricochet --rev ddc58bcad0bb2b898f900a3c13c94c263e797ad2 --locked
+```
+
+Then start it in its own terminal and leave it running. On macOS or Linux:
+
+```bash
+RICOCHET_DEV=1 RICOCHET_BIND=127.0.0.1:8090 ricochet
+```
+
+On Windows (PowerShell):
+
+```powershell
+$env:RICOCHET_DEV="1"; $env:RICOCHET_BIND="127.0.0.1:8090"; ricochet
+```
+
+It is running when it prints `ricochet listening bind=127.0.0.1:8090`.
+
+### Frontend
+
+In another terminal, from the repository root:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Open http://localhost:3000 and sign in with your CMU account.
+
+## 4. Migrations
+
+When a pull request adds an Alembic migration, run this from `api/`, inside
+`devenv shell` or with your env files in place:
+
+```bash
+uv run alembic upgrade head
+```
+
+Everyone shares one dev database. Never run `alembic downgrade` without asking
+the tech lead, and never point a local checkout at production.
+
 ## Troubleshooting
 
-- **secretspec reports permission denied**: your OpenBao token expired, so
-  run `bao login` again. If it still fails, governance has not added you to
-  the CMUCal team yet.
-- **Sign-in says Keycloak login is not configured**: `npm run dev` was started
-  without `secretspec run -P dev --`, or (manual setup) a value in
+- **`devenv up` or secretspec fails with a secret or permission error**: log
+  in to OpenBao again. If it still fails, governance has not added you to the
+  CMUCal team yet; use the manual setup until it does.
+- **Sign-in ends on a connection error at `localhost:8090`**: Ricochet is not
+  running. In the manual setup, start it as above; without `RICOCHET_DEV` and
+  `RICOCHET_BIND` set it exits right away. Opening `localhost:8090` itself
+  shows a 404, which is normal.
+- **Sign-in says Keycloak login is not configured**: a value in
   `web/.env.local` is empty. Next.js reads env files only at startup, so
   restart `npm run dev` after editing it.
-- **Sign-in ends on a connection error at `localhost:8090`**: Ricochet is not
-  running.
 - **API crashes with `Expected string or URL object, got None`**:
-  `SUPABASE_DB_URL` is missing: the API was started without
-  `secretspec run -P dev --`, or (manual setup) `api/.env.development` does not
-  exist or you did not start the API from `api/`.
+  `SUPABASE_DB_URL` is missing: `api/.env.development` does not exist, or you
+  did not start the API from `api/`.
 - **Pages load but data never does**: some CMU networks block outbound
   Postgres. Try CMU-SECURE, eduroam, or a hotspot.
