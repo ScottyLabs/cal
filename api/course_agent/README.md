@@ -61,8 +61,10 @@ ______________________________________________________________________
 
 ### 1. Install dependencies
 
+From `api/`:
+
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 ### 2. Environment Variables
@@ -81,9 +83,9 @@ OPENROUTER_X_TITLE=cmucal-course-agent
 SERPER_API_KEY=...
 ```
 
-### 3. Run the command in the root directory in cmucal-backend
+### 3. Run it from `api/`
 
-`python -m course_agent.scripts.run_all_courses`
+`uv run python -m course_agent.scripts.run_all_courses`
 
 ## Trouble shooting
 

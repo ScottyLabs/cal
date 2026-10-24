@@ -1,78 +1,52 @@
 # Getting Started
 
-Run the CMUCal frontend and backend on your laptop. There are two ways:
+Run the CMUCal API and web app on your laptop and sign in with your CMU
+account. Pick the setup that fits you:
 
-- **devenv** (once you are on the CMUCal team): one command starts the API,
-  the web app and the sign-in relay, with the dev secrets loaded from OpenBao.
-  Needs Nix, so macOS, Linux or WSL.
-- **Manual**: install the tools yourself and keep the secrets in local env
-  files. Works anywhere, including Windows, and before governance has added
-  you.
+| Setup | Who | Secrets come from | You run |
+| --- | --- | --- | --- |
+| [A. Manual](#a-manual) | Anyone, including before governance adds you | Env files you fill in | 2 terminals |
+| [B. OpenBao](#b-openbao) | CMUCal team members, any OS | OpenBao, via `secretspec` | 2 terminals |
+| [C. devenv](#c-devenv) | CMUCal team members with Nix (macOS, Linux, WSL) | OpenBao, via devenv | `devenv up` |
+
+All three run the same thing: the API on http://localhost:8080 and the web app
+on http://localhost:3000, against the shared dev database.
 
 ## 1. Join the org
 
 1. [Sign up on git.cmu.dev](https://git.cmu.dev/user/sign_up) and
    [add an SSH key](https://docs.scottylabs.org/scottylabs/onboarding/forgejo-setup.html).
-1. Ask the tech lead to add you to the CMUCal team in
-   [governance](https://git.cmu.dev/ScottyLabs/governance).
 1. Link all five accounts (CMU, git.cmu.dev, GitHub, Discord, Slack) at
    [idp.scottylabs.org](https://idp.scottylabs.org/realms/scottylabs/account/account-security/linked-accounts).
-   Governance validation fails if one is missing.
+1. Ask the tech lead to add you to the CMUCal team in
+   [governance](https://git.cmu.dev/ScottyLabs/governance). Governance refuses
+   anyone with an unlinked account, and the team is what gives you read access
+   to the dev secrets in OpenBao (setups B and C).
 
-## 2. Run with devenv
-
-Install Nix and devenv ([devenv.sh/getting-started](https://devenv.sh/getting-started/)),
-then log in to OpenBao once per machine. It opens a browser; sign in with your
-CMU account:
-
-```bash
-nix run git+https://git.cmu.dev/ScottyLabs/kennel#login
-```
-
-Clone the repository and start everything:
+Then clone the repository:
 
 ```bash
 git clone git@git.cmu.dev:ScottyLabs/cal.git
 cd cal
-devenv up
 ```
 
-`devenv up` runs the API on http://localhost:8080, the web app on
-http://localhost:3000, and [Ricochet](https://codeberg.org/anish/ricochet) on
-port 8090, the relay that Keycloak sends sign-ins back through. Open
-http://localhost:3000 and sign in with your CMU account. Ctrl-C stops all
-three.
+## 2. Run it
 
-For other commands, `devenv shell` opens a shell with the dev secrets in its
-environment.
+### A. Manual
 
-## 3. Manual setup
-
-### Prerequisites
-
-Node 22 with npm, Python 3.10 or newer, and [uv](https://docs.astral.sh/uv/).
-
-### Secrets
+Install Node 22 (with npm), Python 3.10 or newer, and
+[uv](https://docs.astral.sh/uv/). Then create the env files:
 
 ```bash
-git clone git@git.cmu.dev:ScottyLabs/cal.git
-cd cal
 cp api/.env.example api/.env.development
 cp web/.env.example web/.env.local
 ```
 
-In `api/.env.development`, fill in `SUPABASE_DB_URL` (the shared dev
-database). In `web/.env.local`, fill in `OIDC_CLIENT_SECRET` and
-`SESSION_SECRET` (any random 32+ characters). Ask the tech lead for the
-values, or copy them from `secretspec/cal/dev` in the
-[OpenBao web UI](https://secrets.scottylabs.org/ui/) (sign in with OIDC). Never
-commit these files.
+Fill in `SUPABASE_DB_URL` in `api/.env.development`, and `OIDC_CLIENT_SECRET`
+and `SESSION_SECRET` (any random 32+ characters) in `web/.env.local`. Ask the
+tech lead for the values. Never commit these files.
 
-If you have the `bao` and `secretspec` CLIs, you can skip the env files: run
-`bao login -address=https://secrets.scottylabs.org -method=oidc` once, then
-start the API and web app below with `secretspec run -P dev --` in front.
-
-### Backend
+Start the API in one terminal:
 
 ```bash
 cd api
@@ -80,12 +54,7 @@ uv sync
 uv run python run.py
 ```
 
-The API listens on http://localhost:8080; `curl localhost:8080/api/health`
-checks it.
-
-### Frontend
-
-In another terminal, from the repository root:
+And the web app in another:
 
 ```bash
 cd web
@@ -93,15 +62,87 @@ npm install
 npm run dev
 ```
 
-`npm run dev` also starts a small sign-in relay on port 8090
-(`web/scripts/dev-relay.js`): Keycloak only returns to that port, and the relay
-forwards the sign-in to the web app. Open http://localhost:3000 and sign in
-with your CMU account.
+Open http://localhost:3000 and sign in.
 
-## 4. Migrations
+### B. OpenBao
 
-When a pull request adds an Alembic migration, run this from `api/`, inside
-`devenv shell` or with your env files in place:
+Same tools as setup A, plus the OpenBao and secretspec CLIs. On macOS,
+`brew install openbao secretspec`; on Windows or Linux, download them from the
+[OpenBao](https://github.com/openbao/openbao/releases) and
+[secretspec](https://github.com/cachix/secretspec/releases) releases.
+
+Log in once per machine (it opens a browser):
+
+```bash
+bao login -address=https://secrets.scottylabs.org -method=oidc
+```
+
+`secretspec check -P dev` confirms you can read every secret. Then run the
+same commands as setup A without creating any env files, putting
+`secretspec run -P dev --` in front of the two start commands:
+
+```bash
+cd api
+uv sync
+secretspec run -P dev -- uv run python run.py
+```
+
+```bash
+cd web
+npm install
+secretspec run -P dev -- npm run dev
+```
+
+### C. devenv
+
+Install Nix and devenv ([devenv.sh/getting-started](https://devenv.sh/getting-started/)),
+then log in to OpenBao once per machine:
+
+```bash
+nix run git+https://git.cmu.dev/ScottyLabs/kennel#login
+```
+
+Then, in the repository:
+
+```bash
+devenv up
+```
+
+That starts the API, the web app and the sign-in relay together, with the dev
+secrets loaded. Ctrl-C stops all of them. `devenv shell` gives you a shell with
+the same secrets for other commands (tests, migrations, scripts).
+
+## How sign-in works locally
+
+Sign-in goes through ScottyLabs Keycloak, which only sends people back to a
+relay on `localhost:8090`. The relay forwards the sign-in to the web app. In
+setups A and B, `npm run dev` starts a small relay for you
+(`web/scripts/dev-relay.js`); in setup C, `devenv up` runs
+[Ricochet](https://codeberg.org/anish/ricochet), the relay ScottyLabs uses in
+production. Either way there is nothing extra to start.
+
+## Tests
+
+```bash
+cd api
+uv sync --extra dev
+uv run pytest
+```
+
+Tests that need a database read `SUPABASE_DB_URL`. Point it at a local
+Postgres you can throw away, migrated with `uv run alembic upgrade head`, not
+the shared dev database.
+
+```bash
+cd web
+npm test
+```
+
+## Migrations
+
+When a pull request adds an Alembic migration, apply it to the dev database
+from `api/` with the dev secrets loaded (env file, `secretspec run -P dev --`,
+or `devenv shell`):
 
 ```bash
 uv run alembic upgrade head
@@ -112,18 +153,20 @@ the tech lead, and never point a local checkout at production.
 
 ## Troubleshooting
 
-- **`devenv up` or secretspec fails with a secret or permission error**: log
-  in to OpenBao again. If it still fails, governance has not added you to the
-  CMUCal team yet; use the manual setup until it does.
-- **Sign-in ends on a connection error at `localhost:8090`**: nothing is
-  serving the relay. In the manual setup, `npm run dev` starts it, so check
-  that it is still running; with devenv, check the ricochet process in
-  `devenv up`. Opening `localhost:8090` itself shows a 404, which is normal.
-- **Sign-in says Keycloak login is not configured**: a value in
-  `web/.env.local` is empty. Next.js reads env files only at startup, so
-  restart `npm run dev` after editing it.
+- **secretspec or `devenv up` fails with a secret or permission error**: log
+  in to OpenBao again. If that does not help, governance has not added you to
+  the CMUCal team yet; use setup A until it does.
+- **Sign-in ends on a connection error at `localhost:8090`**: the relay is not
+  running. It runs inside `npm run dev` (setups A and B) or `devenv up`
+  (setup C), so check that one is still up. Opening `localhost:8090` itself
+  shows a 404, which is normal.
+- **Sign-in says Keycloak login is not configured**: the web app is missing a
+  secret. In setup A, a value in `web/.env.local` is empty; in setup B, the
+  `secretspec run -P dev --` prefix is missing. Next.js reads env files only at
+  startup, so restart `npm run dev` after editing them.
 - **API crashes with `Expected string or URL object, got None`**:
-  `SUPABASE_DB_URL` is missing: `api/.env.development` does not exist, or you
-  did not start the API from `api/`.
+  `SUPABASE_DB_URL` is missing. In setup A, `api/.env.development` does not
+  exist or the API was not started from `api/`; in setup B, the prefix is
+  missing.
 - **Pages load but data never does**: some CMU networks block outbound
   Postgres. Try CMU-SECURE, eduroam, or a hotspot.

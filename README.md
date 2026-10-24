@@ -13,14 +13,18 @@ and built by the matching packages in `flake.nix`.
 
 ## Getting started
 
-On the CMUCal team, with Nix and devenv: log in to OpenBao once
-(`nix run git+https://git.cmu.dev/ScottyLabs/kennel#login`), then `devenv up`
-starts the API (http://localhost:8080), the web app (http://localhost:3000)
-and the sign-in relay with the dev secrets loaded.
+See [`docs/getting-started.md`](docs/getting-started.md). In short, from a
+clone of this repository:
 
-Without Nix, or on Windows, see the manual setup in
-[`docs/getting-started.md`](docs/getting-started.md): Node 22, Python 3.10+,
-[uv](https://docs.astral.sh/uv/), and local env files.
+- **Not on the CMUCal team yet**: copy `api/.env.example` and
+  `web/.env.example`, fill in the secrets from the tech lead, then run
+  `uv run python run.py` in `api/` and `npm run dev` in `web/`.
+- **On the team**: the same two commands with `secretspec run -P dev --` in
+  front, after `bao login`, so the secrets come from OpenBao instead.
+- **On the team, with Nix**: `devenv up`, after
+  `nix run git+https://git.cmu.dev/ScottyLabs/kennel#login` once.
+
+The API runs on http://localhost:8080 and the web app on http://localhost:3000.
 
 ## Deployment
 

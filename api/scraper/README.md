@@ -1,4 +1,4 @@
-# Updated README
+# Scraper
 
 <!-- 1. `cd scraper`
 2. Run:
@@ -10,39 +10,29 @@
 
 ## Development Environment
 
-1. Activate the virtual environment at the root directory (`cd api && uv sync`).
-1. Dry run first: `python -m scraper.scripts.export_soc --semester Fall_26 --dry-run`
+From `api/`, with the secrets loaded (see
+[`docs/getting-started.md`](../../docs/getting-started.md)):
+
+1. `uv sync`
+1. Dry run first: `uv run python -m scraper.scripts.export_soc --semester Fall_26 --dry-run`
    - `--semester` accepts `Spring_xx`, `Fall_xx`, `Summer1_xx`, `Summer2_xx`; it defaults to the semester in session. Semester dates live in `scraper/helpers/semester.py`.
-1. Run without `--dry-run` to write. Needs `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `API_BASE_URL` (e.g. `https://api.cmucal.com`). Reruns are safe.
+1. Run without `--dry-run` to write. Needs `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `API_BASE_URL` (the API that rebuilds the calendar occurrences, e.g. `http://localhost:8080`). Reruns are safe.
+
+TartanConnect club events work the same way: `uv run python -m scraper.scripts.export_tartanconnect --dry-run`, then without `--dry-run`.
 
 - If need to delete, run this:
 
 ```
-curl -X DELETE http://localhost:5001/api/events/batch_delete_events_by_params \
+curl -X DELETE http://localhost:8080/api/events/batch_delete_events_by_params \
 -H "Content-Type: application/json" \
 --data-raw '{"semester":"Spring_26","source_url":"https://enr-apps.as.cmu.edu/open/SOC/SOCServlet/completeSchedule"}'
 ```
 
 ## Production Environment
 
-- `.forgejo/workflows/scrape.yml` (manual dispatch) runs `python -m scraper.scripts.export_soc` with secrets from OpenBao. It replaced the Railway cron job.
+- `.forgejo/workflows/scrape.yml` (manual dispatch: `soc`, `peer_tutoring`, `supplemental_instruction`, `tartanconnect` or `all`) runs the exports against production with secrets from OpenBao. It replaced the Railway cron job.
 
-# Old README
-
-To use, first create a virtual environment: `python3 -m venv <myenvname>`
-
-Then activate it:
-
-On windows: `.\env\Scripts\activate.bat`
-On mac: `source venv/bin/activate`
-
-Then install needed packages: `pip3 install -r requirements.txt`
-
-Then create a file `config.ini` that contains the link to the MONGO database in the format seen in `config.ini.example`.
-
-Then launch the scraper: `python3 main.py`
-
-______________________________________________________________________
+# Notes
 
 Updates for the future:
 

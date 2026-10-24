@@ -1,91 +1,67 @@
-# Directions to run the backend
+# CMUCal API
 
-## 0. Git Ignore
+The Flask API (`app/`), the scrapers (`scraper/`) and the course agent
+(`course_agent/`). To run it, follow
+[`docs/getting-started.md`](../docs/getting-started.md); the commands below
+assume the dev secrets are loaded (an `.env.development` file,
+`secretspec run -P dev --`, or `devenv shell`).
 
-Make a `.gitignore` file in the root directory and include the following code:
+## Run
 
-```
-client_secret.json
-.env
-venv/
-**/__pycache__/
-*.pyc
-.DS_Store
-```
-
-## 1. Virtual Environment
-
-(ignore this step if already have venv) If there isn't a venv folder, run `python3 -m venv venv` in terminal to create an venv.
-
-- Next, run the following command to activate venv
-
-  - macOS: `source venv/bin/activate`
-  - windows: `venv\Scripts\activate`
-
-- Once activated, you can install dependencies by
-
-  - dev environment: `pip install -e ".[dev]"`
-  - production environment: `pip install .`
-
-<!-- - Once activated, you can install dependencies by `pip install -r requirements.txt`, `pip install -e .`, and save them by running `pip freeze > requirements.txt` -->
-
-- If you encounter an error with psycogp2, run `brew install postgresql` first.
-
-- Note: if you install new dependencies, make sure to add it to `pyproject.toml`
-
-  - If runtime dependency -> [project.dependencies]
-  - If dev/test only -> [project.optional-dependencies].dev◊
-
-## 2. Flask app
-
-Open a terminal (in the backend folder with virtual environment), run `python run.py` to start the Flask app.
-
-## 3. How to test
-
-Run `pytest` in the terminal.
-
-- Note: uses cmucal-test project on supabase for test db
-
-## 4. Supabase
-
-(ignore this unless told otherwise) IF need to get the table schema from Supabase: in the terminal, run `sqlacodegen [SUPABASE_DB_URL from env file] --outfile models.py`
-
-- comment out the `class Base` section in `models.py`
-- add `from app.services.db import Base` to the top of `models.py`
-- change all capitalized class names from plural to singular. i.e. class Events --> class Event. Don't change the lowercase names in quotes.
-
-## 5. Database Migrations
-
-(ignore this unless told otherwise)
-
-Note: add `APP_ENV=development` or `APP_ENV=production` before you run any alembic operations.
-
-Example commands:
-
-```
-APP_ENV=development alembic revision --autogenerate -m "<insert your message>"
-APP_ENV=development alembic upgrade head
-APP_ENV=test alembic upgrade head
-APP_ENV=production alembic upgrade head
+```bash
+uv sync
+uv run python run.py
 ```
 
-- `upgrade head` = run migrations + bump version.
-- `stamp head` = bump version only, no migrations executed.
-- `alembic downgrade -1` = undo the latest migration
+The API listens on http://localhost:8080.
 
-## 6. Course data
+## Dependencies
 
-- see scraper readme instructions on `export_soc`. Edit Railway cron job at [this link](https://railway.com/project/065650eb-f1b3-4b72-9bdc-e0d0a9457205?environmentId=5b57ba27-25e6-44e5-91b8-6b602ae891f3).
+Dependencies live in `pyproject.toml`: runtime ones under
+`[project.dependencies]`, test-only ones under
+`[project.optional-dependencies].dev`. Add one with `uv add <package>` (or
+`uv add --optional dev <package>`) so `uv.lock` stays in sync.
 
-## 7. Scraped Info
+## Tests
 
-(ignore this unless told otherwise) IF need to scrape data from handshake, tartanconnect, si, peer tutoring
+```bash
+uv sync --extra dev
+uv run pytest
+```
 
-1. `git pull` the scraper branch, and switch to this branch
-1. `cd scraper`
-1. Run these commands:
-   - `python exporters/handshake_export_to_excel.py`
-   - `python exporters/tartanconnect_export_to_excel.py`
-   - `python exporters/si_export_to_excel.py`
-   - `python exporters/peer_tutoring_export_to_excel.py`
-1. Then you can see an excel sheet exported to the base folder
+Tests that need a database read `SUPABASE_DB_URL`. Point it at a local
+Postgres you can throw away, migrated with `uv run alembic upgrade head`, not
+the shared dev database.
+
+## Migrations
+
+Alembic migrates whatever database `SUPABASE_DB_URL` points at. `APP_ENV`
+(default `development`) only picks which `.env.<APP_ENV>` file it loads.
+
+```bash
+uv run alembic revision --autogenerate -m "<message>"
+uv run alembic upgrade head
+```
+
+- `upgrade head` runs the pending migrations and bumps the version.
+- `stamp head` bumps the version without running anything.
+- `downgrade -1` undoes the latest migration.
+
+Everyone shares one dev database, so ask the tech lead before a downgrade.
+Production migrations are run by the tech lead, never from a local checkout.
+
+## Regenerating models from Supabase
+
+Only when told to: `uv run sqlacodegen "$SUPABASE_DB_URL" --outfile models.py`,
+then in `models.py`:
+
+- comment out the `class Base` section;
+- add `from app.services.db import Base` at the top;
+- make the capitalized class names singular (`class Events` becomes
+  `class Event`), leaving the lowercase names in quotes alone.
+
+## Course and club data
+
+See [`scraper/README.md`](scraper/README.md): the Schedule of Classes and
+TartanConnect exports, and the Scrape workflow that runs them against
+production.

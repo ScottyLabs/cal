@@ -1,25 +1,21 @@
-# CMUCal
+# CMUCal web
 
-**CMUCal** is a comprehensive web application designed to eliminate the friction of managing scattered academic schedules by bringing all CMU academic resources into one place.
+The Next.js frontend for [cmucal.com](https://cmucal.com), written in
+TypeScript with Tailwind CSS. It talks to the Flask API in [`api/`](../api).
 
-- It features an intuitive frontend built with TypeScript and Tailwind CSS, a robust backend powered by Flask, and an efficient scraping system developed in Python.
-- Through seamless Google Calendar integration, it unifies users' existing calendars with
-  lectures, recitations, office hours, and academic support events.
-- Planned features include integrations with Handshake and TartanConnect, as well as
-  community-driven event discovery through crowdsourced submissions and upvote/downvote mechanisms.
+To run it, follow [`docs/getting-started.md`](../docs/getting-started.md).
+`npm run dev` starts the dev server on http://localhost:3000 together with the
+local sign-in relay on port 8090 (`scripts/dev-relay.js`);
+`npm run dev:next` starts only the dev server.
 
-<!-- It is bootstrapped with `create-t3-app`. -->
+## Checks
 
-## How to run
-
-- Frontend: `npm run dev`
-  <!-- - Note: we will fix type errors around November. Run `npm run build` to see all the errors. -->
-- Backend: see the `readme` file in the backend folder at https://github.com/scottylabs-labrador/cmucal-backend.
-
-## How to test
-
-- run `npm run test`
+```bash
+npm test         # vitest
+npm run check    # eslint and tsc
+```
 
 ## Deployment
 
-- Deployed on Vercel.
+Kennel builds and deploys `main` to cmucal.com; see the root
+[README](../README.md#deployment).
