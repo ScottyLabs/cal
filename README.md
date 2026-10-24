@@ -20,7 +20,7 @@ and the sign-in relay with the dev secrets loaded.
 
 Without Nix, or on Windows, see the manual setup in
 [`docs/getting-started.md`](docs/getting-started.md): Node 22, Python 3.10+,
-[uv](https://docs.astral.sh/uv/), local env files, and Ricochet for sign-in.
+[uv](https://docs.astral.sh/uv/), and local env files.
 
 ## Deployment
 

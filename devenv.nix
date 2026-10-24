@@ -72,7 +72,7 @@
   # `devenv up` runs these with the dev secrets from OpenBao, next to ricochet.
   processes = {
     api.exec = "cd $DEVENV_ROOT/api && uv sync --quiet && uv run python run.py";
-    web.exec = "cd $DEVENV_ROOT/web && npm install --no-audit --no-fund && npm run dev";
+    web.exec = "cd $DEVENV_ROOT/web && npm install --no-audit --no-fund && npm run dev:next";
   };
 
   scripts = {

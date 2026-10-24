@@ -50,8 +50,7 @@ environment.
 
 ### Prerequisites
 
-Node 22 with npm, Python 3.10 or newer, [uv](https://docs.astral.sh/uv/), and
-[Rust](https://rustup.rs) (to install Ricochet).
+Node 22 with npm, Python 3.10 or newer, and [uv](https://docs.astral.sh/uv/).
 
 ### Secrets
 
@@ -84,30 +83,6 @@ uv run python run.py
 The API listens on http://localhost:8080; `curl localhost:8080/api/health`
 checks it.
 
-### Sign-in relay
-
-Sign-in goes through ScottyLabs Keycloak, which only returns to the
-[Ricochet](https://codeberg.org/anish/ricochet) relay on port 8090. Install it
-once:
-
-```bash
-cargo install --git https://codeberg.org/anish/ricochet --rev ddc58bcad0bb2b898f900a3c13c94c263e797ad2 --locked
-```
-
-Then start it in its own terminal and leave it running. On macOS or Linux:
-
-```bash
-RICOCHET_DEV=1 RICOCHET_BIND=127.0.0.1:8090 ricochet
-```
-
-On Windows (PowerShell):
-
-```powershell
-$env:RICOCHET_DEV="1"; $env:RICOCHET_BIND="127.0.0.1:8090"; ricochet
-```
-
-It is running when it prints `ricochet listening bind=127.0.0.1:8090`.
-
 ### Frontend
 
 In another terminal, from the repository root:
@@ -118,7 +93,10 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 and sign in with your CMU account.
+`npm run dev` also starts a small sign-in relay on port 8090
+(`web/scripts/dev-relay.js`): Keycloak only returns to that port, and the relay
+forwards the sign-in to the web app. Open http://localhost:3000 and sign in
+with your CMU account.
 
 ## 4. Migrations
 
@@ -137,10 +115,10 @@ the tech lead, and never point a local checkout at production.
 - **`devenv up` or secretspec fails with a secret or permission error**: log
   in to OpenBao again. If it still fails, governance has not added you to the
   CMUCal team yet; use the manual setup until it does.
-- **Sign-in ends on a connection error at `localhost:8090`**: Ricochet is not
-  running. In the manual setup, start it as above; without `RICOCHET_DEV` and
-  `RICOCHET_BIND` set it exits right away. Opening `localhost:8090` itself
-  shows a 404, which is normal.
+- **Sign-in ends on a connection error at `localhost:8090`**: nothing is
+  serving the relay. In the manual setup, `npm run dev` starts it, so check
+  that it is still running; with devenv, check the ricochet process in
+  `devenv up`. Opening `localhost:8090` itself shows a 404, which is normal.
 - **Sign-in says Keycloak login is not configured**: a value in
   `web/.env.local` is empty. Next.js reads env files only at startup, so
   restart `npm run dev` after editing it.
