@@ -41,10 +41,16 @@ export function relayTarget(query) {
   const state = query.get("state");
   if (!state) return null;
 
+  // Unpadded base64url only, as Ricochet decodes it; Buffer is more lenient.
+  const encoded = state.trim();
+  if (!/^[A-Za-z0-9_-]+$/.test(encoded) || encoded.length % 4 === 1) {
+    return null;
+  }
+
   let target;
   try {
     const envelope = parseJson(
-      Buffer.from(state.trim(), "base64url").toString("utf8"),
+      Buffer.from(encoded, "base64url").toString("utf8"),
     );
     if (
       typeof envelope !== "object" ||

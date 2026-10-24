@@ -21,4 +21,20 @@ const next = spawn(
   [nextBin, "dev", "--turbo", ...process.argv.slice(2)],
   { stdio: "inherit" },
 );
-next.on("exit", (code) => process.exit(code ?? 1));
+
+// Pass stop signals on so Next never outlives this script, then exit the way
+// Next did.
+/** @type {NodeJS.Signals[]} */
+const signals = ["SIGINT", "SIGTERM", "SIGHUP"];
+const forward = (/** @type {NodeJS.Signals} */ signal) => next.kill(signal);
+for (const signal of signals) process.on(signal, forward);
+
+next.on("error", (err) => {
+  console.error(err);
+  process.exit(1);
+});
+next.on("exit", (code, signal) => {
+  for (const s of signals) process.off(s, forward);
+  if (signal) process.kill(process.pid, signal);
+  else process.exit(code ?? 1);
+});

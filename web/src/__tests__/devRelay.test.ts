@@ -49,4 +49,11 @@ describe("relayTarget", () => {
     expect(callback({ code: "abc" })).toBeNull();
     expect(callback({ state: "not-json", code: "abc" })).toBeNull();
   });
+
+  it("refuses state that Ricochet would not decode", () => {
+    const s = state({ return_to: "http://localhost:3000/cb" });
+    expect(callback({ state: s, code: "abc" })).not.toBeNull();
+    expect(callback({ state: `${s}==`, code: "abc" })).toBeNull();
+    expect(callback({ state: `${s}!!`, code: "abc" })).toBeNull();
+  });
 });
