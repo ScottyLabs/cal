@@ -12,62 +12,62 @@ requires-python = ">=3.10"
 # Runtime dependencies ONLY
 # -----------------------------
 dependencies = [
-    # Web / API
-    "Flask>=3.1",
-    "flask-cors",
-    "Flask-JWT-Extended",
-    "Flask-PyMongo",
-    "gunicorn",
-    "sentry-sdk[flask]",
+  # Web / API
+  "Flask>=3.1",
+  "flask-cors",
+  "Flask-JWT-Extended",
+  "Flask-PyMongo",
+  "gunicorn",
+  "sentry-sdk[flask]",
 
-    # Database
-    "SQLAlchemy>=2.0",
-    "alembic",
-    "psycopg2-binary",
-    "pymongo",
-    "supabase",
+  # Database
+  "SQLAlchemy>=2.0",
+  "alembic",
+  "psycopg2-binary",
+  "pymongo",
+  "supabase",
 
-    # Auth / security
-    "bcrypt",
-    "Flask-Bcrypt",
-    "PyJWT",
-    "python-dotenv",
+  # Auth / security
+  "bcrypt",
+  "Flask-Bcrypt",
+  "PyJWT",
+  "python-dotenv",
 
-    # Scraping / parsing
-    "requests",
-    "urllib3",
-    "beautifulsoup4",
+  # Scraping / parsing
+  "requests",
+  "urllib3",
+  "beautifulsoup4",
 
-    # Data / export
-    "pandas",
-    "numpy",
-    "openpyxl",
+  # Data / export
+  "pandas",
+  "numpy",
+  "openpyxl",
 
-    # Calendar / time
-    "icalendar",
-    "recurring-ical-events",
-    "python-dateutil",
-    "pytz",
-    "tzlocal",
-    "x-wr-timezone",
+  # Calendar / time
+  "icalendar",
+  "recurring-ical-events",
+  "python-dateutil",
+  "pytz",
+  "tzlocal",
+  "x-wr-timezone",
 
-    # Google APIs
-    "google-api-python-client",
-    "google-auth",
-    "google-auth-oauthlib",
+  # Google APIs
+  "google-api-python-client",
+  "google-auth",
+  "google-auth-oauthlib",
 
-    # LLM / Agents
-    "langchain",
-    "langchain-openai",
-    "langgraph",
-    "openai",
-    "tiktoken",
+  # LLM / Agents
+  "langchain",
+  "langchain-openai",
+  "langgraph",
+  "openai",
+  "tiktoken",
 
-    # Visualization (LangGraph)
-    "graphviz",
+  # Visualization (LangGraph)
+  "graphviz",
 
-    # Misc
-    "inflect",
+  # Misc
+  "inflect",
 ]
 
 # -----------------------------
@@ -84,12 +84,12 @@ api = "app.wsgi:main"
 # -----------------------------
 [project.optional-dependencies]
 dev = [
-    "pytest",
-    "pytest-cov",
-    "pytest-mock",
-    "coverage",
-    "typeguard",
-    "sqlacodegen",
+  "pytest",
+  "pytest-cov",
+  "pytest-mock",
+  "coverage",
+  "typeguard",
+  "sqlacodegen",
 ]
 
 # -----------------------------
