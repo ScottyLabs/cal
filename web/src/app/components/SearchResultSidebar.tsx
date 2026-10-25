@@ -17,6 +17,7 @@ import React from 'react'
 import dynamic from "next/dynamic";
 import { fetchAllTags } from "../utils/api/events";
 import { API_BASE_URL, api } from "../utils/api/api";
+import TodayStrip from "./TodayStrip";
 
 // The control's styles depend on the theme, which is only known in the
 // browser, so it is not server-rendered.
@@ -190,8 +191,20 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
     setCurrentPage(1);
   }, [searchTerm, selectedDate, selectedTags, selectedEventType]);
   
+  const openDetailsNear = (event: EventType, rect: DOMRect) => {
+    openDetails(event.id, event, {
+      x: rect.right + 8,
+      y: rect.top,
+      anchorRect: rect,
+    });
+  };
+
   return (
     <div className="px-8 py-3">
+      <TodayStrip
+        events={globalEvents}
+        onSelect={openDetailsNear}
+      />
       {/* Search Bar */}
       <div className="relative flex items-center w-full my-3">
         <FiSearch className="absolute left-3 text-gray-500 dark:text-gray-300" size={16} />
@@ -342,7 +355,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
               {savedEventIds.has(event.id) ? "Remove" : "Add"}
             </button>
             <button
-              onClick={() => openDetails(event.id, event)}
+              onClick={(e) => openDetailsNear(event, e.currentTarget.getBoundingClientRect())}
               className="mt-2 mx-2 px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600">
               Learn more
             </button>

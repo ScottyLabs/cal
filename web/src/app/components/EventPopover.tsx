@@ -68,7 +68,7 @@ export default function EventPopover({ show, onClose, position, savedEventDetail
     };
     void fetchTag();
   }, [eventId]);
-
+  console.log("EventPopover position:", position); // this is a test line, remove this later!!
   if (!position) return null;
 
   return (
