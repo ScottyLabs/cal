@@ -4,14 +4,18 @@
 # long-running services, not scheduled jobs, so they live here instead -
 # matching ScottyLabs/courses, which runs its scraper the same way.
 #
-# Manual dispatch only, deliberately. These write directly to the production
-# database and the Schedule of Classes scrape takes roughly an hour. The SOC
-# semester defaults to the one in session (Jan-May Spring, Aug-Dec Fall) and
-# the run refuses to write if the SOC page is for a different term. Add a
-# `schedule:` trigger once a run has been watched end to end under kennel.
+# These write directly to the production database. Only the TartanConnect
+# import runs on a schedule, weekly. The Schedule of Classes scrape takes
+# roughly an hour and stays manual: its semester defaults to the one in session
+# (Jan-May Spring, Aug-Dec Fall) and the run refuses to write if the SOC page
+# is for a different term, which it is once next semester is posted.
 name: Scrape
 
 on:
+  schedule:
+    # Mondays 10:00 UTC. A scheduled run has no inputs, so the defaults below
+    # pick the TartanConnect import against prod.
+    - cron: "0 10 * * 1"
   workflow_dispatch:
     inputs:
       source:
@@ -52,7 +56,7 @@ jobs:
     env:
       # Kennel overrides the provider at deploy time, but here we resolve
       # explicitly: the CI job authenticates to OpenBao with its own OIDC token.
-      SECRETSPEC_PROFILE: ${{ inputs.profile }}
+      SECRETSPEC_PROFILE: ${{ inputs.profile || 'prod' }}
       SECRETSPEC_PROVIDER: openbao-ci
       # Read by scraper/scripts/export_soc.py.
       SOC_SEMESTER: ${{ inputs.semester }}
@@ -72,7 +76,7 @@ jobs:
             devenv shell -- python -m "scraper.scripts.$1"
             echo "::endgroup::"
           }
-          case "${{ inputs.source }}" in
+          case "${{ inputs.source || 'tartanconnect' }}" in
             soc)                      run_one export_soc ;;
             peer_tutoring)            run_one export_peer_tutoring ;;
             supplemental_instruction) run_one export_supplemental_instruction ;;
