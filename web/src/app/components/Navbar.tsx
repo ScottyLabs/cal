@@ -153,6 +153,13 @@ export default function Navbar() {
   };
 
 
+  // The sidebar's empty state asks for the create-schedule form.
+  useEffect(() => {
+    const open = () => setShowNewScheduleInput(true);
+    window.addEventListener("cmucal:create-schedule", open);
+    return () => window.removeEventListener("cmucal:create-schedule", open);
+  }, []);
+
   // Handle dark mode mounting
   useEffect(() => {
     setMounted(true);
