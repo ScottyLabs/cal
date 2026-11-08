@@ -1,0 +1,11 @@
+{
+  "nodeModulesDir": "auto",
+  "tasks": {
+    "build": "next build",
+    "dev": "next dev --turbo",
+    "start": "next start",
+    "preview": "next build && next start",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  }
+}

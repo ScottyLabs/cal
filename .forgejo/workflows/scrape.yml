@@ -1,8 +1,4 @@
-# Data refresh for CMUCal.
-#
-# These ran as Railway cron jobs before the kennel migration. Kennel deploys
-# long-running services, not scheduled jobs, so they live here instead -
-# matching ScottyLabs/courses, which runs its scraper the same way.
+# Data refresh for CMU Cal.
 #
 # Manual dispatch only, deliberately. These write directly to the production
 # database and the Schedule of Classes scrape takes roughly an hour. The SOC
@@ -61,7 +57,6 @@ jobs:
       TARTANCONNECT_DRY_RUN: ${{ inputs.dry_run }}
     steps:
       - uses: https://code.forgejo.org/actions/checkout@v7
-      - uses: https://git.cmu.dev/ScottyLabs/kennel/.forgejo/actions/prepare@main
 
       - name: Scrape
         working-directory: api
@@ -69,7 +64,7 @@ jobs:
           set -euo pipefail
           run_one() {
             echo "::group::$1"
-            devenv shell -- python -m "scraper.scripts.$1"
+            nix develop --command uv run --locked python -m "scraper.scripts.$1"
             echo "::endgroup::"
           }
           case "${{ inputs.source }}" in

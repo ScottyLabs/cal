@@ -46,7 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <AuthProvider initialUser={profile}>
       <html lang="en" className="h-full" suppressHydrationWarning>
         <body className={`${inter.variable} ${GeistMono.variable} font-sans antialiased dark:bg-[#0F1115] h-full`}>
-          <PostHogPageViews apiKey={process.env.POSTHOG_KEY} apiHost={process.env.POSTHOG_HOST} />
+          <PostHogPageViews apiKey={process.env.PUBLIC_POSTHOG_KEY} apiHost={process.env.PUBLIC_POSTHOG_HOST} />
           <GcalEventsProvider>
             <EventStateProvider>
               <UserProvider>

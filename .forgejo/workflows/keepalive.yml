@@ -1,4 +1,4 @@
-# Keeps CMUCal's Supabase free-tier projects from auto-pausing.
+# Keeps CMU Cal's Supabase free-tier projects from auto-pausing.
 #
 # Supabase pauses a free project after about a week without user database
 # queries. Both projects have been caught paused, dev repeatedly. This sends

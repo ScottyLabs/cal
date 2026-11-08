@@ -15,7 +15,7 @@ def test_agent_accepts_site_and_calendar(
 
     # html fetch
     mocker.patch(
-        "course_agent.app.services.html_fetcher.fetch_html",
+        "course_agent.app.agent.nodes.verify_site.fetch_html",
         return_value="""
             <html>
               <iframe src="https://calendar.google.com/calendar/embed?src=test@cmu.edu"></iframe>
@@ -70,7 +70,7 @@ def test_agent_rejects_first_site_and_continues(
     }
 
     mocker.patch(
-        "course_agent.app.services.html_fetcher.fetch_html",
+        "course_agent.app.agent.nodes.verify_site.fetch_html",
         return_value="<html>random page</html>",
     )
 
@@ -140,7 +140,7 @@ def test_site_without_calendar(
     )
 
     mocker.patch(
-        "course_agent.app.services.html_fetcher.fetch_html",
+        "course_agent.app.agent.nodes.verify_site.fetch_html",
         return_value="<html>syllabus but no iframe</html>",
     )
 

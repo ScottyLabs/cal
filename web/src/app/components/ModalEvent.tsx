@@ -71,7 +71,6 @@ export default function ModalEvent({ show, onClose, savedEventDetails }: ModalEv
             }
         }
         void fetchEventDetails();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [eventId])
 
     useEffect(() => {

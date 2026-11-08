@@ -1,6 +1,4 @@
-# Nix / devenv
-.devenv/
-.direnv/
+# Nix
 .pre-commit-config.yaml
 result
 result-*
@@ -8,7 +6,6 @@ result-*
 # Secrets - never commit real values
 .env
 .env.*
-!.env.example
 !web/.env.production
 !web/.env.development
 client_secret.json
@@ -28,9 +25,6 @@ tsconfig.tsbuildinfo
 
 # OS
 .DS_Store
-
-# Local Claude Code state
-.claude/settings.local.json
 
 # Python build artifacts
 build/

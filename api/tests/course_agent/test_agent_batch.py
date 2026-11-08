@@ -18,7 +18,7 @@ def test_agent_runs_multiple_courses(
     )
 
     mocker.patch(
-        "course_agent.app.services.html_fetcher.fetch_html",
+        "course_agent.app.agent.nodes.verify_site.fetch_html",
         return_value="<html>syllabus</html>",
     )
 

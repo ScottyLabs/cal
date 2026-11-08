@@ -6,48 +6,28 @@ A unified web calendar for all CMU academic events, live at
 
 - `api/`: Flask API, scrapers, and course agent (the `api` service).
 - `web/`: Next.js 16 frontend (the `web` service).
-- `docs/`: contributor docs, published on docs.scottylabs.org.
+- `docs/`: contributor docs.
 
-Both services are declared in `devenv.nix` under `scottylabs.kennel.services`
-and built by the matching packages in `flake.nix`.
+Both services are declared and built in `flake.nix`.
 
 ## Getting started
 
-No nix needed: Node 22, Python 3.10+, and [uv](https://docs.astral.sh/uv/).
-Full walkthrough in [`docs/getting-started.md`](docs/getting-started.md).
+Install Lix and log in to OpenBao by following kennel's [local development](https://docs.kennel.scottylabs.org/guides/local-development/#installing-nix) and [secrets](https://docs.kennel.scottylabs.org/guides/secrets/#local-development) guides, then enter the dev shell and start the API, the frontend, and the sign-in relay. The full walkthrough is in [`docs/getting-started.md`](docs/getting-started.md).
 
 ```bash
-cp api/.env.example api/.env.development   # fill in the secrets
-cd api && uv sync && uv run python run.py  # http://localhost:8080
-
-cp web/.env.example web/.env.local         # in a second terminal; sign-in
-                                           # also needs Ricochet (see docs)
-cd web && npm install && npm run dev       # http://localhost:3000
+nix develop
+pitchfork start --local   # API on :8080, frontend on :3000
 ```
-
-Nix and devenv are only needed to change the build and deploy config
-(`devenv.nix`, `flake.nix`, `secretspec.toml`): run
-`nix run git+https://git.cmu.dev/ScottyLabs/kennel#login` once, then
-`devenv allow`.
 
 ## Deployment
 
 Kennel deploys `main` to production (`cmucal.com`, `api.cmucal.com`), so a
-merge ships to users. Other branch pushes are ignored; open a pull request to
-get CI. Preview deployments are off because every deployment would share the
-one Supabase database.
-
-Each service exposes `GET /api/health`, which kennel polls after starting it.
+merge ships to users. Preview deployments are off because every deployment
+would share the one Supabase database.
 
 ## Secrets
 
-Declared in `secretspec.toml`, stored in OpenBao, injected at deploy time.
-Never committed.
-
-```bash
-secretspec set -P prod SUPABASE_DB_URL
-secretspec check -P prod
-```
+Declared in `secretspec.toml` and stored in OpenBao. Kennel's [secrets guide](https://docs.kennel.scottylabs.org/guides/secrets/#managing-secrets) covers setting and checking them.
 
 `web/.env.production` is the exception: `NEXT_PUBLIC_*` values are inlined at
 build time, before kennel resolves secrets, and are public by design.
@@ -59,5 +39,5 @@ build time, before kennel resolves secrets, and are public by design.
   scraper and course agent writers, which use the Supabase REST client.
 - Scraped course events do not skip holidays, and lecture vs recitation is
   guessed from the section label.
-- Ruff runs a reduced rule set and the `ty` hook is off.
+- Ruff runs a reduced rule set.
 - `nix build .#api` fails on macOS (a darwin nix bug); CI builds on Linux.

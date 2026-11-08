@@ -1,4 +1,4 @@
-# CMUCal
+# CMU Cal
 
 A unified web calendar for CMU academic events, live at
 [cmucal.com](https://cmucal.com). Source:
