@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import or_
@@ -17,6 +19,8 @@ from icalendar import Calendar, Event as ICalEvent
 log = logging.getLogger(__name__)
 
 schedule_bp = Blueprint("schedule_bp", __name__)
+
+CAMPUS_TZ = ZoneInfo("America/New_York")
 
 
 def event_occurrence_to_dict(occurrence: EventOccurrence):
@@ -95,6 +99,11 @@ def get_schedule_download():
             return jsonify({"error": "Schedule not found"}), 404
             
         cal = Calendar()
+        # PRODID and VERSION are required by RFC 5545; Outlook rejects files without them
+        cal.add("prodid", "-//ScottyLabs//CMUCal//EN")
+        cal.add("version", "2.0")
+        cal.add("x-wr-calname", schedule.name or "CMUCal")
+
         for schedule_org in schedule.schedule_orgs:
             org = schedule_org.org
             # Same org types the schedule view shows
@@ -105,19 +114,37 @@ def get_schedule_download():
             for category in categories:
                 for occ in org_occurrence(db, org, category):
                     vevent = ICalEvent()
-                    vevent.add("uid", occ.id)
-                    vevent.add("dtstart", occ.start_datetime)
-                    vevent.add("dtend", occ.end_datetime)
-                    vevent.add("summary", occ.title)
-                    vevent.add("location", occ.location)
-                    vevent.add("description", occ.description)
+                    # UIDs must be globally unique, not just unique in our table
+                    vevent.add("uid", f"{occ.id}@cal.scottylabs.org")
+                    vevent.add("dtstamp", datetime.now(timezone.utc))
+
+                    if occ.is_all_day:
+                        # All-day events are dates, not times. Take the date in
+                        # campus time so a UTC conversion can't shift the day.
+                        start = occ.start_datetime.astimezone(CAMPUS_TZ).date()
+                        end = occ.end_datetime.astimezone(CAMPUS_TZ).date()
+                        # DTEND is exclusive for dates, so a one-day event ends the next day
+                        if end <= start:
+                            end = start + timedelta(days=1)
+                        vevent.add("dtstart", start)
+                        vevent.add("dtend", end)
+                    else:
+                        vevent.add("dtstart", occ.start_datetime)
+                        vevent.add("dtend", occ.end_datetime)
+
+                    vevent.add("summary", occ.title or "Untitled event")
+                    # Optional fields: leave them out rather than writing "None"
+                    if occ.location:
+                        vevent.add("location", occ.location)
+                    if occ.description:
+                        vevent.add("description", occ.description)
                     cal.add_component(vevent)
     except Exception:
         log.exception("get_schedule_download failed")
         return jsonify({"error": "Internal server error"}), 500                    
     
 
-    return cal.to_ical(), 200, {"Content-Type": "text/calendar", "Content-Disposition": "attachment; filename=cmucal.ics"}
+    return cal.to_ical(), 200, {"Content-Type": "text/calendar", "Content-Disposition": 'attachment; filename="cmucal.ics"'}
 
 
 @schedule_bp.route("/", methods=["GET"])
