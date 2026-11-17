@@ -11,6 +11,8 @@ from app.models.models import (
     Schedule,
 )
 from app.utils.auth import current_user
+from icalendar import Calendar, Event as ICalEvent
+
 
 log = logging.getLogger(__name__)
 
@@ -34,6 +36,89 @@ def event_occurrence_to_dict(occurrence: EventOccurrence):
         "category_id": occurrence.category_id,
     }
 
+def find_user_schedule(db, user, schedule_id=None):
+    schedule_query = db.query(Schedule).filter(Schedule.user_id == user.id)
+    if schedule_id:
+        schedule = schedule_query.filter(Schedule.id == schedule_id).first()
+    else:
+        schedule = schedule_query.first()
+        
+    if not schedule:
+        return None
+    
+    return schedule
+    
+    
+def org_occurrence(db, org, category):
+    # Get events for this category (exclude events from inactive sources)
+    events = (
+        db.query(Event)
+        .outerjoin(
+            CalendarSource,
+            Event.calendar_source_id == CalendarSource.id,
+        )
+        .filter(
+            Event.org_id == org.id,
+            Event.category_id == category.id,
+            or_(
+                Event.calendar_source_id == None,
+                CalendarSource.active == True,
+            ),  
+        )
+        .all()
+    )
+
+    # Get event occurrences
+    event_ids = [e.id for e in events]
+    occurrences = []
+    if event_ids:
+        occurrences = (
+            db.query(EventOccurrence)
+            .filter(EventOccurrence.event_id.in_(event_ids))
+            .all()
+        )
+    
+    return occurrences
+
+# get_schedule_download -> get_schedule_routebut eith a different route and everything in 
+# Build a Calendar with one VEVENT per EventOccurrence (UID, DTSTART, DTEND, SUMMARY, LOCATION, DESCRIPTION). Return cal.to_ical() with mimetype="text/calendar" and Content-Disposition: attachment; filename="cmucal.ics".
+@schedule_bp.route("/export", methods=["GET"])
+def get_schedule_download():
+    schedule_id = request.args.get("schedule_id")
+    user = current_user()
+    
+    try:
+        db = g.db
+        schedule = find_user_schedule(db, user, schedule_id)
+            
+        if schedule is None:
+            return jsonify({"error": "Schedule not found"}), 404
+            
+        cal = Calendar()
+        for schedule_org in schedule.schedule_orgs:
+            org = schedule_org.org
+            # Same org types the schedule view shows
+            if not org or org.type not in ("COURSE", "ACADEMIC", "CLUB"):
+                continue
+
+            categories = db.query(Category).filter(Category.org_id == org.id).all()
+            for category in categories:
+                for occ in org_occurrence(db, org, category):
+                    vevent = ICalEvent()
+                    vevent.add("uid", occ.id)
+                    vevent.add("dtstart", occ.start_datetime)
+                    vevent.add("dtend", occ.end_datetime)
+                    vevent.add("summary", occ.title)
+                    vevent.add("location", occ.location)
+                    vevent.add("description", occ.description)
+                    cal.add_component(vevent)
+    except Exception:
+        log.exception("get_schedule_download failed")
+        return jsonify({"error": "Internal server error"}), 500                    
+    
+
+    return cal.to_ical(), 200, {"Content-Type": "text/calendar", "Content-Disposition": "attachment; filename=cmucal.ics"}
+
 
 @schedule_bp.route("/", methods=["GET"])
 def get_schedule_route():
@@ -44,12 +129,7 @@ def get_schedule_route():
     db = g.db
     try:
         # Get specific schedule or user's first schedule
-        schedule_query = db.query(Schedule).filter(Schedule.user_id == user.id)
-        if schedule_id:
-            schedule = schedule_query.filter(Schedule.id == schedule_id).first()
-        else:
-            schedule = schedule_query.first()
-
+        schedule = find_user_schedule(db, user, schedule_id)
         if not schedule:
             return jsonify({"courses": [], "clubs": []})
 
@@ -64,9 +144,6 @@ def get_schedule_route():
 
             # Get all categories for this org
             categories = db.query(Category).filter(Category.org_id == org.id).all()
-
-            # Get all events and occurrences for this org
-            events_query = db.query(Event).filter(Event.org_id == org.id)
 
             # Check if org is a course or club
             if org.type == "COURSE" or org.type == "ACADEMIC":
@@ -83,32 +160,7 @@ def get_schedule_route():
                         {"id": category.id, "name": category.name}
                     )
 
-                    # Get events for this category (exclude events from inactive sources)
-                    events = (
-                        db.query(Event)
-                        .outerjoin(
-                            CalendarSource,
-                            Event.calendar_source_id == CalendarSource.id,
-                        )
-                        .filter(
-                            Event.org_id == org.id,
-                            Event.category_id == category.id,
-                            or_(
-                                Event.calendar_source_id == None,
-                                CalendarSource.active == True,
-                            ),  # noqa: E711
-                        )
-                        .all()
-                    )
-
-                    # Get event occurrences
-                    event_ids = [e.id for e in events]
-                    occurrences = (
-                        db.query(EventOccurrence)
-                        .filter(EventOccurrence.event_id.in_(event_ids))
-                        .all()
-                    )
-
+                    occurrences = org_occurrence(db, org, category)
                     courses[org.id]["events"][category.name] = [
                         event_occurrence_to_dict(o) for o in occurrences
                     ]
@@ -127,34 +179,7 @@ def get_schedule_route():
                         {"id": category.id, "name": category.name}
                     )
 
-                    # Get regular events for this category (exclude events from inactive sources)
-                    events = (
-                        db.query(Event)
-                        .outerjoin(
-                            CalendarSource,
-                            Event.calendar_source_id == CalendarSource.id,
-                        )
-                        .filter(
-                            Event.org_id == org.id,
-                            Event.category_id == category.id,
-                            or_(
-                                Event.calendar_source_id == None,
-                                CalendarSource.active == True,
-                            ),  # noqa: E711
-                        )
-                        .all()
-                    )
-
-                    event_ids = [e.id for e in events]
-
-                    occurrences = []
-                    if event_ids:
-                        occurrences = (
-                            db.query(EventOccurrence)
-                            .filter(EventOccurrence.event_id.in_(event_ids))
-                            .all()
-                        )
-
+                    occurrences = org_occurrence(db, org, category)
                     clubs[org.id]["events"][category.name] = [
                         event_occurrence_to_dict(o) for o in occurrences
                     ]
