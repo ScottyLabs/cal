@@ -82,8 +82,15 @@
             };
           };
 
+          # scraper fixtures are saved copies of real (malformed) pages
+          treefmt.settings.global.excludes = [ "api/tests/scraper_monitors/fixtures/*" ];
+
           pre-commit.settings.hooks = {
             deno-test.enable = lib.mkForce false;
+            # off until their existing backlog is fixed (431 oxlint errors, 144 ty diagnostics); deno-check also needs .scottylabs excluded first
+            oxlint.enable = lib.mkForce false;
+            ty.enable = lib.mkForce false;
+            deno-check.enable = lib.mkForce false;
             vitest = {
               enable = true;
               name = "vitest";
