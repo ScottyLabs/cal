@@ -91,6 +91,26 @@
             oxlint.enable = lib.mkForce false;
             ty.enable = lib.mkForce false;
             deno-check.enable = lib.mkForce false;
+            # the dev shell exports the shared dev database as SUPABASE_DB_URL, so point the tests at the local one instead (`pitchfork start --local`)
+            pytest.entry = lib.mkForce (
+              lib.getExe (
+                pkgs.writeShellApplication {
+                  name = "pytest-local-db";
+                  text = ''
+                    export SUPABASE_DB_URL="''${DATABASE_URL:?no local database; run pitchfork start --local}"
+                    cd api
+                    if ! alembic upgrade head >/dev/null 2>&1; then
+                      echo "pytest: local database unreachable; run pitchfork start --local" >&2
+                      exit 1
+                    fi
+                    rc=0
+                    python -m pytest "$@" || rc=$?
+                    [ "$rc" -eq 5 ] && exit 0
+                    exit "$rc"
+                  '';
+                }
+              )
+            );
             vitest = {
               enable = true;
               name = "vitest";
