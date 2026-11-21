@@ -30,8 +30,7 @@ export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
   const idpError = params.get("error");
   if (idpError) return fail(idpError);
-  // openid-client checks this too; failing early keeps a stale or foreign
-  // state from ever reaching the token endpoint.
+  // openid-client checks this too; failing early keeps a stale or foreign state from ever reaching the token endpoint.
   if (params.get("state") !== tx.state) return fail("state");
 
   try {

@@ -2,26 +2,24 @@ import React from "react";
 import dayjs, { Dayjs } from "dayjs";
 import { DBRecurrenceEnds, RecurrenceInput, RecurrenceOutput, RRuleFrequency } from "./types"; // Adjust the import path as necessary
 
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-
 export function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",      // "Feb"
-      day: "numeric",      // "2"
-      hour: "numeric",     // "10"
-      minute: "2-digit",   // "00"
-      hour12: true         // "AM/PM"
-    }).format(date);
-  }
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short", // "Feb"
+    day: "numeric", // "2"
+    hour: "numeric", // "10"
+    minute: "2-digit", // "00"
+    hour12: true, // "AM/PM"
+  }).format(date);
+}
 
-// Same-day ranges read "Mon, Feb 16, 6:30 - 7:45 AM"; longer ranges keep
-// the full date on both ends.
+// Same-day ranges read "Mon, Feb 16, 6:30 - 7:45 AM"; longer ranges keep the full date on both ends.
 export function formatTimeRange(startString: string, endString: string): string {
   const start = new Date(startString);
   const end = new Date(endString);
@@ -38,45 +36,45 @@ export function formatTimeRange(startString: string, endString: string): string 
     minute: "2-digit",
     hour12: true,
   });
-  const sameMeridiem = (start.getHours() < 12) === (end.getHours() < 12);
+  const sameMeridiem = start.getHours() < 12 === end.getHours() < 12;
   const startTime = sameMeridiem ? time.format(start).replace(/\s[AP]M$/, "") : time.format(start);
   return `${day}, ${startTime} - ${time.format(end)}`;
 }
 
-
 export const getDateString = (date: string) => {
-    // return: 2024-08-02
-    return new Date(date).toISOString().slice(0, 10);
-}
+  // return: 2024-08-02
+  return new Date(date).toISOString().slice(0, 10);
+};
 
 export const get24Hour = (time: string) => {
-    // time: 07:00PM
-    const suffix = time.slice(5); //default end is the lenght of string
-    if (suffix == 'PM') {
-        let hour = Number(time.slice(0,2));
-        hour = hour + 12;
-        const newH = `${hour}`;
-        return newH+time.slice(2,5);
-    } 
-    return time.slice(0,5);
-}
+  // time: 07:00PM
+  const suffix = time.slice(5); //default end is the lenght of string
+  if (suffix == "PM") {
+    let hour = Number(time.slice(0, 2));
+    hour = hour + 12;
+    const newH = `${hour}`;
+    return newH + time.slice(2, 5);
+  }
+  return time.slice(0, 5);
+};
 
-export const getFormattedDateStr = (date:string, time:string) => {
-    const formattedDate = getDateString(date);
-    const formattedTime = get24Hour(time);
-    return formattedDate + 'T' + formattedTime;
-}
+export const getFormattedDateStr = (date: string, time: string) => {
+  const formattedDate = getDateString(date);
+  const formattedTime = get24Hour(time);
+  return formattedDate + "T" + formattedTime;
+};
 
 // used in CustomRecurrencePicker.tsx
 export function generateRRuleString(input: RecurrenceInput): string {
-  const { frequency, interval, selectedDays, ends, endDate, occurrences, startDatetime, nthWeek } = input;
+  const { frequency, interval, selectedDays, ends, endDate, occurrences, startDatetime, nthWeek } =
+    input;
   const freq = frequency.toUpperCase();
   const rruleParts = [`FREQ=${freq}`, `INTERVAL=${interval}`];
 
   const weekdayMap = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 
   if (frequency === "WEEKLY" && selectedDays.length > 0) {
-    const byDay = selectedDays.map(i => weekdayMap[i]).join(",");
+    const byDay = selectedDays.map((i) => weekdayMap[i]).join(",");
     rruleParts.push(`BYDAY=${byDay}`);
   }
 
@@ -103,24 +101,40 @@ export function generateRRuleString(input: RecurrenceInput): string {
   return rruleParts.join(";");
 }
 
-
 export function formatRecurrence(input: RecurrenceInput): RecurrenceOutput {
   const {
-    frequency, interval, selectedDays, ends, endDate, occurrences,
-    startDatetime, eventId, nthWeek
+    frequency,
+    interval,
+    selectedDays,
+    ends,
+    endDate,
+    occurrences,
+    startDatetime,
+    eventId,
+    nthWeek,
   } = input;
 
   const weekdayMap = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
   const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
   const frequencyMap: Record<string, string> = {
     DAILY: "day",
     WEEKLY: "week",
     MONTHLY: "month",
-    YEARLY: "year"
+    YEARLY: "year",
   };
 
   let by_day: string[] | null = null;
@@ -131,7 +145,7 @@ export function formatRecurrence(input: RecurrenceInput): RecurrenceOutput {
     by_day = selectedDays
       .filter((i): i is number => typeof i === "number" && i >= 0 && i <= 6)
       .sort((a, b) => a - b)
-      .map(i => weekdayMap[i]!);
+      .map((i) => weekdayMap[i]!);
   }
 
   if (frequency === "MONTHLY") {
@@ -154,7 +168,7 @@ export function formatRecurrence(input: RecurrenceInput): RecurrenceOutput {
   if (frequency === "WEEKLY") {
     const daysText = selectedDays
       .sort((a, b) => a - b)
-      .map(i => dayNames[i])
+      .map((i) => dayNames[i])
       .join(", ")
       .replace(/, ([^,]*)$/, " and $1");
     onPart = `on ${daysText}`;
@@ -168,7 +182,7 @@ export function formatRecurrence(input: RecurrenceInput): RecurrenceOutput {
     }
   } else if (frequency === "YEARLY") {
     const day = by_month_day ?? startDatetime.date();
-    const monthName = monthNames[(by_month ?? (startDatetime.month() + 1)) - 1];
+    const monthName = monthNames[(by_month ?? startDatetime.month() + 1) - 1];
     onPart = `on ${monthName} ${day}`;
   }
 
@@ -183,30 +197,31 @@ export function formatRecurrence(input: RecurrenceInput): RecurrenceOutput {
     by_day,
     by_month,
     by_month_day,
-    start_datetime: startDatetime.toISOString()
+    start_datetime: startDatetime.toISOString(),
   };
 
   return { dbRecurrence, summary };
 }
 
-
-
 // Helper to convert 1 -> "1st", 2 -> "2nd", etc.
 function ordinal(n: number): string {
-  const suffix = (n % 10 === 1 && n % 100 !== 11) ? "st" :
-                 (n % 10 === 2 && n % 100 !== 12) ? "nd" :
-                 (n % 10 === 3 && n % 100 !== 13) ? "rd" : "th";
+  const suffix =
+    n % 10 === 1 && n % 100 !== 11
+      ? "st"
+      : n % 10 === 2 && n % 100 !== 12
+        ? "nd"
+        : n % 10 === 3 && n % 100 !== 13
+          ? "rd"
+          : "th";
   return `${n}${suffix}`;
 }
-
-
 
 export function toRRuleFrequency(input: string): RRuleFrequency {
   const map: Record<string, RRuleFrequency> = {
     daily: "DAILY",
     weekly: "WEEKLY",
     monthly: "MONTHLY",
-    yearly: "YEARLY"
+    yearly: "YEARLY",
   };
 
   const key = input.toLowerCase();
@@ -223,7 +238,7 @@ export function toDBRecurrenceEnds(input: string): DBRecurrenceEnds {
   const map: Record<string, DBRecurrenceEnds> = {
     never: "never",
     on: "on",
-    after: "after"
+    after: "after",
   };
 
   const key = input.toLowerCase();
@@ -243,11 +258,11 @@ export function getNthDayOfWeekInMonth(date: Dayjs): number {
 
 export function isLastWeekdayInMonth(date: Dayjs): boolean {
   const dayOfWeek = date.day();
-  const lastSameDay = date.endOf('month').date(); // e.g. 31
-  let last = date.endOf('month');
+  const lastSameDay = date.endOf("month").date(); // e.g. 31
+  let last = date.endOf("month");
 
   while (last.day() !== dayOfWeek) {
-    last = last.subtract(1, 'day');
+    last = last.subtract(1, "day");
   }
 
   return last.date() === date.date();

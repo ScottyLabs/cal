@@ -49,9 +49,7 @@ export default function MobileSidebarDrawer({ children }: MobileSidebarDrawerPro
             <FiX className="text-gray-600 dark:text-gray-300" size={24} />
           </button>
         </div>
-        <div className="flex-1 min-h-0">
-          {children}
-        </div>
+        <div className="flex-1 min-h-0">{children}</div>
       </div>
     </Drawer>
   );

@@ -12,9 +12,7 @@ import { readSession, SESSION_COOKIE } from "./session";
  * API verifies itself.
  */
 export async function getSessionProfile(): Promise<Profile | null> {
-  // Read cookies first, unconditionally: it is what marks every page as
-  // per-request. Without it a build that lacks the auth env (the Nix build
-  // always does) would prerender a signed-out page and serve it to everyone.
+  // Read cookies first, unconditionally: it is what marks every page as per-request. Without it a build that lacks the auth env (the Nix build always does) would prerender a signed-out page and serve it to everyone.
   const store = await cookies();
   let config;
   try {

@@ -17,8 +17,7 @@ NY = ZoneInfo("America/New_York")
 
 
 def _snapshot(db, event_ids):
-    # event_saved_at is left out: it records the event's last_updated_at, which
-    # every regeneration bumps, so it differs between any two runs.
+    # event_saved_at is left out: it records the event's last_updated_at, which every regeneration bumps, so it differs between any two runs.
     return sorted(
         (
             o.event_id,
@@ -99,8 +98,7 @@ def test_batch_regeneration_matches_per_event(
     assert counts[ids[2]] == 11
     assert any(row[3] == "Moved" and row[5] == "Elsewhere" for row in per_event)
 
-    # The batch path skips rules generated after the event's last update, so
-    # clear that marker to make it rebuild everything.
+    # The batch path skips rules generated after the event's last update, so clear that marker to make it rebuild everything.
     for _, rule, _ in events:
         rule.last_generated_at = None
     db.flush()

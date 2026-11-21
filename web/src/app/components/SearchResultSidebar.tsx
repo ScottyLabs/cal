@@ -9,17 +9,16 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useTheme } from "next-themes";
 
-import { EventClickArg } from "@fullcalendar/core"; 
+import { EventClickArg } from "@fullcalendar/core";
 import { EventType } from "../types/EventType";
 import { useEventState } from "../../context/EventStateContext";
 
-import React from 'react'
+import React from "react";
 import dynamic from "next/dynamic";
 import { fetchAllTags } from "../utils/api/events";
 import { API_BASE_URL, api } from "../utils/api/api";
 
-// The control's styles depend on the theme, which is only known in the
-// browser, so it is not server-rendered.
+// The control's styles depend on the theme, which is only known in the browser, so it is not server-rendered.
 const Select = dynamic(() => import("react-select"), { ssr: false });
 
 type Props = {
@@ -57,18 +56,19 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-function SkeletonEventCard() { 
+function SkeletonEventCard() {
   return (
     <div className="animate-pulse p-4 border rounded-lg mb-2 bg-white dark:bg-transparent space-y-3">
       <p className="text-sm text-gray-400">EVENT</p>
       {/* <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-      <div className="h-3 bg-gray-200 rounded w-1/2"></div> */}      
-      <p className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></p> 
+      <div className="h-3 bg-gray-200 rounded w-1/2"></div> */}
+      <p className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></p>
       <p className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></p>
       <p className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/5"></p>
       <div className="flex">
-      <p className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/5 mr-2"></p>
-      <p className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/5"></p></div>      
+        <p className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/5 mr-2"></p>
+        <p className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/5"></p>
+      </div>
     </div>
   );
 }
@@ -77,10 +77,12 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
   const { isSignedIn } = useAuth();
   const { allEvents: globalEvents, eventsLoading: globalEventsLoading, refetchEvents } = useUser();
   const { theme } = useTheme();
-  const [allTags, setAllTags] = useState<{id: number; name: string}[]>([]);
+  const [allTags, setAllTags] = useState<{ id: number; name: string }[]>([]);
   const [selectedTags, setSelectedTags] = useState<OptionType[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedEventType, setSelectedEventType] = useState<EventTypeOption>(EVENT_TYPE_OPTIONS[0]);
+  const [selectedEventType, setSelectedEventType] = useState<EventTypeOption>(
+    EVENT_TYPE_OPTIONS[0],
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredByTags, setFilteredByTags] = useState<EventType[]>(globalEvents);
   const { openDetails, toggleAdded, savedEventIds } = useEventState();
@@ -115,15 +117,15 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
       setFilteredByTags(globalEvents);
       return;
     }
-    
+
     const selectedTagIds = selectedTags.map((tag) => tag.value).join(",");
     const fetchEvents = async () => {
       try {
         const res = await api.get<EventType[]>(`/events/`, {
           params: {
-            term: '',
+            term: "",
             tags: selectedTagIds,
-            date: '',
+            date: "",
           },
           withCredentials: true,
         });
@@ -136,7 +138,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
       void fetchEvents();
     }
   }, [selectedTags, isSignedIn, globalEvents]);
-  const tagOptions = allTags.map(tag => ({
+  const tagOptions = allTags.map((tag) => ({
     value: tag.id,
     label: tag.name,
   }));
@@ -148,24 +150,24 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
     // Default: show events from now onwards when no date filter is set
     if (!selectedDate) {
       const now = new Date();
-      filtered = filtered.filter(event => new Date(event.start_datetime) >= now);
+      filtered = filtered.filter((event) => new Date(event.start_datetime) >= now);
     } else {
       // Filter by specific selected date
       const filterDate = selectedDate.toDateString();
-      filtered = filtered.filter(event =>
-        new Date(event.start_datetime).toDateString() === filterDate
+      filtered = filtered.filter(
+        (event) => new Date(event.start_datetime).toDateString() === filterDate,
       );
     }
 
     // Filter by event type
     if (selectedEventType.value !== null) {
-      filtered = filtered.filter(event => event.event_type === selectedEventType.value);
+      filtered = filtered.filter((event) => event.event_type === selectedEventType.value);
     }
 
     // Filter by search term
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(event => {
+      filtered = filtered.filter((event) => {
         const matchesTitle = event.title.toLowerCase().includes(searchLower);
         const matchesDescription = event.description?.toLowerCase().includes(searchLower) ?? false;
         const matchesLocation = event.location?.toLowerCase().includes(searchLower);
@@ -189,7 +191,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedDate, selectedTags, selectedEventType]);
-  
+
   return (
     <div className="px-8 py-3">
       {/* Search Bar */}
@@ -217,66 +219,70 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
               styles={{
                 control: (base) => ({
                   ...base,
-                  minHeight: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  border: theme === 'dark' ? '1px solid #4D5461' : '1px solid #D1D5DB',
-                  backgroundColor: theme === 'dark' ? '#374151' : 'white',
-                  '&:hover': {
-                    backgroundColor: theme === 'dark' ? '#4b5563' : '#f9fafb',
+                  minHeight: "40px",
+                  height: "40px",
+                  borderRadius: "8px",
+                  border: theme === "dark" ? "1px solid #4D5461" : "1px solid #D1D5DB",
+                  backgroundColor: theme === "dark" ? "#374151" : "white",
+                  "&:hover": {
+                    backgroundColor: theme === "dark" ? "#4b5563" : "#f9fafb",
                   },
                 }),
                 valueContainer: (base) => ({
                   ...base,
-                  height: '40px',
-                  padding: '0 8px',
+                  height: "40px",
+                  padding: "0 8px",
                 }),
                 input: (base) => ({
                   ...base,
-                  margin: '0px',
-                  color: theme === 'dark' ? '#ffffff' : '#1f2937',
+                  margin: "0px",
+                  color: theme === "dark" ? "#ffffff" : "#1f2937",
                 }),
                 indicatorsContainer: (base) => ({
                   ...base,
-                  height: '40px',
+                  height: "40px",
                 }),
                 placeholder: (base) => ({
                   ...base,
-                  color: theme === 'dark' ? '#9ca3af' : '#6b7280',
+                  color: theme === "dark" ? "#9ca3af" : "#6b7280",
                 }),
                 singleValue: (base) => ({
                   ...base,
-                  color: theme === 'dark' ? '#ffffff' : '#1f2937',
+                  color: theme === "dark" ? "#ffffff" : "#1f2937",
                 }),
                 multiValue: (base) => ({
                   ...base,
-                  backgroundColor: theme === 'dark' ? '#4b5563' : '#e5e7eb',
+                  backgroundColor: theme === "dark" ? "#4b5563" : "#e5e7eb",
                 }),
                 multiValueLabel: (base) => ({
                   ...base,
-                  color: theme === 'dark' ? '#ffffff' : '#1f2937',
+                  color: theme === "dark" ? "#ffffff" : "#1f2937",
                 }),
                 multiValueRemove: (base) => ({
                   ...base,
-                  color: theme === 'dark' ? '#9ca3af' : '#6b7280',
-                  '&:hover': {
-                    backgroundColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
-                    color: theme === 'dark' ? '#ffffff' : '#1f2937',
+                  color: theme === "dark" ? "#9ca3af" : "#6b7280",
+                  "&:hover": {
+                    backgroundColor: theme === "dark" ? "#6b7280" : "#d1d5db",
+                    color: theme === "dark" ? "#ffffff" : "#1f2937",
                   },
                 }),
                 menu: (base) => ({
                   ...base,
-                  backgroundColor: theme === 'dark' ? '#374151' : 'white',
-                  border: theme === 'dark' ? '1px solid #4D5461' : '1px solid #D1D5DB',
+                  backgroundColor: theme === "dark" ? "#374151" : "white",
+                  border: theme === "dark" ? "1px solid #4D5461" : "1px solid #D1D5DB",
                 }),
                 option: (base, state) => ({
                   ...base,
                   backgroundColor: state.isFocused
-                    ? (theme === 'dark' ? '#4b5563' : '#f5f5f5')
-                    : (theme === 'dark' ? '#374151' : 'white'),
-                  color: theme === 'dark' ? '#ffffff' : '#1f2937',
-                  '&:active': {
-                    backgroundColor: theme === 'dark' ? '#6b7280' : '#e5e7eb',
+                    ? theme === "dark"
+                      ? "#4b5563"
+                      : "#f5f5f5"
+                    : theme === "dark"
+                      ? "#374151"
+                      : "white",
+                  color: theme === "dark" ? "#ffffff" : "#1f2937",
+                  "&:active": {
+                    backgroundColor: theme === "dark" ? "#6b7280" : "#e5e7eb",
                   },
                 }),
               }}
@@ -303,8 +309,8 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
               onClick={() => setSelectedEventType(option)}
               className={`px-3 py-1 text-sm rounded-full border transition-colors ${
                 selectedEventType.value === option.value
-                  ? 'bg-blue-500 text-white border-blue-500'
-                  : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                  ? "bg-blue-500 text-white border-blue-500"
+                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
               }`}
             >
               {option.label}
@@ -315,47 +321,47 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
 
       {/* event cards */}
       <div>
-        {globalEventsLoading
-          ? Array.from({ length: 3 }).map((_, i) => <SkeletonEventCard key={i} />)
-          : 
-        
-      
-      <ul className="space-y-3">
-        {filteredEvents.length === 0 && (
-          <li className="p-3 rounded text-gray-500 italic">
-            No matching events found.
-          </li>
+        {globalEventsLoading ? (
+          Array.from({ length: 3 }).map((_, i) => <SkeletonEventCard key={i} />)
+        ) : (
+          <ul className="space-y-3">
+            {filteredEvents.length === 0 && (
+              <li className="p-3 rounded text-gray-500 italic">No matching events found.</li>
+            )}
+            {paginatedEvents.map((event) => (
+              <li key={event.id} className="p-3 rounded border">
+                {event.event_type && <p className="text-sm text-gray-400">{event.event_type}</p>}
+                <p className="text-lg">{event.title}</p>
+                <p className="text-base text-gray-500">
+                  {formatTimeRange(event.start_datetime, event.end_datetime)}
+                </p>
+                <p className="text-base text-gray-500">{event.location}</p>
+                <button
+                  // onClick={() => toggleAdded(event.id)}
+                  onClick={() => toggleAdded(event)}
+                  className={`mt-2 px-3 py-1.5 rounded-lg ${
+                    savedEventIds.has(event.id) ? "bg-blue-300" : "bg-blue-500" //event.user_saved
+                  } text-white`}
+                >
+                  {savedEventIds.has(event.id) ? "Remove" : "Add"}
+                </button>
+                <button
+                  onClick={() => openDetails(event.id, event)}
+                  className="mt-2 mx-2 px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600"
+                >
+                  Learn more
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
-        {paginatedEvents.map((event) => (
-          <li key={event.id} className="p-3 rounded border">
-            {event.event_type && <p className="text-sm text-gray-400">{event.event_type}</p>}
-            <p className="text-lg">{event.title}</p>
-            <p className="text-base text-gray-500">{formatTimeRange(event.start_datetime, event.end_datetime)}</p>
-            <p className="text-base text-gray-500">{event.location}</p>
-            <button
-              // onClick={() => toggleAdded(event.id)}
-              onClick={() => toggleAdded(event)}
-              className={`mt-2 px-3 py-1.5 rounded-lg ${
-                savedEventIds.has(event.id) ? "bg-blue-300" : "bg-blue-500"//event.user_saved
-              } text-white`}
-            >
-              {savedEventIds.has(event.id) ? "Remove" : "Add"}
-            </button>
-            <button
-              onClick={() => openDetails(event.id, event)}
-              className="mt-2 mx-2 px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600">
-              Learn more
-            </button>
-          </li>
-        ))}
-      </ul>}
       </div>
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-2 mt-6">
           <button
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
             className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -365,7 +371,7 @@ export default function SearchResultsSidebar({ events, setEvents }: Props) {
             Page {currentPage} of {totalPages} ({filteredEvents.length} events)
           </span>
           <button
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
             disabled={currentPage === totalPages}
             className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >

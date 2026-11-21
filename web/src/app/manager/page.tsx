@@ -6,7 +6,10 @@ function ManagerPageSkeleton() {
   return (
     <div className="flex h-[calc(100vh-65px)] w-screen animate-pulse">
       {/* Sidebar */}
-      <div style={{ width: 320, minWidth: 320 }} className="flex-shrink-0 p-4 border-r border-gray-200 dark:border-gray-700">
+      <div
+        style={{ width: 320, minWidth: 320 }}
+        className="flex-shrink-0 p-4 border-r border-gray-200 dark:border-gray-700"
+      >
         <div className="h-4 w-36 bg-gray-200 dark:bg-gray-700 rounded mb-6 mt-2 mx-1" />
         {/* Search bar */}
         <div className="h-9 bg-gray-200 dark:bg-gray-700 rounded-full mb-4 mx-1" />
@@ -38,7 +41,10 @@ function ManagerPageSkeleton() {
             <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="h-10 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700" />
               {Array.from({ length: rows }).map((_, j) => (
-                <div key={j} className="h-12 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center px-4 gap-4">
+                <div
+                  key={j}
+                  className="h-12 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center px-4 gap-4"
+                >
                   <div className="h-3 flex-1 bg-gray-100 dark:bg-gray-800 rounded" />
                   <div className="h-3 w-24 bg-gray-100 dark:bg-gray-800 rounded" />
                 </div>
@@ -107,7 +113,10 @@ export default function ManagerPage() {
         rightContent={
           <ManagerContent
             selectedOrg={selectedOrg}
-            onOrgDeleted={() => { setSelectedOrg(null); setSidebarRefreshKey((k) => k + 1); }}
+            onOrgDeleted={() => {
+              setSelectedOrg(null);
+              setSidebarRefreshKey((k) => k + 1);
+            }}
           />
         }
       />

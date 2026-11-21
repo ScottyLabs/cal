@@ -72,8 +72,7 @@ def apply_overrides(
         ro = recurrence_override_dates[occ_start]
 
         # For RecurrenceOverrides new_start/new_end are time-only adjustments
-        # Apply the time portion to the occurrence date as stored new_start/new_end might
-        # only have a time portion and an arbitrary date portion
+        # Apply the time portion to the occurrence date as stored new_start/new_end might only have a time portion and an arbitrary date portion
         if ro.new_start:
             start_dt = occ_start.replace(
                 hour=ro.new_start.hour,
@@ -299,8 +298,7 @@ def _build_occurrence_rows(
             ro_rrule = rrule_from_db_recurrence_override(ro)
             for ro_date in ro_rrule:
                 ro_date = normalize_occurrence(_ensure_aware(ro_date), event_tz)
-                # If multiple patterns match the same date, later ones win
-                # (could add priority field later if needed)
+                # If multiple patterns match the same date, later ones win (could add priority field later if needed)
                 recurrence_override_dates[ro_date] = ro
         except Exception:
             log.exception("Failed to expand RecurrenceOverride %s", ro.id)

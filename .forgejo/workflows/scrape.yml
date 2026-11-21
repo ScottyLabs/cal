@@ -1,10 +1,6 @@
 # Data refresh for CMU Cal.
 #
-# Manual dispatch only, deliberately. These write directly to the production
-# database and the Schedule of Classes scrape takes roughly an hour. The SOC
-# semester defaults to the one in session (Jan-May Spring, Aug-Dec Fall) and
-# the run refuses to write if the SOC page is for a different term. Add a
-# `schedule:` trigger once a run has been watched end to end under kennel.
+# Manual dispatch only, deliberately. These write directly to the production database and the Schedule of Classes scrape takes roughly an hour. The SOC semester defaults to the one in session (Jan-May Spring, Aug-Dec Fall) and the run refuses to write if the SOC page is for a different term. Add a `schedule:` trigger once a run has been watched end to end under kennel.
 name: Scrape
 
 on:

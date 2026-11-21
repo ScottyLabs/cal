@@ -53,8 +53,7 @@ log = logging.getLogger(__name__)
 
 events_bp = Blueprint("events", __name__)
 
-# Columns a PATCH may never rewrite. The update modal echoes id and org_id back
-# unchanged, so they are skipped rather than rejected.
+# Columns a PATCH may never rewrite. The update modal echoes id and org_id back unchanged, so they are skipped rather than rejected.
 IMMUTABLE_EVENT_FIELDS = {
     "id",
     "org_id",
@@ -627,9 +626,7 @@ def batch_delete_events_by_params():
         if not any([semester, org_id, category_id, event_type, source_url]):
             return jsonify({"error": "At least one filter must be provided"}), 400
 
-        # Without an org the filter can span every org (e.g. a whole semester
-        # or every SOC event), so only site admins may run it. With one, the
-        # query below is confined to that org.
+        # Without an org the filter can span every org (e.g. a whole semester or every SOC event), so only site admins may run it. With one, the query below is confined to that org.
         if not is_site_admin():
             if not org_id:
                 return forbidden("Only CMUCal site admins can delete across orgs")

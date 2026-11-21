@@ -26,11 +26,7 @@ const eventTypesDict = { Academic: "ACADEMIC", Career: "CAREER", Club: "CLUB" };
 type EventTypeLabel = keyof typeof eventTypesDict;
 type EventTypeValue = (typeof eventTypesDict)[EventTypeLabel];
 
-export default function ModalEventLink({
-  show,
-  onClose,
-  selectedCategory,
-}: ModalProps) {
+export default function ModalEventLink({ show, onClose, selectedCategory }: ModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { isSignedIn } = useAuth();
 
@@ -61,8 +57,7 @@ export default function ModalEventLink({
   const validate = () => {
     const isEventTypeInvalid = !selectedEventType && !selectManual;
     const isRightFormat =
-      selectManual ||
-      gcalLink.trim().startsWith("https://calendar.google.com/calendar/ical/");
+      selectManual || gcalLink.trim().startsWith("https://calendar.google.com/calendar/ical/");
     const isPublic = selectManual || gcalLink.trim().includes("public/basic.ics");
     const noOptionSelected = !gcalLink && !selectManual;
 
@@ -70,12 +65,7 @@ export default function ModalEventLink({
     setOptionError(noOptionSelected);
     setGcalLinkError(!isRightFormat || !isPublic);
 
-    return !(
-      isEventTypeInvalid ||
-      noOptionSelected ||
-      !isRightFormat ||
-      !isPublic
-    );
+    return !(isEventTypeInvalid || noOptionSelected || !isRightFormat || !isPublic);
   };
 
   const handleSubmit = async () => {
@@ -127,12 +117,10 @@ export default function ModalEventLink({
     return (
       <div className="flex flex-col items-center py-8">
         <Spinner />
-        <p className="mt-2 text-sm text-gray-500">
-          Importing calendar events...
-        </p>
+        <p className="mt-2 text-sm text-gray-500">Importing calendar events...</p>
       </div>
-    );}   
-
+    );
+  }
 
   return (
     <Modal show={show} onClose={onClose}>
@@ -155,11 +143,7 @@ export default function ModalEventLink({
         ))}
       </div>
 
-      {eventTypeError && (
-        <p className="mb-4 text-sm text-red-500">
-          Please select an event type.
-        </p>
-      )}
+      {eventTypeError && <p className="mb-4 text-sm text-red-500">Please select an event type.</p>}
 
       {/* GCal Link Input */}
       <div
@@ -183,20 +167,18 @@ export default function ModalEventLink({
         />
 
         <p className="mb-4 text-xs text-gray-400">
-          Need help? Go to Google Calendar &gt; Calendar Settings &gt; select
-          &quot;Make available to public&quot; and &quot;See all event details&quot; &gt; copy and
-          paste the &quot;Public address in iCal format&quot;.
+          Need help? Go to Google Calendar &gt; Calendar Settings &gt; select &quot;Make available
+          to public&quot; and &quot;See all event details&quot; &gt; copy and paste the &quot;Public
+          address in iCal format&quot;.
         </p>
         {optionError && (
           <p className="mb-4 text-sm text-red-500">
-            Please provide a Google Calendar link or select &quot;Manually fill out
-            the form&quot;.
+            Please provide a Google Calendar link or select &quot;Manually fill out the form&quot;.
           </p>
         )}
         {gcalLinkError && !optionError && (
           <p className="mb-4 text-sm text-red-500">
-            Please enter a valid Google Calendar iCal link and make sure it is
-            public.
+            Please enter a valid Google Calendar iCal link and make sure it is public.
           </p>
         )}
       </div>

@@ -1,8 +1,6 @@
 # Course-Agent: Autonomous Discovery of CMU Course Calendars
 
-This repository contains an **agentic AI system** that autonomously discovers
-official Carnegie Mellon University course websites and extracts embedded
-Google Calendar (iCal) information when available. It is a multi-agent architecture where one agent proposes candidate course websites and a separate critic agent independently evaluates the decision, vetoing weak or ambiguous verifications before any data is committed.
+This repository contains an **agentic AI system** that autonomously discovers official Carnegie Mellon University course websites and extracts embedded Google Calendar (iCal) information when available. It is a multi-agent architecture where one agent proposes candidate course websites and a separate critic agent independently evaluates the decision, vetoing weak or ambiguous verifications before any data is committed.
 
 The system operates under uncertainty:
 
@@ -10,8 +8,7 @@ The system operates under uncertainty:
 - Some courses have no public websites
 - Some websites do not publish calendars
 
-To handle this, we model discovery as a **probabilistic, auditable agent workflow**
-rather than a deterministic scraper.
+To handle this, we model discovery as a **probabilistic, auditable agent workflow** rather than a deterministic scraper.
 
 ______________________________________________________________________
 

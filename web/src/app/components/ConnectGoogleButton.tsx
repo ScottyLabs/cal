@@ -4,11 +4,16 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 
-import * as React from 'react';
+import * as React from "react";
 import { useGcalEvents } from "../../context/GCalEventsContext";
 import { formatGCalEvent } from "../utils/calendarUtils";
 import { CalendarFields } from "../utils/types";
-import { checkGoogleAuthStatus, ensureCalendarExists, fetchBulkEventsFromCalendars, unauthorizeGoogle } from "../utils/api/googleCalendar";
+import {
+  checkGoogleAuthStatus,
+  ensureCalendarExists,
+  fetchBulkEventsFromCalendars,
+  unauthorizeGoogle,
+} from "../utils/api/googleCalendar";
 import { api, API_BASE_URL } from "../utils/api/api";
 import Modal from "./Modal";
 
@@ -32,16 +37,21 @@ export function ConnectGoogleButton() {
 
   const [availableCalendars, setAvailableCalendars] = useState<CalendarFields[]>([]); // full objects with id & summary
   const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>([]); // selected calendar IDs from dropdown
-  const { gcalEvents, setGcalEvents, isGoogleConnected, setIsGoogleConnected, cmuCalendarId, setCmuCalendarId } = useGcalEvents();
+  const {
+    gcalEvents,
+    setGcalEvents,
+    isGoogleConnected,
+    setIsGoogleConnected,
+    cmuCalendarId,
+    setCmuCalendarId,
+  } = useGcalEvents();
   const [cmuCalIds, setCMUCalIds] = useState<string[]>([]);
   const [showImportSummary, setShowImportSummary] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showCalendarSelector, setShowCalendarSelector] = useState(false);
 
-
   function handleSelectOpen() {
     if (!loading && !isGoogleConnected) {
-
       authorizeGoogle();
     }
   }
@@ -55,27 +65,23 @@ export function ConnectGoogleButton() {
     // });
     const data = await fetchBulkEventsFromCalendars(calendarIds);
 
-    const formattedGCalEvents = data.map((event) => (formatGCalEvent(event, cmuCalIds)));
+    const formattedGCalEvents = data.map((event) => formatGCalEvent(event, cmuCalIds));
 
     setGcalEvents(formattedGCalEvents);
     // console.log("Fetched events:", data);
   };
 
-
-  
-
-
   const authorizeGoogle = () => {
     // Add ?justConnected=true to the redirect URL so backend can append it after OAuth
-    const redirectUrl = window.location.origin + window.location.pathname + '?justConnected=true';
+    const redirectUrl = window.location.origin + window.location.pathname + "?justConnected=true";
     window.location.href = `${API_BASE_URL}/google/authorize?redirect=${encodeURIComponent(redirectUrl)}`;
-  }
+  };
 
   const handleUnauthorizeGoogle = async () => {
     try {
       await unauthorizeGoogle();
       // Reset all state after unauthorizing
-      setShowCalendarSelector(false)
+      setShowCalendarSelector(false);
       setIsGoogleConnected(false);
       setCmuCalendarId(null);
       setAvailableCalendars([]);
@@ -86,7 +92,7 @@ export function ConnectGoogleButton() {
       console.error("Error unauthorizing Google Calendar:", error);
       // You might want to show a toast or error message to the user
     }
-  }
+  };
 
   const fetchCalendars = async () => {
     // Ensure CMUCal exists in user's Google Calendars. If not, create it.
@@ -103,20 +109,18 @@ export function ConnectGoogleButton() {
     try {
       data = (await api.get<CalendarFields[]>("/google/calendars")).data;
     } catch (err) {
-      // A 401 without a Bearer challenge means Google, not CMUCal, wants a
-      // login (an expired CMUCal token was already refreshed and retried).
+      // A 401 without a Bearer challenge means Google, not CMUCal, wants a login (an expired CMUCal token was already refreshed and retried).
       const challenge = axios.isAxiosError(err)
         ? String(err.response?.headers?.["www-authenticate"] ?? "")
         : "";
       if (axios.isAxiosError(err) && err.response?.status === 401 && !/^bearer/iu.test(challenge)) {
-        // should add a screen to give them more information and ask if 
-        // the user wants to connect their Google account
+        // should add a screen to give them more information and ask if the user wants to connect their Google account
         window.location.href = `${API_BASE_URL}/google/authorize`;
         return;
       }
       throw err;
     }
-  
+
     // Sort order:
     // 1. CMUCal (events added from our website)
     // 2. primary calendar
@@ -132,12 +136,9 @@ export function ConnectGoogleButton() {
       return priority(a) - priority(b);
     });
 
-    // Save the sorted calendars (or just summary list if you prefer)
-    // setAvailableCalendars(sorted.map((cal: any) => cal.summary));
+    // Save the sorted calendars (or just summary list if you prefer) setAvailableCalendars(sorted.map((cal: any) => cal.summary));
     setAvailableCalendars(sorted);
-    const defaultSelectedIds = data
-          .filter(cal => cal.summary === "CMUCal")
-          .map(cal => cal.id);
+    const defaultSelectedIds = data.filter((cal) => cal.summary === "CMUCal").map((cal) => cal.id);
     setSelectedCalendarIds(defaultSelectedIds);
     setCMUCalIds(defaultSelectedIds);
   };
@@ -147,8 +148,8 @@ export function ConnectGoogleButton() {
 
     // url params
     const url = new URL(window.location.href);
-    const justConnected = url.searchParams.get('justConnected');
-    const welcome = url.searchParams.get('welcome');
+    const justConnected = url.searchParams.get("justConnected");
+    const welcome = url.searchParams.get("welcome");
 
     const checkAuthStatus = async () => {
       try {
@@ -160,8 +161,8 @@ export function ConnectGoogleButton() {
           if (authorized) {
             setShowImportSummary(true);
           }
-          url.searchParams.delete('justConnected');
-          window.history.replaceState({}, '', url.toString());
+          url.searchParams.delete("justConnected");
+          window.history.replaceState({}, "", url.toString());
         }
 
         // Show welcome modal if welcome param is present and not connected
@@ -169,8 +170,8 @@ export function ConnectGoogleButton() {
           if (!authorized) {
             setShowWelcomeModal(true);
           }
-          url.searchParams.delete('welcome');
-          window.history.replaceState({}, '', url.toString());
+          url.searchParams.delete("welcome");
+          window.history.replaceState({}, "", url.toString());
         }
 
         if (authorized && availableCalendars.length === 0 && !hasFetchedCalendars.current) {
@@ -193,7 +194,6 @@ export function ConnectGoogleButton() {
       setGcalEvents([]);
     }
   }, [selectedCalendarIds, setGcalEvents]);
-  
 
   return (
     <>
@@ -206,8 +206,10 @@ export function ConnectGoogleButton() {
           </div>
 
           {/* Title */}
-          <h2 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">Welcome to CMUCal!</h2>
-          
+          <h2 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">
+            Welcome to CMUCal!
+          </h2>
+
           {/* Description */}
           <p className="text-base text-gray-600 dark:text-gray-300 mb-6 max-w-md">
             Connect your Google Calendar to sync your existing schedules and events.
@@ -240,15 +242,27 @@ export function ConnectGoogleButton() {
           {/* Success Icon */}
           <div className="mb-4">
             <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-8 h-8 text-green-600 dark:text-green-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={3}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
           </div>
 
           {/* Title */}
-          <h2 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">Calendars synced successfully!</h2>
-          
+          <h2 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">
+            Calendars synced successfully!
+          </h2>
+
           {/* Description */}
           <p className="text-base text-gray-600 dark:text-gray-300 mb-6">
             Your Google Calendar has been connected.
@@ -257,10 +271,14 @@ export function ConnectGoogleButton() {
           {/* Imported Calendars Section */}
           <div className="w-full mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Imported calendars</h3>
-              <span className="text-sm text-gray-500 dark:text-gray-400">{availableCalendars.length} total</span>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                Imported calendars
+              </h3>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {availableCalendars.length} total
+              </span>
             </div>
-            
+
             {/* Calendar List */}
             <div className="space-y-2">
               {availableCalendars.map((cal) => (
@@ -269,10 +287,22 @@ export function ConnectGoogleButton() {
                   className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700"
                 >
                   <div className="flex items-center space-x-2">
-                    <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <svg
+                      className="w-5 h-5 text-green-600 dark:text-green-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
-                    <span className="text-base font-medium text-gray-900 dark:text-white">{cal.summary}</span>
+                    <span className="text-base font-medium text-gray-900 dark:text-white">
+                      {cal.summary}
+                    </span>
                   </div>
                   <div className="flex gap-2">
                     {cal.primary && (
@@ -317,7 +347,7 @@ export function ConnectGoogleButton() {
                   if (e.target.checked) {
                     setSelectedCalendarIds([...selectedCalendarIds, cal.id]);
                   } else {
-                    setSelectedCalendarIds(selectedCalendarIds.filter(id => id !== cal.id));
+                    setSelectedCalendarIds(selectedCalendarIds.filter((id) => id !== cal.id));
                   }
                 }}
                 className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
@@ -325,7 +355,9 @@ export function ConnectGoogleButton() {
               <div className="flex-1">
                 <span className="text-sm font-medium">{cal.summary}</span>
                 {cal.primary && <span className="ml-2 text-xs text-blue-600">(Primary)</span>}
-                {cal.accessRole === "owner" && !cal.primary && <span className="ml-2 text-xs text-green-600">(Owner)</span>}
+                {cal.accessRole === "owner" && !cal.primary && (
+                  <span className="ml-2 text-xs text-green-600">(Owner)</span>
+                )}
               </div>
             </label>
           ))}
@@ -356,9 +388,13 @@ export function ConnectGoogleButton() {
           }
         }}
         disabled={loading}
-        className='h-10 px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+        className="h-10 px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? "Checking..." : isGoogleConnected ? "Manage Calendars" : "Connect Google Calendar"}
+        {loading
+          ? "Checking..."
+          : isGoogleConnected
+            ? "Manage Calendars"
+            : "Connect Google Calendar"}
       </button>
     </>
   );

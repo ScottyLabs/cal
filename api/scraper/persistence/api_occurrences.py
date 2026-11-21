@@ -3,8 +3,7 @@ import os
 import requests
 
 # The API regenerates occurrences for these in one request and one commit.
-# Gunicorn kills a request after 120s (app/wsgi.py), so keep batches small
-# enough to finish well inside that.
+# Gunicorn kills a request after 120s (app/wsgi.py), so keep batches small enough to finish well inside that.
 REGENERATE_BATCH = 50
 REGENERATE_TIMEOUT = 115
 

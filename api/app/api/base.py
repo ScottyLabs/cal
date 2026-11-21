@@ -13,9 +13,7 @@ base_bp = Blueprint("base", __name__)
 @base_bp.route("/api/health", methods=["GET"])
 @public
 def health():
-    # Kennel polls this every 2s for up to 60s after starting the service and
-    # will not route the public domain here until it returns 200. Keep it off
-    # the database so a slow Supabase connection can't fail the deploy -
+    # Kennel polls this every 2s for up to 60s after starting the service and will not route the public domain here until it returns 200. Keep it off the database so a slow Supabase connection can't fail the deploy -
     # /test_db below is the liveness check that does touch the DB.
     return jsonify({"status": "ok"}), 200
 

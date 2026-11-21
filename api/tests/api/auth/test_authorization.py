@@ -68,8 +68,7 @@ MUTATING_ROUTES = [
     ("POST", "/api/users/remove_org_from_schedule", {"schedule_id": 1, "org_id": 1}),
 ]
 
-# Routes that need an org role or site admin, i.e. everything above except the
-# caller's own schedules, saved events and Google calendar.
+# Routes that need an org role or site admin, i.e. everything above except the caller's own schedules, saved events and Google calendar.
 PRIVILEGED_ROUTES = [
     r
     for r in MUTATING_ROUTES

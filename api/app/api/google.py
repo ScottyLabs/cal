@@ -40,8 +40,7 @@ def _safe_redirect(url):
 
 
 # /authorize and /oauth/callback are top-level browser navigations (to and from
-# Google), which cannot carry a bearer token. They touch only the Flask session
-# cookie holding Google credentials, never a CMUCal user.
+# Google), which cannot carry a bearer token. They touch only the Flask session cookie holding Google credentials, never a CMUCal user.
 @google_bp.route("/authorize")
 @public
 def authorize():

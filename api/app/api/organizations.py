@@ -515,8 +515,7 @@ def bulk_create_admins():
         if not user_emails_str or not organization_name:
             return jsonify({"error": "Missing user_emails or organization_name"}), 400
 
-        # Adding admins to an existing org is an org-level action; creating the
-        # org as a side effect is a global one.
+        # Adding admins to an existing org is an org-level action; creating the org as a side effect is a global one.
         existing_org = get_organization_by_name(db, organization_name)
         if existing_org is None:
             if not is_site_admin():

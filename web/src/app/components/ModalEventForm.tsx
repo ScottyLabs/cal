@@ -18,11 +18,7 @@ import {
   RadioGroup,
   SelectChangeEvent,
 } from "@mui/material";
-import {
-  DatePicker,
-  TimePicker,
-  LocalizationProvider,
-} from "@mui/x-date-pickers";
+import { DatePicker, TimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 import dayjs, { Dayjs } from "dayjs";
@@ -32,18 +28,23 @@ import timezonePlugin from "dayjs/plugin/timezone";
 dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
 
-import axios from 'axios';
+import axios from "axios";
 import { useAuth } from "~/context/AuthContext";
-import CustomRecurrenceModal from "./CustomRecurrenceModal"; 
+import CustomRecurrenceModal from "./CustomRecurrenceModal";
 import { set } from "lodash";
 import { start } from "repl";
 import { RecurrenceInput, EventPayloadType, CourseOption, CategoryOrg } from "../utils/types";
 import { createEvent, fetchAllTags } from "../utils/api/events";
 import { getCourseOrgs } from "../utils/api/organizations";
-import { formatRecurrence, toDBRecurrenceEnds, toRRuleFrequency, getNthDayOfWeekInMonth, isLastWeekdayInMonth } from "../utils/dateService";
+import {
+  formatRecurrence,
+  toDBRecurrenceEnds,
+  toRRuleFrequency,
+  getNthDayOfWeekInMonth,
+  isLastWeekdayInMonth,
+} from "../utils/dateService";
 import { el } from "node_modules/@fullcalendar/core/internal-common";
-import Modal from './Modal';
-
+import Modal from "./Modal";
 
 interface ModalProps {
   show: boolean;
@@ -54,15 +55,11 @@ interface ModalProps {
 
 type Tag = { id?: number; name: string };
 
-const eventTypesDict = {"Academic": "ACADEMIC", "Career": "CAREER", "Club": "CLUB"};
+const eventTypesDict = { Academic: "ACADEMIC", Career: "CAREER", Club: "CLUB" };
 type EventTypeLabel = keyof typeof eventTypesDict;
-type EventTypeValue = typeof eventTypesDict[EventTypeLabel];
+type EventTypeValue = (typeof eventTypesDict)[EventTypeLabel];
 
 const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
-
-
-
-
 
 export default function ModalEventForm({ show, onClose, selectedCategory, eventType }: ModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -94,9 +91,15 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
 
   // by default timezone is set to the user's current local time zone as detected by the browser.
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const timezones = Intl.supportedValuesOf?.('timeZone') || [
-    "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
-    "UTC", "Europe/London", "Asia/Tokyo", "Asia/Qatar"
+  const timezones = Intl.supportedValuesOf?.("timeZone") || [
+    "America/New_York",
+    "America/Chicago",
+    "America/Denver",
+    "America/Los_Angeles",
+    "UTC",
+    "Europe/London",
+    "Asia/Tokyo",
+    "Asia/Qatar",
   ];
 
   const [interval, setInterval] = useState(1);
@@ -111,33 +114,34 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
     if (!date) return [];
 
     const nth = getNthDayOfWeekInMonth(date);
-    const nthSuffix = ['th', 'st', 'nd', 'rd'][((nth % 10 > 3) || (nth >= 11 && nth <= 13)) ? 0 : nth % 10];
+    const nthSuffix = ["th", "st", "nd", "rd"][
+      nth % 10 > 3 || (nth >= 11 && nth <= 13) ? 0 : nth % 10
+    ];
 
     return [
       { value: "none", label: "Does not repeat" },
       { value: "daily", label: "Daily" },
-      { value: "weekly", label: `Weekly on ${date.format('dddd')}` },
+      { value: "weekly", label: `Weekly on ${date.format("dddd")}` },
       {
         value: "monthly_nth",
-        label: `Monthly on the ${nth}${nthSuffix} ${date.format('dddd')}`,
+        label: `Monthly on the ${nth}${nthSuffix} ${date.format("dddd")}`,
       },
       {
         value: "monthly_last",
-        label: `Monthly on the last ${date.format('dddd')}`,
+        label: `Monthly on the last ${date.format("dddd")}`,
         hidden: !isLastWeekdayInMonth(date),
       },
       {
         value: "yearly",
-        label: `Annually on ${date.format('MMMM D')}`,
+        label: `Annually on ${date.format("MMMM D")}`,
       },
       { value: "weekdays", label: "Every weekday (Monday to Friday)" },
       {
         value: "custom",
         label: customRecurrenceSummary ? `Custom: ${customRecurrenceSummary}` : "Custom...",
-      }
+      },
     ];
   }, [date, customRecurrenceSummary]);
-
 
   // Career
   const [requireRegistration, setRequireRegistration] = useState(false);
@@ -162,12 +166,9 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
 
   const toggleDay = (index: number) => {
     setSelectedDays((prev) =>
-      prev.includes(index)
-        ? prev.filter((d) => d !== index)
-        : [...prev, index]
+      prev.includes(index) ? prev.filter((d) => d !== index) : [...prev, index],
     );
   };
-
 
   const [dateError, setDateError] = useState(false);
   const [startError, setStartError] = useState(false);
@@ -178,7 +179,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
     setTitle("");
     setLocation("");
     setSourceURL("");
-    setDescription(""); 
+    setDescription("");
     setDate(null);
     setStartTime(null);
     setEndTime(null);
@@ -195,7 +196,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
     setInstructors([]);
     setInstructorStr("");
     setSelectedTags([]);
-  }
+  };
 
   const validate = () => {
     const isEventTypeInvalid = !selectedEventType;
@@ -225,8 +226,6 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
     );
   };
 
-
-
   const handleSubmit = async () => {
     const isValid = validate();
     if (!isValid) {
@@ -234,137 +233,146 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
       return;
     }
     if (!isSignedIn) {
-        alert("Please sign in first.");
-        return;
+      alert("Please sign in first.");
+      return;
     }
 
     try {
-          const payload : EventPayloadType = {
-            title: title,
-            description: description,
-            start_datetime: date && startTime
-              ? dayjs.tz(date.format("YYYY-MM-DD") + "T" + startTime.format("HH:mm"), timezone).utc().toISOString()
-              : null,
-            end_datetime: date && endTime
-              ? dayjs.tz(date.format("YYYY-MM-DD") + "T" + endTime.format("HH:mm"), timezone).utc().toISOString()
-              : null,
-            is_all_day: allDay,
-            event_timezone: timezone,
-            location: location,
-            source_url: sourceURL,
-            event_type: selectedEventType in eventTypesDict
-                        ? eventTypesDict[selectedEventType as keyof typeof eventTypesDict]
-                        : "",
-            category_id: selectedCategory.id,
-            org_id: selectedCategory.org_id,
-            event_tags: selectedTags.map(tag => tag.name),
+      const payload: EventPayloadType = {
+        title: title,
+        description: description,
+        start_datetime:
+          date && startTime
+            ? dayjs
+                .tz(date.format("YYYY-MM-DD") + "T" + startTime.format("HH:mm"), timezone)
+                .utc()
+                .toISOString()
+            : null,
+        end_datetime:
+          date && endTime
+            ? dayjs
+                .tz(date.format("YYYY-MM-DD") + "T" + endTime.format("HH:mm"), timezone)
+                .utc()
+                .toISOString()
+            : null,
+        is_all_day: allDay,
+        event_timezone: timezone,
+        location: location,
+        source_url: sourceURL,
+        event_type:
+          selectedEventType in eventTypesDict
+            ? eventTypesDict[selectedEventType as keyof typeof eventTypesDict]
+            : "",
+        category_id: selectedCategory.id,
+        org_id: selectedCategory.org_id,
+        event_tags: selectedTags.map((tag) => tag.name),
+      };
+
+      if (allDay && !startTime && !endTime) {
+        payload.start_datetime = date ? dayjs(date).startOf("day").utc().toISOString() : null;
+        payload.end_datetime = date
+          ? dayjs(date).add(1, "day").startOf("day").utc().toISOString()
+          : null;
+      }
+
+      if (selectedEventType === "Academic") {
+        payload.course_num = courseNum;
+        payload.course_name = courseName;
+        payload.instructors = instructors;
+      } else if (selectedEventType === "Career") {
+        payload.host = host;
+        payload.link = sourceURL;
+        payload.registration_required = requireRegistration;
+      } else if (selectedEventType === "Club") {
+        // Add any specific fields for Club events if needed
+      }
+
+      // add the recurrence settings
+      if (repeat !== "none") {
+        payload.recurrence = "RECURRING";
+
+        let recurrenceInput: RecurrenceInput;
+
+        if (repeat === "custom") {
+          // Use current state values
+          recurrenceInput = {
+            frequency: toRRuleFrequency(frequency),
+            interval,
+            selectedDays,
+            ends: toDBRecurrenceEnds(ends),
+            endDate: endDate ? dayjs(endDate).endOf("day").utc() : null,
+            occurrences,
+            startDatetime: payload.start_datetime ? dayjs(payload.start_datetime) : dayjs(),
+            eventId: -1,
+            nthWeek,
           };
+        } else {
+          // Use computed local values for predefined repeat patterns
+          if (!date) throw new Error("Date is not defined");
 
-          if (allDay && !startTime && !endTime) {
-            payload.start_datetime = date ? dayjs(date).startOf('day').utc().toISOString() : null;
-            payload.end_datetime = date ? dayjs(date).add(1, 'day').startOf('day').utc().toISOString() : null;
+          let localFrequency: RecurrenceInput["frequency"] = "DAILY";
+          let localSelectedDays: number[] = [];
+          let localNthWeek: number | null = null;
+          const localInterval = 1;
+
+          if (repeat === "daily") {
+            localFrequency = "DAILY";
+            localSelectedDays = [0, 1, 2, 3, 4, 5, 6];
+          } else if (repeat === "weekly") {
+            localFrequency = "WEEKLY";
+            localSelectedDays = [date.day()];
+          } else if (repeat === "monthly_nth") {
+            localFrequency = "MONTHLY";
+            localSelectedDays = [date.day()];
+            localNthWeek = getNthDayOfWeekInMonth(date);
+          } else if (repeat === "monthly_last") {
+            localFrequency = "MONTHLY";
+            localSelectedDays = [date.day()];
+            localNthWeek = -1;
+          } else if (repeat === "yearly") {
+            localFrequency = "YEARLY";
+          } else if (repeat === "weekdays") {
+            localFrequency = "WEEKLY";
+            localSelectedDays = [1, 2, 3, 4, 5];
           }
 
-          if (selectedEventType === "Academic") {
-            payload.course_num = courseNum;
-            payload.course_name = courseName;
-            payload.instructors = instructors;
-          } else if (selectedEventType === "Career") {
-            payload.host = host;
-            payload.link = sourceURL;
-            payload.registration_required = requireRegistration;
-          } else if (selectedEventType === "Club") {
-            // Add any specific fields for Club events if needed
-          }
+          recurrenceInput = {
+            frequency: localFrequency,
+            interval: localInterval,
+            selectedDays: localSelectedDays,
+            ends: "never",
+            endDate: null,
+            occurrences: 0,
+            startDatetime: payload.start_datetime ? dayjs(payload.start_datetime) : dayjs(),
+            eventId: -1,
+            nthWeek: localNthWeek,
+          };
+        }
 
-          // add the recurrence settings
-          if (repeat !== "none") {
-            payload.recurrence = "RECURRING";
+        const { dbRecurrence, summary } = formatRecurrence(recurrenceInput);
 
-            let recurrenceInput: RecurrenceInput;
+        payload.recurrence_data = dbRecurrence;
+        setCustomRecurrenceSummary(summary);
 
-            if (repeat === "custom") {
-              // Use current state values
-              recurrenceInput = {
-                frequency: toRRuleFrequency(frequency),
-                interval,
-                selectedDays,
-                ends: toDBRecurrenceEnds(ends),
-                endDate: endDate ? dayjs(endDate).endOf('day').utc() : null,
-                occurrences,
-                startDatetime: payload.start_datetime ? dayjs(payload.start_datetime) : dayjs(),
-                eventId: -1,
-                nthWeek
-              };
-            } else {
-              // Use computed local values for predefined repeat patterns
-              if (!date) throw new Error("Date is not defined");
+        // call endpoint to create a recurring event
+      } else {
+        payload.recurrence = "ONETIME";
+        // call endpoint to create a one-time event
+      }
 
-              let localFrequency: RecurrenceInput["frequency"] = "DAILY";
-              let localSelectedDays: number[] = [];
-              let localNthWeek: number | null = null;
-              const localInterval = 1;
+      const res = await createEvent(payload);
 
-              if (repeat === "daily") {
-                localFrequency = "DAILY";
-                localSelectedDays = [0, 1, 2, 3, 4, 5, 6];
-              } else if (repeat === "weekly") {
-                localFrequency = "WEEKLY";
-                localSelectedDays = [date.day()];
-              } else if (repeat === "monthly_nth") {
-                localFrequency = "MONTHLY";
-                localSelectedDays = [date.day()];
-                localNthWeek = getNthDayOfWeekInMonth(date);
-              } else if (repeat === "monthly_last") {
-                localFrequency = "MONTHLY";
-                localSelectedDays = [date.day()];
-                localNthWeek = -1;
-              } else if (repeat === "yearly") {
-                localFrequency = "YEARLY";
-              } else if (repeat === "weekdays") {
-                localFrequency = "WEEKLY";
-                localSelectedDays = [1, 2, 3, 4, 5];
-              }
-
-              recurrenceInput = {
-                frequency: localFrequency,
-                interval: localInterval,
-                selectedDays: localSelectedDays,
-                ends: "never",
-                endDate: null,
-                occurrences: 0,
-                startDatetime: payload.start_datetime ? dayjs(payload.start_datetime) : dayjs(),
-                eventId: -1,
-                nthWeek: localNthWeek
-              };
-            }
-
-            const { dbRecurrence, summary } = formatRecurrence(recurrenceInput);
-
-            payload.recurrence_data = dbRecurrence;
-            setCustomRecurrenceSummary(summary);
-
-            // call endpoint to create a recurring event
-          } else {
-            payload.recurrence = "ONETIME";
-            // call endpoint to create a one-time event
-          }
-
-
-          const res = await createEvent(payload);
-
-          if (res.status === 201) {
-            alert("Event created successfully!");
-            onClose(); // [ok] only close modal if backend call succeeds
-          } else {
-            alert("Something went wrong while submitting.");
-          }
+      if (res.status === 201) {
+        alert("Event created successfully!");
+        onClose(); // [ok] only close modal if backend call succeeds
+      } else {
+        alert("Something went wrong while submitting.");
+      }
     } catch (err) {
       console.error("Submission error:", err);
       alert("Failed to submit. Please try again.");
     }
   };
-
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -374,7 +382,7 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
           tags.map((tag) => ({
             id: tag.id,
             name: tag.name.toLowerCase(),
-          }))
+          })),
         );
       } catch (err) {
         console.error("Failed to fetch tags", err);
@@ -386,7 +394,9 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
         const data: CourseOption[] = await getCourseOrgs();
 
         // Sort by course number, which is a string in the format "15-112"
-        data.sort((a, b) => { return a.number.localeCompare(b.number);}) // Sorts in ascending order
+        data.sort((a, b) => {
+          return a.number.localeCompare(b.number);
+        }); // Sorts in ascending order
 
         setCourses(data);
       } catch (err) {
@@ -401,18 +411,16 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
       const firstWord = selectedCategory.organization_name.split(" ")[0];
       const potentialCourseNum = firstWord == null || firstWord === "" ? "none" : firstWord;
       const match = /\d\d-\d\d\d/.exec(potentialCourseNum);
-        
+
       if (match) {
         setCourse(selectedCategory.organization_name);
         setCourseNum(potentialCourseNum);
         setCourseName(selectedCategory.organization_name.split(" ").slice(1).join(" "));
       }
     }
-    
   }, [selectedEventType]);
 
   if (!show || !selectedCategory || !isSignedIn) return null;
-
 
   const handleInstructorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -423,18 +431,16 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
 
   const handleCustomRecurrenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-      setRepeat(value);
-      if (value === "custom") {
-        setShowCustomRecurrence(true); // <-- show modal when "Custom..." selected
-      } else {
-        
-        setShowCustomRecurrence(false);
-        // Reset recurrence settings if not custom
-      }
+    setRepeat(value);
+    if (value === "custom") {
+      setShowCustomRecurrence(true); // <-- show modal when "Custom..." selected
+    } else {
+      setShowCustomRecurrence(false);
+      // Reset recurrence settings if not custom
+    }
   };
 
   const onCustomRecurrenceClose = () => {
-
     if (!date) {
       setDateError(true);
       return;
@@ -449,21 +455,18 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
       occurrences,
       startDatetime: date ?? dayjs(), // fallback
       eventId: -1, // placeholder
-      nthWeek
+      nthWeek,
     };
 
     const { dbRecurrence, summary } = formatRecurrence(current);
     setCustomRecurrenceSummary(summary);
-    
+
     setShowCustomRecurrence(false);
   };
 
-  
-    
-
   return (
     <Modal show={show} onClose={onClose}>
-    {/* <>
+      {/* <>
        
       <div
         className="fixed inset-0 bg-black bg-opacity-40 z-40"
@@ -480,212 +483,200 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
           className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-auto relative"
           onClick={(e) => e.stopPropagation()}
         > */}
-          <h2 className="text-xl font-semibold mb-4">
-            Upload to {selectedCategory.organization_name} - {selectedCategory.name}
-          </h2>
+      <h2 className="text-xl font-semibold mb-4">
+        Upload to {selectedCategory.organization_name} - {selectedCategory.name}
+      </h2>
 
-          {/* Event Type */}
-          <div className="flex space-x-2 mb-3">
-            {['Academic', 'Career', 'Club'].map((eventType) => (
-              <button
-                key={eventType}
-                className={`px-3 py-1 rounded text-sm ${
-                  eventType === selectedEventType ? "bg-blue-400" : "bg-blue-200"
-                }`}
-                onClick={() => setSelectedEventType(eventType)}
-              >
-                {eventType}
-              </button>
-            ))}
-          </div>
+      {/* Event Type */}
+      <div className="flex space-x-2 mb-3">
+        {["Academic", "Career", "Club"].map((eventType) => (
+          <button
+            key={eventType}
+            className={`px-3 py-1 rounded text-sm ${
+              eventType === selectedEventType ? "bg-blue-400" : "bg-blue-200"
+            }`}
+            onClick={() => setSelectedEventType(eventType)}
+          >
+            {eventType}
+          </button>
+        ))}
+      </div>
 
-          {eventTypeError && (
-            <p className="text-red-500 text-sm mb-4">
-              Please select an event type.
-            </p>
-          )}
+      {eventTypeError && <p className="text-red-500 text-sm mb-4">Please select an event type.</p>}
 
-          {/* Title */}
-          <TextField
-            label="Event Title"
-            variant="standard"
-            required
-            fullWidth
-            size="medium"
-            value={title}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              if (titleError) setTitleError(false); // clear error on change
+      {/* Title */}
+      <TextField
+        label="Event Title"
+        variant="standard"
+        required
+        fullWidth
+        size="medium"
+        value={title}
+        onChange={(e) => {
+          setTitle(e.target.value);
+          if (titleError) setTitleError(false); // clear error on change
+        }}
+        error={titleError}
+        helperText={titleError ? "Title is required" : ""}
+        className="mb-6"
+      />
+
+      {/* time zone */}
+      <FormControl variant="standard" fullWidth>
+        <InputLabel
+          shrink={false}
+          sx={{
+            color: "blue",
+            fontWeight: 500,
+            fontSize: "0.875rem", // Small text (14px)
+            "&.Mui-focused": { color: "grey" },
+          }}
+        >
+          {timezone}
+        </InputLabel>
+
+        <Select
+          value={timezone}
+          onChange={(e) => setTimezone(e.target.value)}
+          disableUnderline
+          displayEmpty
+          sx={{
+            color: "blue",
+            fontWeight: 500,
+            fontSize: "0.875rem", // Small text (14px)
+            "& .MuiSelect-icon": {
+              color: "grey",
+            },
+            "& fieldset": {
+              border: "none",
+            },
+            "& .MuiOutlinedInput-notchedOutline": {
+              border: "none",
+            },
+          }}
+          renderValue={(selected) => selected || "Timezone"}
+        >
+          {timezones.map((tz) => (
+            <MenuItem key={tz} value={tz}>
+              {tz}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      {/* Date & Time */}
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <Box display="flex" alignItems="center" gap={2} mt={2}>
+          <DatePicker
+            label="Date"
+            value={date}
+            onChange={(newDate: Dayjs | null) => {
+              setDate(newDate);
+              setDateError(false);
             }}
-            error={titleError}
-            helperText={titleError ? "Title is required" : ""}
-            className="mb-6"
+            slotProps={{
+              textField: {
+                required: true,
+                error: dateError,
+                helperText: dateError ? "Date is required" : "",
+              },
+            }}
           />
 
-            {/* time zone */}
-          <FormControl variant="standard" fullWidth >
-            <InputLabel
-              shrink={false}
-              sx={{
-                color: "blue",
-                fontWeight: 500,
-                fontSize: "0.875rem", // Small text (14px)
-                '&.Mui-focused': { color: "grey" },
-              }}
-            >
-              {timezone}
-            </InputLabel>
+          <TimePicker
+            label="Start Time"
+            value={startTime}
+            onChange={(newTime: Dayjs | null) => {
+              setStartTime(newTime);
+              setStartError(false);
+            }}
+            disabled={allDay}
+            slotProps={{
+              textField: {
+                required: !allDay,
+                error: startError,
+                helperText: startError ? "Start time is required" : "",
+              },
+            }}
+          />
 
-            <Select
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              disableUnderline
-              displayEmpty
-              sx={{
-                color: "blue",
-                fontWeight: 500,
-                fontSize: "0.875rem", // Small text (14px)
-                "& .MuiSelect-icon": {
-                  color: "grey",
-                },
-                "& fieldset": {
-                  border: "none",
-                },
-                "& .MuiOutlinedInput-notchedOutline": {
-                  border: "none",
-                },
-              }}
-              renderValue={(selected) => selected || "Timezone"}
-            >
-              {timezones.map((tz) => (
-                <MenuItem key={tz} value={tz}>
-                  {tz}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Typography>-</Typography>
 
+          <TimePicker
+            label="End Time"
+            value={endTime}
+            onChange={(newTime: Dayjs | null) => {
+              setEndTime(newTime);
+              setEndError(false);
+            }}
+            disabled={allDay}
+            slotProps={{
+              textField: {
+                required: !allDay,
+                error: endError,
+                helperText: endError ? "End time is required" : "",
+              },
+            }}
+          />
+        </Box>
 
-          {/* Date & Time */}
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Box display="flex" alignItems="center" gap={2} mt={2}>
-              <DatePicker
-                label="Date"
-                value={date}
-                onChange={(newDate: Dayjs | null) => {
-                  setDate(newDate);
-                  setDateError(false);
-                }}
-                slotProps={{
-                  textField: {
-                    required: true,
-                    error: dateError,
-                    helperText: dateError ? "Date is required" : "",
-                  },
-                }}
-              />
+        <Box display="flex" alignItems="center" gap={2} mb={2}>
+          <FormControlLabel
+            control={<Checkbox checked={allDay} onChange={(e) => setAllDay(e.target.checked)} />}
+            label="All day"
+          />
 
-              <TimePicker
-                label="Start Time"
-                value={startTime}
-                onChange={(newTime: Dayjs | null) => {
-                  setStartTime(newTime);
-                  setStartError(false);
-                }}
-                disabled={allDay}
-                slotProps={{
-                  textField: {
-                    required: !allDay,
-                    error: startError,
-                    helperText: startError ? "Start time is required" : "",
-                  },
-                }}
-              />
-
-              <Typography>-</Typography>
-
-              <TimePicker
-                label="End Time"
-                value={endTime}
-                onChange={(newTime: Dayjs | null) => {
-                  setEndTime(newTime);
-                  setEndError(false);
-                }}
-                disabled={allDay}
-                slotProps={{
-                  textField: {
-                    required: !allDay,
-                    error: endError,
-                    helperText: endError ? "End time is required" : "",
-                  },
-                }}
-              />
-            </Box>
-
-            <Box display="flex" alignItems="center" gap={2} mb={2}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={allDay}
-                    onChange={(e) => setAllDay(e.target.checked)}
-                  />
-                }
-                label="All day"
-              />
-
-              {selectedEventType == "Career" && 
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={requireRegistration}
-                      onChange={(e) => setRequireRegistration(e.target.checked)}
-                    />
-                  }
-                  label="Require registration"
+          {selectedEventType == "Career" && (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={requireRegistration}
+                  onChange={(e) => setRequireRegistration(e.target.checked)}
                 />
               }
-            </Box>
+              label="Require registration"
+            />
+          )}
+        </Box>
 
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Repeats</InputLabel>
-              <Select
-                value={repeat}
-                label="Repeats"
-                
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setRepeat(value);
-                  if (value === "custom") {
-                    setShowCustomRecurrence(true); // <-- show modal when "Custom..." selected
-                  }
-                }}
-                size="small"
-              >
-                {recurrenceOptions
-                  .filter(option => !option.hidden)
-                  .map(option => (
-                    <MenuItem
-                      key={option.value}
-                      value={option.value}
-                      onClick={() => {
-                        if (option.value === "custom" && repeat === "custom") {
-                          setShowCustomRecurrence(true);
-                        }
-                      }}
-                    >
-                      {option.label}
-                    </MenuItem>
-                ))}
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel>Repeats</InputLabel>
+          <Select
+            value={repeat}
+            label="Repeats"
 
-              </Select>
+            onChange={(e) => {
+              const value = e.target.value;
+              setRepeat(value);
+              if (value === "custom") {
+                setShowCustomRecurrence(true); // <-- show modal when "Custom..." selected
+              }
+            }}
+            size="small"
+          >
+            {recurrenceOptions
+              .filter((option) => !option.hidden)
+              .map((option) => (
+                <MenuItem
+                  key={option.value}
+                  value={option.value}
+                  onClick={() => {
+                    if (option.value === "custom" && repeat === "custom") {
+                      setShowCustomRecurrence(true);
+                    }
+                  }}
+                >
+                  {option.label}
+                </MenuItem>
+              ))}
+          </Select>
+        </FormControl>
+      </LocalizationProvider>
 
-            </FormControl>
-          </LocalizationProvider>
-
-          {/* Course */}
-          {selectedEventType === "Academic" && (
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              {/* <InputLabel>Course</InputLabel>
+      {/* Course */}
+      {selectedEventType === "Academic" && (
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          {/* <InputLabel>Course</InputLabel>
               <Select
                 value={course}
                 label="Course"
@@ -701,225 +692,219 @@ export default function ModalEventForm({ show, onClose, selectedCategory, eventT
                     </MenuItem>
                   ))}
               </Select> */}
-              <Autocomplete
-                fullWidth
-                size="small"
-                options={courses}
-                getOptionLabel={(option) => option.label}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                value={courses.find(c => c.label === course) ?? null}
-                onChange={(event, newValue) => {
-                  if (newValue) {
-                    setCourse(newValue.label);
-                    setCourseNum(newValue.number);
-                    setCourseName(newValue.title);
-                    setCourseError(false);
-                  } else {
-                    setCourse("none");
-                    setCourseNum("");
-                    setCourseName("");
-                    setCourseError(true);
-                  }
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Course"
-                    required
-                    error={courseError}
-                    helperText={courseError ? "Please select a course." : ""}
-                  />
-                )}
-                filterOptions={(options, state) => {
-                  const input = state.inputValue.toLowerCase();
-                  return options.filter(
-                    (option) =>
-                      option.number.toLowerCase().includes(input) ||
-                      option.title.toLowerCase().includes(input)
-                  );
-                }}
-              />
-
-              {courseError && (
-                <p className="text-red-500 text-xs mt-1 ml-4">
-                  Please select a course.
-                </p>
-              )}
-
-            </FormControl>
-          )}
-
-          {/* Instructors */}
-          {selectedEventType === "Academic" && (
-            <TextField
-              label="Add Instructors (separate names by ,)"
-              variant="outlined"
-              fullWidth
-              value={instructorStr}
-              onChange={handleInstructorChange}
-              // need to add error message if wrong format
-              size="small"
-              sx={{ mb: 2 }}
-            />
-          )}
-
-          {/* Location */}
-          <TextField
-            label="Add location"
-            variant="outlined"
-            required
-            fullWidth
-            value={location}
-            onChange={(e) => {
-              setLocation(e.target.value);
-              if (locationError) setLocationError(false); // clear error on change
-            }}
-            error={locationError}
-            helperText={locationError ? "Location is required" : ""}
-            className="my-4"
-            size="small"
-          />
-
-          {/* Source URL */}
-          <TextField
-            label="Add Source/Registration URL"
-            variant="outlined"
-            sx={{ mb: 2, mt: 2 }}
-            required={requireRegistration} // Only required for Career
-            fullWidth
-            size="small"
-            value={sourceURL}
-            onChange={(e) => {
-              setSourceURL(e.target.value);
-              if (sourceURLError) setSourceURLError(false);
-            }}
-            error={requireRegistration && sourceURLError}
-            helperText={
-              requireRegistration && sourceURLError
-                ? "Source URL is required if registration is required"
-                : ""
-            }
-          />
-
-          {/* Host */}
-          {selectedEventType === "Career" && (
-            <TextField
-              label="Add host"
-              variant="outlined"
-              fullWidth
-              size="small"
-              value={host}
-              sx={{ mb: 2 }}
-              onChange={(e) => {
-                setHost(e.target.value);
-              }}
-            />
-          )}
-
-
-          {/* Tags */}
           <Autocomplete
-            multiple
-            freeSolo
-            options={predefinedTags}
-            getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
-            filterSelectedOptions
+            fullWidth
             size="small"
-            value={selectedTags}
+            options={courses}
+            getOptionLabel={(option) => option.label}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            value={courses.find((c) => c.label === course) ?? null}
             onChange={(event, newValue) => {
-              const normalized = newValue.map((tag) =>
-                typeof tag === "string" ? { name: tag.toLowerCase() } : { ...tag, name: tag.name.toLowerCase() }
-              );
-              setSelectedTags(normalized);
+              if (newValue) {
+                setCourse(newValue.label);
+                setCourseNum(newValue.number);
+                setCourseName(newValue.title);
+                setCourseError(false);
+              } else {
+                setCourse("none");
+                setCourseNum("");
+                setCourseName("");
+                setCourseError(true);
+              }
             }}
-            renderTags={(value, getTagProps) =>
-              value.map((option: Tag, index: number) => {
-                const tagProps = getTagProps({ index });
-                const { key, ...rest } = tagProps;
-
-                return (
-                  <Chip
-                    key={key} // explicitly pass the key
-                    label={option.name}
-                    variant="outlined"
-                    {...rest} // spread the remaining props
-                  />
-                );
-              })
-            }
             renderInput={(params) => (
               <TextField
                 {...params}
-                variant="outlined"
-                label="Tags"
-                placeholder="Add or select a tag"
+                label="Course"
+                required
+                error={courseError}
+                helperText={courseError ? "Please select a course." : ""}
               />
             )}
-            sx={{ mb: 2 }}
-          />
-
-          {/* Description */}
-          <TextField
-            label="Add description"
-            variant="outlined"
-            fullWidth
-            size="small"
-            value={description}
-            sx={{ mb: 2 }}
-            onChange={(e) => {
-              setDescription(e.target.value);
+            filterOptions={(options, state) => {
+              const input = state.inputValue.toLowerCase();
+              return options.filter(
+                (option) =>
+                  option.number.toLowerCase().includes(input) ||
+                  option.title.toLowerCase().includes(input),
+              );
             }}
           />
-          
-          
 
-          {/* Custom Recurrence Modal */}
-          {showCustomRecurrence && (
-            <CustomRecurrenceModal
-              open={showCustomRecurrence}
-              onClose={onCustomRecurrenceClose}
-              interval={interval}
-              setInterval={setInterval}
-              frequency={frequency}
-              setFrequency={setFrequency}
-              selectedDays={selectedDays}
-              toggleDay={toggleDay}
-              ends={ends}
-              setEnds={setEnds}
-              endDate={endDate}
-              setEndDate={setEndDate}
-              occurrences={occurrences}
-              setOccurrences={setOccurrences}
-            />
-          )}
+          {courseError && <p className="text-red-500 text-xs mt-1 ml-4">Please select a course.</p>}
+        </FormControl>
+      )}
 
-          {/* Buttons */}
-          <div className="flex justify-end gap-4">
-            <button
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-              onClick={reset}
-            >
-              Reset
-            </button>
+      {/* Instructors */}
+      {selectedEventType === "Academic" && (
+        <TextField
+          label="Add Instructors (separate names by ,)"
+          variant="outlined"
+          fullWidth
+          value={instructorStr}
+          onChange={handleInstructorChange}
+          // need to add error message if wrong format
+          size="small"
+          sx={{ mb: 2 }}
+        />
+      )}
 
-            <button
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-              onClick={() => {
-                void handleSubmit();
-              }}
-            >
-              Continue
-            </button>
-          </div>
+      {/* Location */}
+      <TextField
+        label="Add location"
+        variant="outlined"
+        required
+        fullWidth
+        value={location}
+        onChange={(e) => {
+          setLocation(e.target.value);
+          if (locationError) setLocationError(false); // clear error on change
+        }}
+        error={locationError}
+        helperText={locationError ? "Location is required" : ""}
+        className="my-4"
+        size="small"
+      />
 
-          {/* Close Button */}
-          {/* <button
+      {/* Source URL */}
+      <TextField
+        label="Add Source/Registration URL"
+        variant="outlined"
+        sx={{ mb: 2, mt: 2 }}
+        required={requireRegistration} // Only required for Career
+        fullWidth
+        size="small"
+        value={sourceURL}
+        onChange={(e) => {
+          setSourceURL(e.target.value);
+          if (sourceURLError) setSourceURLError(false);
+        }}
+        error={requireRegistration && sourceURLError}
+        helperText={
+          requireRegistration && sourceURLError
+            ? "Source URL is required if registration is required"
+            : ""
+        }
+      />
+
+      {/* Host */}
+      {selectedEventType === "Career" && (
+        <TextField
+          label="Add host"
+          variant="outlined"
+          fullWidth
+          size="small"
+          value={host}
+          sx={{ mb: 2 }}
+          onChange={(e) => {
+            setHost(e.target.value);
+          }}
+        />
+      )}
+
+      {/* Tags */}
+      <Autocomplete
+        multiple
+        freeSolo
+        options={predefinedTags}
+        getOptionLabel={(option) => (typeof option === "string" ? option : option.name)}
+        filterSelectedOptions
+        size="small"
+        value={selectedTags}
+        onChange={(event, newValue) => {
+          const normalized = newValue.map((tag) =>
+            typeof tag === "string"
+              ? { name: tag.toLowerCase() }
+              : { ...tag, name: tag.name.toLowerCase() },
+          );
+          setSelectedTags(normalized);
+        }}
+        renderTags={(value, getTagProps) =>
+          value.map((option: Tag, index: number) => {
+            const tagProps = getTagProps({ index });
+            const { key, ...rest } = tagProps;
+
+            return (
+              <Chip
+                key={key} // explicitly pass the key
+                label={option.name}
+                variant="outlined"
+                {...rest} // spread the remaining props
+              />
+            );
+          })
+        }
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            variant="outlined"
+            label="Tags"
+            placeholder="Add or select a tag"
+          />
+        )}
+        sx={{ mb: 2 }}
+      />
+
+      {/* Description */}
+      <TextField
+        label="Add description"
+        variant="outlined"
+        fullWidth
+        size="small"
+        value={description}
+        sx={{ mb: 2 }}
+        onChange={(e) => {
+          setDescription(e.target.value);
+        }}
+      />
+
+      {/* Custom Recurrence Modal */}
+      {showCustomRecurrence && (
+        <CustomRecurrenceModal
+          open={showCustomRecurrence}
+          onClose={onCustomRecurrenceClose}
+          interval={interval}
+          setInterval={setInterval}
+          frequency={frequency}
+          setFrequency={setFrequency}
+          selectedDays={selectedDays}
+          toggleDay={toggleDay}
+          ends={ends}
+          setEnds={setEnds}
+          endDate={endDate}
+          setEndDate={setEndDate}
+          occurrences={occurrences}
+          setOccurrences={setOccurrences}
+        />
+      )}
+
+      {/* Buttons */}
+      <div className="flex justify-end gap-4">
+        <button
+          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+          onClick={reset}
+        >
+          Reset
+        </button>
+
+        <button
+          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+          onClick={() => {
+            void handleSubmit();
+          }}
+        >
+          Continue
+        </button>
+      </div>
+
+      {/* Close Button */}
+      {/* <button
             onClick={onClose}
             className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 dark:hover:text-white"
           >
             &times;
           </button> */}
-        {/* </div>
+      {/* </div>
       </div>
     </> */}
     </Modal>

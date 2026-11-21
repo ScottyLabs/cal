@@ -1,14 +1,14 @@
 "use client";
 // components/Modal.tsx
 
-import Modal from './Modal';
+import Modal from "./Modal";
 import { useEventState } from "../../context/EventStateContext";
 import { ReactNode, useState, useEffect } from "react";
 
-import axios from 'axios';
+import axios from "axios";
 import { useAuth } from "~/context/AuthContext";
-import { getAdminCategories } from '../utils/api/users';
-import { CategoryOrg } from '../utils/types';
+import { getAdminCategories } from "../utils/api/users";
+import { CategoryOrg } from "../utils/types";
 
 type ModalProps = {
   show: boolean;
@@ -16,7 +16,6 @@ type ModalProps = {
 };
 
 export default function ModalUploadOne({ show, onClose }: ModalProps) {
-
   const [selectedOption, setSelectedOption] = useState<CategoryOrg | null>(null);
   const { isSignedIn } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
@@ -47,12 +46,13 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
           <h2 className="text-lg font-semibold mb-4">Loading Calendars...</h2>
-          <p className="text-gray-600 dark:text-gray-400">Please wait while we fetch your authorized calendars.</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Please wait while we fetch your authorized calendars.
+          </p>
         </div>
       </div>
     );
   }
-  
 
   return (
     <Modal show={show} onClose={onClose}>
@@ -65,7 +65,9 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
           setSelectedOption(selected ?? null);
         }}
       >
-        <option value="" disabled>Select a calendar</option>
+        <option value="" disabled>
+          Select a calendar
+        </option>
         {adminCategories.map((category) => (
           <option key={category.id} value={category.id}>
             {category.organization_name} - {category.name}
@@ -74,7 +76,13 @@ export default function ModalUploadOne({ show, onClose }: ModalProps) {
       </select>
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
         No available calendars? Please fill out this{" "}
-        <a href='https://forms.gle/DaaShMuQpbYiSNLn6' target='_blank' className="text-blue-600 hover:underline">google form</a>{" "}
+        <a
+          href="https://forms.gle/DaaShMuQpbYiSNLn6"
+          target="_blank"
+          className="text-blue-600 hover:underline"
+        >
+          google form
+        </a>{" "}
         to request edit access to an organization&apos;s calendar.
       </p>
       <button

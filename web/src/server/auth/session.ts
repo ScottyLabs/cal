@@ -8,10 +8,7 @@
 //   cal_login    path=/api/auth  PKCE verifier, nonce and state for a login
 //                                in flight, 10 minutes
 //
-// Each is a JWE (dir + A256GCM) under a key derived from SESSION_SECRET, with
-// its own audience so one cannot be replayed as another. JavaScript never sees
-// the refresh token; the browser only ever gets short-lived access tokens
-// from GET /api/auth/token.
+// Each is a JWE (dir + A256GCM) under a key derived from SESSION_SECRET, with its own audience so one cannot be replayed as another. JavaScript never sees the refresh token; the browser only ever gets short-lived access tokens from GET /api/auth/token.
 import { createHash } from "node:crypto";
 
 import { EncryptJWT, jwtDecrypt } from "jose";
@@ -80,8 +77,7 @@ function cookieOptions(config: AuthConfig, path: string, expiresAtMs: number) {
   return {
     httpOnly: true,
     secure: config.secureCookies,
-    // Lax still sends the cookie on the top-level GET that Ricochet redirects
-    // to, which the login cookie needs, while keeping it off cross-site POSTs.
+    // Lax still sends the cookie on the top-level GET that Ricochet redirects to, which the login cookie needs, while keeping it off cross-site POSTs.
     sameSite: "lax" as const,
     path,
     expires: new Date(expiresAtMs),
@@ -121,11 +117,19 @@ export async function writeSession(
   const access = await seal(
     config,
     "access",
-    { accessToken: tokens.accessToken, accessTokenExpiresAt: tokens.accessTokenExpiresAt, sub: profile.sub },
+    {
+      accessToken: tokens.accessToken,
+      accessTokenExpiresAt: tokens.accessTokenExpiresAt,
+      sub: profile.sub,
+    },
     tokens.accessTokenExpiresAt,
   );
   if (access.length <= MAX_COOKIE_VALUE) {
-    res.cookies.set(ACCESS_COOKIE, access, cookieOptions(config, AUTH_PATH, tokens.accessTokenExpiresAt));
+    res.cookies.set(
+      ACCESS_COOKIE,
+      access,
+      cookieOptions(config, AUTH_PATH, tokens.accessTokenExpiresAt),
+    );
   } else {
     res.cookies.delete({ name: ACCESS_COOKIE, path: AUTH_PATH });
   }

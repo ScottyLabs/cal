@@ -17,16 +17,18 @@ export const GcalEventsProvider = ({ children }: { children: React.ReactNode }) 
   const [gcalEvents, setGcalEvents] = useState<FullCalendarEvent[]>([]);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [cmuCalendarId, setCmuCalendarId] = useState<string | null>(null);
-  
+
   return (
-    <GcalEventsContext.Provider value={{ 
-      gcalEvents, 
-      setGcalEvents,
-      isGoogleConnected,
-      setIsGoogleConnected,
-      cmuCalendarId,
-      setCmuCalendarId
-    }}>
+    <GcalEventsContext.Provider
+      value={{
+        gcalEvents,
+        setGcalEvents,
+        isGoogleConnected,
+        setIsGoogleConnected,
+        cmuCalendarId,
+        setCmuCalendarId,
+      }}
+    >
       {children}
     </GcalEventsContext.Provider>
   );

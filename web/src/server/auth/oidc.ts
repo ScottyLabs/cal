@@ -1,12 +1,6 @@
-// OIDC against ScottyLabs Keycloak through the Ricochet relay, following the
-// org pattern in housing (apps/backend/src/auth/oidc.ts) and cmugpt-surface
-// (apps/server/src/routes/authRoutes.ts). openid-client does the protocol and
-// all token validation; this module only decides the redirect_uri and state.
+// OIDC against ScottyLabs Keycloak through the Ricochet relay, following the org pattern in housing (apps/backend/src/auth/oidc.ts) and cmugpt-surface (apps/server/src/routes/authRoutes.ts). openid-client does the protocol and all token validation; this module only decides the redirect_uri and state.
 //
-// Ricochet contract (codeberg.org/anish/ricochet): the IdP redirect_uri is the
-// relay, and our real callback rides in `state` as base64url(JSON) with a
-// `return_to` field. The relay checks return_to against its host allowlist
-// and forwards code, state (byte for byte), session_state and iss to it.
+// Ricochet contract (codeberg.org/anish/ricochet): the IdP redirect_uri is the relay, and our real callback rides in `state` as base64url(JSON) with a `return_to` field. The relay checks return_to against its host allowlist and forwards code, state (byte for byte), session_state and iss to it.
 import { randomBytes } from "node:crypto";
 
 import * as client from "openid-client";

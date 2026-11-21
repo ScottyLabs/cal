@@ -38,7 +38,7 @@ Everyone shares one dev database. Ask the tech lead before running `migrate-down
 ## Troubleshooting
 
 | Symptom | Fix |
-| --- | --- |
+| -- | -- |
 | secretspec reports permission denied | Your OpenBao token expired, so run the login command again. If it still fails, governance has not added you to the CMU Cal team yet. |
 | Sign-in ends on a connection error at `localhost:8090` | Ricochet is not running. `pitchfork status` shows whether it started. |
 | Pages load but data never does | Some CMU networks block outbound Postgres. Try CMU-SECURE, eduroam, or a hotspot. |

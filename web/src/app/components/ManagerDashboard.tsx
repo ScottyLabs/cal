@@ -2,7 +2,13 @@
 
 import { useAuth } from "~/context/AuthContext";
 import { FiPlus, FiEdit2, FiTrash2, FiSearch } from "react-icons/fi";
-import type { AdminInOrg, Org, CalendarSourceType, EventOccurrence, Category } from "../utils/types";
+import type {
+  AdminInOrg,
+  Org,
+  CalendarSourceType,
+  EventOccurrence,
+  Category,
+} from "../utils/types";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
   getAdminsInOrg,
@@ -44,7 +50,11 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminInOrg | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{ type: string; id?: number; name?: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: string;
+    id?: number;
+    name?: string;
+  } | null>(null);
 
   // Unified loading state - true while initial org data loads
   const [isOrgLoading, setIsOrgLoading] = useState(false);
@@ -96,32 +106,32 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
     setCategories([]);
     if (selectedOrgId === null) return;
     setIsOrgLoading(true);
-    void Promise.all([
-      fetchAdmins(),
-      fetchCalendarSources(),
-      fetchEvents(),
-    ]).finally(() => setIsOrgLoading(false));
+    void Promise.all([fetchAdmins(), fetchCalendarSources(), fetchEvents()]).finally(() =>
+      setIsOrgLoading(false),
+    );
   }, [selectedOrgId, fetchAdmins, fetchCalendarSources, fetchEvents]);
 
   // Poll while any calendar source is syncing; fetch events when they finish
   const wasSyncingRef = useRef(false);
   useEffect(() => {
     const isSyncing = calendarSources.some(
-      (cs) => cs.last_sync_status === "pending" || cs.last_sync_status === "syncing"
+      (cs) => cs.last_sync_status === "pending" || cs.last_sync_status === "syncing",
     );
     if (wasSyncingRef.current && !isSyncing && calendarSources.length > 0) {
       void fetchEvents();
     }
     wasSyncingRef.current = isSyncing;
     if (!isSyncing) return;
-    const id = setInterval(() => { void fetchCalendarSources(); }, 5000);
+    const id = setInterval(() => {
+      void fetchCalendarSources();
+    }, 5000);
     return () => clearInterval(id);
   }, [calendarSources, fetchCalendarSources, fetchEvents]);
 
   // Derive current user's admin record and permissions
   const myAdmin = useMemo(
     () => admins.find((a) => dbUser !== null && a.user_id === dbUser.id),
-    [admins, dbUser]
+    [admins, dbUser],
   );
   const isAdmin = myAdmin?.role === "admin";
   const myDbUserId = myAdmin?.user_id ?? null;
@@ -133,9 +143,7 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
     if (!eventSearch.trim()) return events;
     const term = eventSearch.toLowerCase();
     return events.filter(
-      (e) =>
-        e.title.toLowerCase().includes(term) ||
-        e.location?.toLowerCase().includes(term)
+      (e) => e.title.toLowerCase().includes(term) || e.location?.toLowerCase().includes(term),
     );
   }, [events, eventSearch]);
 
@@ -178,8 +186,14 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
         isAdmin={isAdmin}
         myDbUserId={myDbUserId}
         onAdd={() => setShowAddAdmin(true)}
-        onEdit={(admin) => { setEditingAdmin(admin); setShowEditAdmin(true); }}
-        onDelete={(admin) => { setDeleteTarget({ type: "admin", id: admin.user_id, name: admin.andrew_id }); setShowDeleteConfirm(true); }}
+        onEdit={(admin) => {
+          setEditingAdmin(admin);
+          setShowEditAdmin(true);
+        }}
+        onDelete={(admin) => {
+          setDeleteTarget({ type: "admin", id: admin.user_id, name: admin.andrew_id });
+          setShowDeleteConfirm(true);
+        }}
       />
 
       {/* Categories */}
@@ -188,7 +202,10 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
         isAdmin={isAdmin}
         allowedCategoryId={allowedCategoryId}
         onAdd={() => setShowAddCategory(true)}
-        onDelete={(cat) => { setDeleteTarget({ type: "category", id: cat.id, name: cat.name }); setShowDeleteConfirm(true); }}
+        onDelete={(cat) => {
+          setDeleteTarget({ type: "category", id: cat.id, name: cat.name });
+          setShowDeleteConfirm(true);
+        }}
       />
 
       {/* iCal Links */}
@@ -201,13 +218,16 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
           try {
             const result = await toggleCalendarSource(selectedOrgId!, cs.id);
             setCalendarSources((prev) =>
-              prev.map((s) => (s.id === cs.id ? { ...s, active: result.active } : s))
+              prev.map((s) => (s.id === cs.id ? { ...s, active: result.active } : s)),
             );
           } catch (error) {
             console.error("Failed to toggle calendar source:", error);
           }
         }}
-        onDelete={(cs) => { setDeleteTarget({ type: "ical", id: cs.id, name: cs.url }); setShowDeleteConfirm(true); }}
+        onDelete={(cs) => {
+          setDeleteTarget({ type: "ical", id: cs.id, name: cs.url });
+          setShowDeleteConfirm(true);
+        }}
       />
 
       {/* Events */}
@@ -217,13 +237,19 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
         allowedCategoryId={allowedCategoryId}
         search={eventSearch}
         onSearchChange={setEventSearch}
-        onDelete={(event) => { setDeleteTarget({ type: "event", id: event.event_id, name: event.title }); setShowDeleteConfirm(true); }}
+        onDelete={(event) => {
+          setDeleteTarget({ type: "event", id: event.event_id, name: event.title });
+          setShowDeleteConfirm(true);
+        }}
       />
 
       {/* Danger zone - admin only */}
       {isAdmin && (
         <button
-          onClick={() => { setDeleteTarget({ type: "org", name: selectedOrg.name }); setShowDeleteConfirm(true); }}
+          onClick={() => {
+            setDeleteTarget({ type: "org", name: selectedOrg.name });
+            setShowDeleteConfirm(true);
+          }}
           className="rounded-full border border-red-200 px-5 py-2 text-sm text-red-600 hover:bg-red-50"
         >
           Delete organization
@@ -241,7 +267,10 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
       {/* Edit Admin Modal */}
       <EditAdminModal
         show={showEditAdmin}
-        onClose={() => { setShowEditAdmin(false); setEditingAdmin(null); }}
+        onClose={() => {
+          setShowEditAdmin(false);
+          setEditingAdmin(null);
+        }}
         admin={editingAdmin}
         categories={categories}
         onSuccess={fetchAdmins}
@@ -261,13 +290,18 @@ export default function ManagerContent({ selectedOrg, onOrgDeleted }: Props) {
         onClose={() => setShowAddIcal(false)}
         orgId={selectedOrgId!}
         categories={allowedCategories}
-        onSuccess={async () => { await fetchCalendarSources(); }}
+        onSuccess={async () => {
+          await fetchCalendarSources();
+        }}
       />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
         show={showDeleteConfirm}
-        onClose={() => { setShowDeleteConfirm(false); setDeleteTarget(null); }}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setDeleteTarget(null);
+        }}
         target={deleteTarget}
         onConfirm={async () => {
           if (!deleteTarget) return;
@@ -389,15 +423,17 @@ function AdminsSection({
                   <tr key={i} className="border-t">
                     <td className="px-4 py-3">
                       {admin.andrew_id}
-                      {isSelf && (
-                        <span className="ml-2 text-xs text-gray-400">(you)</span>
-                      )}
+                      {isSelf && <span className="ml-2 text-xs text-gray-400">(you)</span>}
                     </td>
                     <td className="px-4 py-3 capitalize">{admin.role}</td>
                     {isAdmin && (
                       <td className="px-4 py-3 text-right space-x-2">
-                        <IconButton onClick={() => onEdit(admin)} disabled={isSelf}><FiEdit2 /></IconButton>
-                        <IconButton onClick={() => onDelete(admin)} disabled={isSelf}><FiTrash2 /></IconButton>
+                        <IconButton onClick={() => onEdit(admin)} disabled={isSelf}>
+                          <FiEdit2 />
+                        </IconButton>
+                        <IconButton onClick={() => onDelete(admin)} disabled={isSelf}>
+                          <FiTrash2 />
+                        </IconButton>
                       </td>
                     )}
                   </tr>
@@ -462,7 +498,9 @@ function CategoriesSection({
                   <td className="px-4 py-3">{cat.name}</td>
                   {canManage && (
                     <td className="px-4 py-3 text-right">
-                      <IconButton onClick={() => onDelete(cat)}><FiTrash2 /></IconButton>
+                      <IconButton onClick={() => onDelete(cat)}>
+                        <FiTrash2 />
+                      </IconButton>
                     </td>
                   )}
                 </tr>
@@ -490,10 +528,7 @@ function ICalSection({
   onToggle: (cs: CalendarSourceType) => void;
   onDelete: (cs: CalendarSourceType) => void;
 }) {
-  const categoryMap = useMemo(
-    () => new Map(categories.map((c) => [c.id, c.name])),
-    [categories]
-  );
+  const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
   return (
     <section className="mb-10">
@@ -507,7 +542,8 @@ function ICalSection({
         </button>
       </div>
       <p className="text-sm text-gray-500 mb-3">
-        Manage external calendar integrations. Active links are automatically synced to import new events.
+        Manage external calendar integrations. Active links are automatically synced to import new
+        events.
       </p>
 
       <div className="rounded-xl border overflow-hidden">
@@ -532,7 +568,9 @@ function ICalSection({
                 <tr key={cs.id} className="border-t">
                   <td className="px-4 py-3 text-gray-500 max-w-xs">
                     <div className="flex items-center gap-2">
-                      <span className="truncate" title={cs.url}>{cs.url}</span>
+                      <span className="truncate" title={cs.url}>
+                        {cs.url}
+                      </span>
                       {(cs.last_sync_status === "pending" || cs.last_sync_status === "syncing") && (
                         <span className="shrink-0 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
                           Syncing...
@@ -559,7 +597,9 @@ function ICalSection({
                     <IconButton
                       onClick={() => onDelete(cs)}
                       disabled={allowedCategoryId !== null && cs.category_id !== allowedCategoryId}
-                    ><FiTrash2 /></IconButton>
+                    >
+                      <FiTrash2 />
+                    </IconButton>
                   </td>
                 </tr>
               ))
@@ -586,10 +626,7 @@ function EventsSection({
   onSearchChange: (val: string) => void;
   onDelete: (event: EventOccurrence) => void;
 }) {
-  const categoryMap = useMemo(
-    () => new Map(categories.map((c) => [c.id, c.name])),
-    [categories]
-  );
+  const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
   return (
     <section className="mb-12">
@@ -630,7 +667,9 @@ function EventsSection({
                 <tr key={event.id} className="border-t">
                   <td className="px-4 py-3">{event.title}</td>
                   <td className="px-4 py-3 text-gray-500">
-                    {event.category_id ? (categoryMap.get(event.category_id) ?? "Uncategorized") : "Uncategorized"}
+                    {event.category_id
+                      ? (categoryMap.get(event.category_id) ?? "Uncategorized")
+                      : "Uncategorized"}
                   </td>
                   <td className="px-4 py-3">
                     {formatDateRange(event.start_datetime, event.end_datetime)}
@@ -639,8 +678,12 @@ function EventsSection({
                   <td className="px-4 py-3 text-right space-x-2">
                     <IconButton
                       onClick={() => onDelete(event)}
-                      disabled={allowedCategoryId !== null && event.category_id !== allowedCategoryId}
-                    ><FiTrash2 /></IconButton>
+                      disabled={
+                        allowedCategoryId !== null && event.category_id !== allowedCategoryId
+                      }
+                    >
+                      <FiTrash2 />
+                    </IconButton>
                   </td>
                 </tr>
               ))
@@ -813,7 +856,9 @@ function EditAdminModal({
               >
                 <option value="">All categories</option>
                 {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -919,7 +964,9 @@ function AddICalModal({
               className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
               ))}
             </select>
           </div>
@@ -983,7 +1030,14 @@ function AddCategoryModal({
   };
 
   return (
-    <Modal show={show} onClose={() => { setName(""); setError(""); onClose(); }}>
+    <Modal
+      show={show}
+      onClose={() => {
+        setName("");
+        setError("");
+        onClose();
+      }}
+    >
       <h2 className="text-lg font-semibold mb-4">Add Category</h2>
       <div className="space-y-4">
         <div>
@@ -999,7 +1053,11 @@ function AddCategoryModal({
         {error && <p className="text-sm text-red-600">{error}</p>}
         <div className="flex justify-end gap-3 pt-2">
           <button
-            onClick={() => { setName(""); setError(""); onClose(); }}
+            onClick={() => {
+              setName("");
+              setError("");
+              onClose();
+            }}
             className="rounded-lg border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
           >
             Cancel
@@ -1084,7 +1142,15 @@ function DeleteConfirmModal({
 
 /* ---------- Small reusable components ---------- */
 
-function IconButton({ children, onClick, disabled }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean }) {
+function IconButton({
+  children,
+  onClick,
+  disabled,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
   return (
     <button
       onClick={onClick}
@@ -1096,7 +1162,15 @@ function IconButton({ children, onClick, disabled }: { children: React.ReactNode
   );
 }
 
-function Toggle({ active, onClick, disabled }: { active: boolean; onClick?: () => void; disabled?: boolean }) {
+function Toggle({
+  active,
+  onClick,
+  disabled,
+}: {
+  active: boolean;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
   return (
     <button
       onClick={onClick}
@@ -1106,9 +1180,7 @@ function Toggle({ active, onClick, disabled }: { active: boolean; onClick?: () =
       }`}
     >
       <div
-        className={`h-4 w-4 rounded-full bg-white transition ${
-          active ? "translate-x-4" : ""
-        }`}
+        className={`h-4 w-4 rounded-full bg-white transition ${active ? "translate-x-4" : ""}`}
       />
     </button>
   );

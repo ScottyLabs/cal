@@ -24,8 +24,7 @@ describe("safeReturnTo", () => {
     "//evil.example",
     "/\\evil.example",
     "\\\\evil.example",
-    // The URL parser strips tabs and newlines, which would turn these into
-    // "//evil.example". searchParams.get decodes %09 and %0A to exactly this.
+    // The URL parser strips tabs and newlines, which would turn these into "//evil.example". searchParams.get decodes %09 and %0A to exactly this.
     "/\t/evil.example",
     "/\n/evil.example",
     "/\r\n/evil.example",

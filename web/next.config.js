@@ -6,8 +6,7 @@ import "./src/env.js";
 /** @type {import("next").NextConfig} */
 const config = {
   // Kennel deploys this as a systemd service from a read-only Nix store path.
-  // Standalone output traces the exact dependency set into a self-contained
-  // server, instead of shipping the whole node_modules tree.
+  // Standalone output traces the exact dependency set into a self-contained server, instead of shipping the whole node_modules tree.
   output: "standalone",
 };
 

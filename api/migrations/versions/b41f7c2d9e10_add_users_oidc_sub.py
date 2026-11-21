@@ -20,8 +20,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "b41f7c2d9e10"
-# 55da73f9050c ("add agent_run to events") is where the prod and dev databases
-# are.
+# 55da73f9050c ("add agent_run to events") is where the prod and dev databases are.
 down_revision: Union[str, Sequence[str], None] = "55da73f9050c"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

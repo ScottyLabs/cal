@@ -12,8 +12,7 @@ from scraper.monitors.base_scraper import BaseScraper
 BASE_URL = "https://tartanconnect.cmu.edu"
 EVENTS_URL = f"{BASE_URL}/mobile_ws/v17/mobile_events_list"
 PAGE_SIZE = 100
-# "Private Location (sign in to display)" / "(register to display)": the
-# address is only on TartanConnect.
+# "Private Location (sign in to display)" / "(register to display)": the address is only on TartanConnect.
 PRIVATE_LOCATION = "See TartanConnect"
 
 # "Sun, Oct 11, 2026 5 PM" or "7:30 PM"; the end time may omit the date.

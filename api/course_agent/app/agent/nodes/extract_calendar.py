@@ -1,5 +1,4 @@
-# course-agent/app/agent/nodes/extract_calendar.py
-# from course_agent.app.db.repositories import insert_calendar
+# course-agent/app/agent/nodes/extract_calendar.py from course_agent.app.db.repositories import insert_calendar
 from course_agent.app.agent.state import CourseAgentState
 from course_agent.app.db.repositories import upsert_calendar_source
 from course_agent.app.services.iframe_scanner import (

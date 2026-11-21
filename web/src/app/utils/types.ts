@@ -1,7 +1,6 @@
 import { EventInput } from "@fullcalendar/core";
 import dayjs, { Dayjs } from "dayjs";
 
-
 export interface Event {
   _id: {
     $oid: string;
@@ -17,13 +16,11 @@ export interface Event {
   resource_source: string;
 }
 
-
 export interface CourseOption {
   id: string;
   type: string;
   selected: boolean;
 }
-
 
 export interface Course {
   id: string;
@@ -33,13 +30,11 @@ export interface Course {
   options: CourseOption[];
 }
 
-
 export interface ClubOption {
   id: string;
   type: string;
   selected: boolean;
 }
-
 
 export interface Club {
   id: string;
@@ -71,7 +66,6 @@ export interface ToggleItemProps {
   label: string;
 }
 
-
 export interface AccordionProps {
   title: string;
   subtitle?: string;
@@ -88,7 +82,6 @@ export interface GCalLinkPayloadType {
   course_name?: string;
   instructors?: string[];
 }
-
 
 export interface EventPayloadType {
   title: string;
@@ -116,13 +109,13 @@ export interface EventPayloadType {
 export interface RecurrenceInput {
   frequency: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
   interval: number;
-  selectedDays: number[];     // For weekly recurrence: [0 (Sun) - 6 (Sat)]
+  selectedDays: number[]; // For weekly recurrence: [0 (Sun) - 6 (Sat)]
   ends: "never" | "on" | "after";
   endDate: Dayjs | null;
   occurrences: number;
   startDatetime: Dayjs;
   eventId: number;
-  nthWeek?: number | null;    // For monthly recurrence: 1-5 or -1 for last week
+  nthWeek?: number | null; // For monthly recurrence: 1-5 or -1 for last week
 }
 
 export interface RecurrenceOutput {
@@ -145,23 +138,23 @@ export type RRuleFrequency = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 export type DBRecurrenceEnds = "never" | "on" | "after";
 
 export interface EventOccurrence {
-    id: number;
-    title: string;
-    description: string | null;
-    start_datetime: string;
-    end_datetime: string;
-    location: string;
-    is_all_day: boolean;
-    source_url: string | null;
-    recurrence: string;
-    event_id: number;
-    org_id: number;
-    category_id: number;
+  id: number;
+  title: string;
+  description: string | null;
+  start_datetime: string;
+  end_datetime: string;
+  location: string;
+  is_all_day: boolean;
+  source_url: string | null;
+  recurrence: string;
+  event_id: number;
+  org_id: number;
+  category_id: number;
 }
 
 export interface Category {
-    id: number;
-    name: string;
+  id: number;
+  name: string;
 }
 
 export interface CategoryOrg {
@@ -173,19 +166,19 @@ export interface CategoryOrg {
 }
 
 export interface Organization {
-    org_id: number;
-    name: string;
-    categories: Category[];
-    events: Record<string, EventOccurrence[]>;
+  org_id: number;
+  name: string;
+  categories: Category[];
+  events: Record<string, EventOccurrence[]>;
 }
 
 export interface Course extends Organization {
-    type: "COURSE" | "ACADEMIC";
+  type: "COURSE" | "ACADEMIC";
 }
 
 export interface Club extends Organization {
-    type: "CLUB";
-    description?: string | null;
+  type: "CLUB";
+  description?: string | null;
 }
 
 export interface CourseOption {
@@ -193,7 +186,7 @@ export interface CourseOption {
   number: string;
   title: string;
   label: string;
-};
+}
 
 export interface CalendarFields {
   id: string;
@@ -214,32 +207,32 @@ export interface CalendarFields {
 }
 
 export interface GCalEvent {
-    id?: string;
-    title?: string;
-    start: string;
-    end: string;
+  id?: string;
+  title?: string;
+  start: string;
+  end: string;
+  location?: string;
+  description?: string;
+  source_url?: string;
+  allDay?: boolean;
+  calendarId: string;
+}
+
+export interface FullCalendarEvent {
+  id: string;
+  title: string;
+  start: string | Date;
+  end: string | Date;
+  allDay?: boolean;
+  classNames?: string[];
+  extendedProps: {
+    calendarId: string;
     location?: string;
     description?: string;
     source_url?: string;
-    allDay?: boolean;
-    calendarId: string;
-};
-  
-export interface FullCalendarEvent {
-    id: string;
-    title: string;
-    start: string | Date;
-    end: string | Date;
-    allDay?: boolean;
-    classNames?: string[];
-    extendedProps: {
-      calendarId: string,
-      location?: string,
-      description?: string,
-      source_url?: string,
-      event_id?: string
-    }
-};
+    event_id?: string;
+  };
+}
 
 export type AuthStatus = { authorized: boolean };
 
@@ -270,7 +263,12 @@ export interface BulkCreateAdminsResponse {
   organization: { id: number; name: string };
   categories: { id: number; name: string }[];
   created_users: string[];
-  created_admins: { user_email: string; user_id: number; org_id: number; category_id: number | null }[];
+  created_admins: {
+    user_email: string;
+    user_id: number;
+    org_id: number;
+    category_id: number | null;
+  }[];
   errors: string[];
 }
 

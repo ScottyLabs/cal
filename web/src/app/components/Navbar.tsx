@@ -18,25 +18,23 @@ import { useUser } from "~/context/UserContext";
 import { ConnectGoogleButton } from "./ConnectGoogleButton";
 import UserMenu from "./UserMenu";
 
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
-import axios, { AxiosError } from 'axios';
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
+import axios, { AxiosError } from "axios";
 import { getUserID } from "../utils/api/users";
 import { API_BASE_URL } from "../utils/api/api";
 import { fetchRole } from "../utils/authService";
-
 
 // type NavBarProps = {
 //   UserButton: ReactNode;
 // };
 
 export default function Navbar() {
-
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   // const [showUploadModalOne, setShowUploadModalOne] = useState(false);
-  // const [showUploadModalTwo, setShowUploadModalTwo] = useState(false);  
+  // const [showUploadModalTwo, setShowUploadModalTwo] = useState(false);
   const { openPreUpload } = useEventState();
   const { currentScheduleId, setCurrentScheduleId } = useUser();
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -44,10 +42,10 @@ export default function Navbar() {
   const pathname = usePathname();
   const newScheduleRef = useRef<HTMLDivElement | null>(null);
 
-  const [schedules, setSchedules] = useState<Array<{id: number, name: string}>>([]);
+  const [schedules, setSchedules] = useState<Array<{ id: number; name: string }>>([]);
   const [schedulesLoading, setSchedulesLoading] = useState(true);
   const [showNewScheduleInput, setShowNewScheduleInput] = useState(false);
-  const [newScheduleName, setNewScheduleName] = useState('');
+  const [newScheduleName, setNewScheduleName] = useState("");
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isCreatingSchedule, setIsCreatingSchedule] = useState(false);
   const isMobile = useIsMobile();
@@ -57,13 +55,13 @@ export default function Navbar() {
 
   const handleScheduleChange = (event: SelectChangeEvent) => {
     // Don't change schedule if "new" is selected - just open the modal
-    if (event.target.value === 'new') {
+    if (event.target.value === "new") {
       setShowNewScheduleInput(true);
       return;
     }
-    
+
     const scheduleId = Number(event.target.value);
-    const schedule = schedules.find(s => s.id === scheduleId) ?? null;
+    const schedule = schedules.find((s) => s.id === scheduleId) ?? null;
     // Update context directly (this will trigger refetch)
     setCurrentScheduleId(schedule?.id ?? null);
   };
@@ -77,21 +75,25 @@ export default function Navbar() {
     setIsCreatingSchedule(true);
     try {
       // Create schedule (the API takes the owner from the access token)
-      const response = await axios.post<{ status: string; user_id: number; schedule_id: number }>(`${API_BASE_URL}/users/create_schedule`, {
-        name: newScheduleName.trim()
-      }, {
-        withCredentials: true,
-      });
+      const response = await axios.post<{ status: string; user_id: number; schedule_id: number }>(
+        `${API_BASE_URL}/users/create_schedule`,
+        {
+          name: newScheduleName.trim(),
+        },
+        {
+          withCredentials: true,
+        },
+      );
 
       if (response.data.schedule_id) {
         const newScheduleId: number = response.data.schedule_id;
         const newScheduleName_trimmed = newScheduleName.trim();
-        
+
         // Update local state
         const newSchedule = { id: newScheduleId, name: newScheduleName_trimmed };
-        setSchedules(prev => [...prev, newSchedule]);
+        setSchedules((prev) => [...prev, newSchedule]);
         setShowNewScheduleInput(false);
-        setNewScheduleName('');
+        setNewScheduleName("");
 
         // Update context directly (triggers refetch)
         setCurrentScheduleId(newScheduleId);
@@ -99,16 +101,23 @@ export default function Navbar() {
     } catch (error) {
       const err = error as AxiosError<{ error?: string }>;
       const serverError = err.response?.data?.error;
-      console.error("Failed to create schedule:", serverError == null || serverError === "" ? err.message : serverError);
+      console.error(
+        "Failed to create schedule:",
+        serverError == null || serverError === "" ? err.message : serverError,
+      );
       alert("Failed to create schedule. Please try again.");
     } finally {
       setIsCreatingSchedule(false);
     }
   };
 
-  const handleDeleteSchedule = async (scheduleId: number, scheduleName: string, event: React.MouseEvent) => {
+  const handleDeleteSchedule = async (
+    scheduleId: number,
+    scheduleName: string,
+    event: React.MouseEvent,
+  ) => {
     event.stopPropagation(); // Prevent the select from opening/closing
-    
+
     if (!isSignedIn) {
       console.error("User not logged in");
       return;
@@ -124,7 +133,7 @@ export default function Navbar() {
     const previousScheduleId = currentScheduleId;
 
     // Optimistically update UI immediately
-    const remainingSchedules = schedules.filter(s => s.id !== scheduleId);
+    const remainingSchedules = schedules.filter((s) => s.id !== scheduleId);
     setSchedules(remainingSchedules);
 
     // If we deleted the current schedule, switch to the first available one
@@ -145,13 +154,12 @@ export default function Navbar() {
     } catch (error) {
       console.error("Failed to delete schedule:", error);
       alert("Failed to delete schedule. Reverting changes.");
-      
+
       // Revert on error
       setSchedules(previousSchedules);
       setCurrentScheduleId(previousScheduleId);
     }
   };
-
 
   // Handle dark mode mounting
   useEffect(() => {
@@ -162,20 +170,20 @@ export default function Navbar() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (!isSignedIn) return;
-      
+
       try {
         const { user_id: id } = await getUserID();
         if (id) {
           setUserId(id);
-          
+
           // Parallel API calls for faster loading
           const [schedulesResponse, role] = await Promise.all([
             axios.get<Array<{ id: number; name: string }>>(`${API_BASE_URL}/users/schedules`, {
               withCredentials: true,
             }),
-            fetchRole()
+            fetchRole(),
           ]);
-          
+
           setSchedules(schedulesResponse.data);
           setUserRole(role);
         } else {
@@ -196,10 +204,7 @@ export default function Navbar() {
     if (!showNewScheduleInput) return;
 
     function handleClickOutside(e: MouseEvent) {
-      if (
-        newScheduleRef.current &&
-        !newScheduleRef.current.contains(e.target as Node)
-      ) {
+      if (newScheduleRef.current && !newScheduleRef.current.contains(e.target as Node)) {
         setShowNewScheduleInput(false);
       }
     }
@@ -227,10 +232,12 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="flex items-center justify-between px-4 py-3 
+      <nav
+        className="flex items-center justify-between px-4 py-3 
                       border-b border-b-[#E5E7EB] dark:border-b-[#262A32]
                       bg-white dark:bg-[#1C1F26]
-                      shadow-md dark:shadow-lg">
+                      shadow-md dark:shadow-lg"
+      >
         {/* Left Section */}
         <div className="flex items-center gap-3">
           {/* Mobile Hamburger Menu */}
@@ -238,7 +245,7 @@ export default function Navbar() {
             <button
               onClick={() => {
                 // This will be handled by the drawer in the page component
-                window.dispatchEvent(new CustomEvent('toggleMobileSidebar'));
+                window.dispatchEvent(new CustomEvent("toggleMobileSidebar"));
               }}
               aria-label="Toggle sidebar"
               className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -246,160 +253,178 @@ export default function Navbar() {
               <FiMenu className="text-gray-600 dark:text-gray-300" size={24} />
             </button>
           )}
-          
+
           {/* CMUCal Title */}
           <Link href="/" className="flex items-center gap-1 mr-2">
             <img src="/newLogo.png" alt="CMUCal Logo" className="w-10 h-10 object-contain" />
             <h1 className="text-xl font-semibold text-gray-800 dark:text-[#E6E8EC]">CMUCal</h1>
           </Link>
-          
+
           {/* Segmented Selector for Home/Explore - Desktop only */}
           {!isMobile && (
             <div className="h-10 flex items-center border border-[#E5E7EB] rounded-lg bg-white dark:bg-[#16181D] dark:border-[#262A32] overflow-hidden">
-            <Link href="/" className="flex-1 focus-visible:outline-offset-[-2px]" aria-label="Home">
-              <div
-                className={`flex items-center justify-center h-10 px-3 cursor-pointer transition-colors
-                  ${pathname === "/" 
-                    ? "bg-gray-100 dark:bg-gray-600" 
-                    : "hover:bg-gray-50 dark:hover:bg-gray-600"}
-                `}
+              <Link
+                href="/"
+                className="flex-1 focus-visible:outline-offset-[-2px]"
+                aria-label="Home"
               >
-              <FaRegUser className="w-5 h-5 text-gray-700 dark:text-[#A1A6B0]" size={18} />
-              </div>
-            </Link>
+                <div
+                  className={`flex items-center justify-center h-10 px-3 cursor-pointer transition-colors
+                  ${
+                    pathname === "/"
+                      ? "bg-gray-100 dark:bg-gray-600"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-600"
+                  }
+                `}
+                >
+                  <FaRegUser className="w-5 h-5 text-gray-700 dark:text-[#A1A6B0]" size={18} />
+                </div>
+              </Link>
 
-            {/* Dividing line */}
-            <div className="w-px h-full bg-gray-300 dark:bg-gray-600"></div>
+              {/* Dividing line */}
+              <div className="w-px h-full bg-gray-300 dark:bg-gray-600"></div>
 
-            <Link href="/explore" className="flex-1 focus-visible:outline-offset-[-2px]" aria-label="Explore">
-              <div className={`flex items-center justify-center h-10 px-3 cursor-pointer transition-colors
-                ${pathname === "/explore" 
-                  ? "bg-gray-100 dark:bg-gray-600" 
-                  : "hover:bg-gray-50 dark:hover:bg-gray-600"}`}>
-                <FiSearch className="w-5 h-5 text-gray-700 dark:text-[#A1A6B0]" size={20} />
-              </div>
-            </Link>
+              <Link
+                href="/explore"
+                className="flex-1 focus-visible:outline-offset-[-2px]"
+                aria-label="Explore"
+              >
+                <div
+                  className={`flex items-center justify-center h-10 px-3 cursor-pointer transition-colors
+                ${
+                  pathname === "/explore"
+                    ? "bg-gray-100 dark:bg-gray-600"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-600"
+                }`}
+                >
+                  <FiSearch className="w-5 h-5 text-gray-700 dark:text-[#A1A6B0]" size={20} />
+                </div>
+              </Link>
             </div>
           )}
 
           {/* Schedule Selector - Button or Dropdown - Desktop only */}
           {!isMobile && (
             <div className="relative">
-            {isLoading ? (
-              // Show skeleton while loading
-              <div className="h-10 px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 animate-pulse flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
-                <div className="w-16 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
-              </div>
-            ) : schedules.length === 0 ? (
-              // Show button when no schedules exist
-              <button
-                onClick={() => setShowNewScheduleInput(true)}
-                className="h-10 px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
-              >
-                <BsCalendar3 className="text-gray-600 dark:text-gray-300" size={16} />
-                <span>Create Schedule</span>
-              </button>
-            ) : (
-              // Show dropdown when schedules exist
-              <FormControl sx={{ minWidth: isMobile ? 60 : 120 }} size="small">
-                <Select
-                  value={currentScheduleId ? String(currentScheduleId) : ''}
-                  onChange={handleScheduleChange}
-                  displayEmpty
-                  inputProps={{ 'aria-label': 'Schedule selector' }}
-                  renderValue={(value) => {
-                    const schedule = schedules.find(s => s.id === Number(value));
-                    return (
-                      <div className="flex items-center gap-2">
-                        <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
-                        {!isMobile && (
-                            <span className="text-sm text-gray-800 dark:text-white">{schedule?.name ?? 'Select Schedule'}</span>
+              {isLoading ? (
+                // Show skeleton while loading
+                <div className="h-10 px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 animate-pulse flex items-center gap-2">
+                  <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                  <div className="w-16 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                </div>
+              ) : schedules.length === 0 ? (
+                // Show button when no schedules exist
+                <button
+                  onClick={() => setShowNewScheduleInput(true)}
+                  className="h-10 px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
+                >
+                  <BsCalendar3 className="text-gray-600 dark:text-gray-300" size={16} />
+                  <span>Create Schedule</span>
+                </button>
+              ) : (
+                // Show dropdown when schedules exist
+                <FormControl sx={{ minWidth: isMobile ? 60 : 120 }} size="small">
+                  <Select
+                    value={currentScheduleId ? String(currentScheduleId) : ""}
+                    onChange={handleScheduleChange}
+                    displayEmpty
+                    inputProps={{ "aria-label": "Schedule selector" }}
+                    renderValue={(value) => {
+                      const schedule = schedules.find((s) => s.id === Number(value));
+                      return (
+                        <div className="flex items-center gap-2">
+                          <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
+                          {!isMobile && (
+                            <span className="text-sm text-gray-800 dark:text-white">
+                              {schedule?.name ?? "Select Schedule"}
+                            </span>
                           )}
-                      </div>
-                    );
-                  }}
-                  sx={{
-                    border: theme === 'dark' ? "1px solid #4D5461" : "1px solid #D1D5DB",
-                    borderRadius: "8px",
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      border: "none",
-                    },
-                    '&:hover': {
-                      backgroundColor: theme === 'dark' ? "#4b5563" : "#f9fafb",
-                    },
-                    '&:has(:focus-visible)': {
-                      outline: "2px solid #3b82f6",
-                      outlineOffset: "2px",
-                    },
-                    '&.Mui-focused': {
-                      boxShadow: "none",
-                      border: theme === 'dark' ? "1px solid #4D5461" : "1px solid #e5e7eb"
-                    },
-                    height: "40px",
-                    backgroundColor: theme === 'dark' ? "#374151" : "white",
-                    color: theme === 'dark' ? "#ffffff" : "#1f2937",
-                    '& .MuiSelect-icon': {
-                      color: theme === 'dark' ? "#9ca3af" : "#4b5563",
-                    },
-                  }}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: {
-                        backgroundColor: theme === 'dark' ? '#374151' : 'white',
-                        '& .MuiMenuItem-root': {
-                          color: theme === 'dark' ? '#ffffff' : '#1f2937',
-                          '&:hover': {
-                            backgroundColor: theme === 'dark' ? '#4b5563' : '#f5f5f5',
-                          },
-                          '&.Mui-selected': {
-                            backgroundColor: theme === 'dark' ? '#4b5563' : '#e5e7eb',
-                            '&:hover': {
-                              backgroundColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+                        </div>
+                      );
+                    }}
+                    sx={{
+                      border: theme === "dark" ? "1px solid #4D5461" : "1px solid #D1D5DB",
+                      borderRadius: "8px",
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        border: "none",
+                      },
+                      "&:hover": {
+                        backgroundColor: theme === "dark" ? "#4b5563" : "#f9fafb",
+                      },
+                      "&:has(:focus-visible)": {
+                        outline: "2px solid #3b82f6",
+                        outlineOffset: "2px",
+                      },
+                      "&.Mui-focused": {
+                        boxShadow: "none",
+                        border: theme === "dark" ? "1px solid #4D5461" : "1px solid #e5e7eb",
+                      },
+                      height: "40px",
+                      backgroundColor: theme === "dark" ? "#374151" : "white",
+                      color: theme === "dark" ? "#ffffff" : "#1f2937",
+                      "& .MuiSelect-icon": {
+                        color: theme === "dark" ? "#9ca3af" : "#4b5563",
+                      },
+                    }}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          backgroundColor: theme === "dark" ? "#374151" : "white",
+                          "& .MuiMenuItem-root": {
+                            color: theme === "dark" ? "#ffffff" : "#1f2937",
+                            "&:hover": {
+                              backgroundColor: theme === "dark" ? "#4b5563" : "#f5f5f5",
+                            },
+                            "&.Mui-selected": {
+                              backgroundColor: theme === "dark" ? "#4b5563" : "#e5e7eb",
+                              "&:hover": {
+                                backgroundColor: theme === "dark" ? "#6b7280" : "#d1d5db",
+                              },
                             },
                           },
                         },
                       },
-                    },
-                  }}
-                >
-                  {schedules.map((schedule) => (
-                    <MenuItem 
-                      key={schedule.id} 
-                      value={String(schedule.id)}
-                      sx={{
-                        '& .delete-icon': {
-                          opacity: 0,
-                        },
-                        '&:hover .delete-icon': {
-                          opacity: 1,
-                        }
-                      }}
-                    >
-                      <div className="flex items-center justify-between w-full gap-2">
-                        <div className="flex items-center gap-2">
-                          <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
-                          <span className="text-sm text-gray-800 dark:text-white">{schedule.name}</span>
+                    }}
+                  >
+                    {schedules.map((schedule) => (
+                      <MenuItem
+                        key={schedule.id}
+                        value={String(schedule.id)}
+                        sx={{
+                          "& .delete-icon": {
+                            opacity: 0,
+                          },
+                          "&:hover .delete-icon": {
+                            opacity: 1,
+                          },
+                        }}
+                      >
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <div className="flex items-center gap-2">
+                            <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
+                            <span className="text-sm text-gray-800 dark:text-white">
+                              {schedule.name}
+                            </span>
+                          </div>
+                          <button
+                            className="delete-icon transition-opacity"
+                            onClick={(e) => handleDeleteSchedule(schedule.id, schedule.name, e)}
+                          >
+                            <FiTrash2 className="text-gray-400 hover:text-red-500" size={16} />
+                          </button>
                         </div>
-                        <button
-                          className="delete-icon transition-opacity"
-                          onClick={(e) => handleDeleteSchedule(schedule.id, schedule.name, e)}
-                        >
-                          <FiTrash2 className="text-gray-400 hover:text-red-500" size={16} />
-                        </button>
+                      </MenuItem>
+                    ))}
+                    <MenuItem value="new">
+                      <div className="flex items-center gap-2 text-blue-500">
+                        <span className="text-sm">+ Create New Schedule</span>
                       </div>
                     </MenuItem>
-                  ))}
-                  <MenuItem value="new">
-                    <div className="flex items-center gap-2 text-blue-500">
-                      <span className="text-sm">+ Create New Schedule</span>
-                    </div>
-                  </MenuItem>
-                </Select>
-              </FormControl>
-            )}
-            
-            {showNewScheduleInput  && (
+                  </Select>
+                </FormControl>
+              )}
+
+              {showNewScheduleInput && (
                 <div
                   ref={newScheduleRef}
                   className="absolute top-full left-0 mt-1.5 p-3
@@ -408,223 +433,222 @@ export default function Navbar() {
                     dark:shadow-[0_12px_32px_rgba(0,0,0,0.55),0_1px_0_rgba(255,255,255,0.3)]
                     rounded-md shadow-lg z-50 min-w-[280px]"
                 >
-                <input
-                  type="text"
-                  value={newScheduleName}
-                  onChange={(e) => setNewScheduleName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !isCreatingSchedule) {
-                      void handleCreateSchedule();
-                    } else if (e.key === 'Escape') {
-                      setShowNewScheduleInput(false);
-                      setNewScheduleName('');
-                    }
-                  }}
-                  placeholder="Schedule name"
-                  className="w-full text-sm p-2 rounded-md mb-2 bg-gray-100 dark:bg-gray-700 dark:text-white"
-                  autoFocus
-                  disabled={isCreatingSchedule}
-                />
-                <div className="flex justify-end gap-2">
-                  <button
-                    onClick={() => void handleCreateSchedule()}
-                    disabled={isCreatingSchedule}
-                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"
-
-                  >
-                    {isCreatingSchedule ? 'Creating...' : 'Create'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowNewScheduleInput(false);
-                      setNewScheduleName('');
+                  <input
+                    type="text"
+                    value={newScheduleName}
+                    onChange={(e) => setNewScheduleName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !isCreatingSchedule) {
+                        void handleCreateSchedule();
+                      } else if (e.key === "Escape") {
+                        setShowNewScheduleInput(false);
+                        setNewScheduleName("");
+                      }
                     }}
+                    placeholder="Schedule name"
+                    className="w-full text-sm p-2 rounded-md mb-2 bg-gray-100 dark:bg-gray-700 dark:text-white"
+                    autoFocus
                     disabled={isCreatingSchedule}
-                    className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300"
-                  >
-                    Cancel
-                  </button>
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => void handleCreateSchedule()}
+                      disabled={isCreatingSchedule}
+                      className="px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                    >
+                      {isCreatingSchedule ? "Creating..." : "Create"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowNewScheduleInput(false);
+                        setNewScheduleName("");
+                      }}
+                      disabled={isCreatingSchedule}
+                      className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             </div>
           )}
         </div>
 
         {/* Center Section: Search Bar */}
         {/* TODO: THIS DOESNT ACTUALLY DO ANYTHING */}
-        <div className="flex-1 max-w-2xl">
-        </div>
+        <div className="flex-1 max-w-2xl"></div>
 
         {/* Right Section */}
         <div className="flex items-center gap-1">
           {/* Mobile: schedule Menu */}
           {isMobile && (
             <div className="relative">
-            {isLoading ? (
-              // Show skeleton while loading
-              <div className="h-10 px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 animate-pulse flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
-                <div className="w-16 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
-              </div>
-            ) : schedules.length === 0 ? (
-              // Show button when no schedules exist
-              <button
-                onClick={() => setShowNewScheduleInput(true)}
-                className="h-10 px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
-              >
-                <BsCalendar3 className="text-gray-600 dark:text-gray-300" size={16} />
-                <span>Create Schedule</span>
-              </button>
-            ) : (
-              // Show dropdown when schedules exist
-              <FormControl sx={{ minWidth: isMobile ? 60 : 120 }} size="small">
-                <Select
-                  value={currentScheduleId ? String(currentScheduleId) : ''}
-                  onChange={handleScheduleChange}
-                  displayEmpty
-                  inputProps={{ 'aria-label': 'Schedule selector' }}
-                  renderValue={(value) => {
-                    const schedule = schedules.find(s => s.id === Number(value));
-                    return (
-                      <div className="flex items-center gap-2">
-                        <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
-                        {!isMobile && (
-                            <span className="text-sm text-gray-800 dark:text-white">{schedule?.name ?? 'Select Schedule'}</span>
+              {isLoading ? (
+                // Show skeleton while loading
+                <div className="h-10 px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 animate-pulse flex items-center gap-2">
+                  <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                  <div className="w-16 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                </div>
+              ) : schedules.length === 0 ? (
+                // Show button when no schedules exist
+                <button
+                  onClick={() => setShowNewScheduleInput(true)}
+                  className="h-10 px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
+                >
+                  <BsCalendar3 className="text-gray-600 dark:text-gray-300" size={16} />
+                  <span>Create Schedule</span>
+                </button>
+              ) : (
+                // Show dropdown when schedules exist
+                <FormControl sx={{ minWidth: isMobile ? 60 : 120 }} size="small">
+                  <Select
+                    value={currentScheduleId ? String(currentScheduleId) : ""}
+                    onChange={handleScheduleChange}
+                    displayEmpty
+                    inputProps={{ "aria-label": "Schedule selector" }}
+                    renderValue={(value) => {
+                      const schedule = schedules.find((s) => s.id === Number(value));
+                      return (
+                        <div className="flex items-center gap-2">
+                          <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
+                          {!isMobile && (
+                            <span className="text-sm text-gray-800 dark:text-white">
+                              {schedule?.name ?? "Select Schedule"}
+                            </span>
                           )}
-                      </div>
-                    );
-                  }}
-                  sx={{
-                    border: theme === 'dark' ? "1px solid #4D5461" : "1px solid #D1D5DB",
-                    borderRadius: "8px",
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      border: "none",
-                    },
-                    '&:hover': {
-                      backgroundColor: theme === 'dark' ? "#4b5563" : "#f9fafb",
-                    },
-                    '&:has(:focus-visible)': {
-                      outline: "2px solid #3b82f6",
-                      outlineOffset: "2px",
-                    },
-                    '&.Mui-focused': {
-                      boxShadow: "none",
-                      border: theme === 'dark' ? "1px solid #4D5461" : "1px solid #e5e7eb"
-                    },
-                    height: "40px",
-                    backgroundColor: theme === 'dark' ? "#374151" : "white",
-                    color: theme === 'dark' ? "#ffffff" : "#1f2937",
-                    '& .MuiSelect-icon': {
-                      color: theme === 'dark' ? "#9ca3af" : "#4b5563",
-                    },
-                  }}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: {
-                        backgroundColor: theme === 'dark' ? '#374151' : 'white',
-                        '& .MuiMenuItem-root': {
-                          color: theme === 'dark' ? '#ffffff' : '#1f2937',
-                          '&:hover': {
-                            backgroundColor: theme === 'dark' ? '#4b5563' : '#f5f5f5',
-                          },
-                          '&.Mui-selected': {
-                            backgroundColor: theme === 'dark' ? '#4b5563' : '#e5e7eb',
-                            '&:hover': {
-                              backgroundColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+                        </div>
+                      );
+                    }}
+                    sx={{
+                      border: theme === "dark" ? "1px solid #4D5461" : "1px solid #D1D5DB",
+                      borderRadius: "8px",
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        border: "none",
+                      },
+                      "&:hover": {
+                        backgroundColor: theme === "dark" ? "#4b5563" : "#f9fafb",
+                      },
+                      "&:has(:focus-visible)": {
+                        outline: "2px solid #3b82f6",
+                        outlineOffset: "2px",
+                      },
+                      "&.Mui-focused": {
+                        boxShadow: "none",
+                        border: theme === "dark" ? "1px solid #4D5461" : "1px solid #e5e7eb",
+                      },
+                      height: "40px",
+                      backgroundColor: theme === "dark" ? "#374151" : "white",
+                      color: theme === "dark" ? "#ffffff" : "#1f2937",
+                      "& .MuiSelect-icon": {
+                        color: theme === "dark" ? "#9ca3af" : "#4b5563",
+                      },
+                    }}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          backgroundColor: theme === "dark" ? "#374151" : "white",
+                          "& .MuiMenuItem-root": {
+                            color: theme === "dark" ? "#ffffff" : "#1f2937",
+                            "&:hover": {
+                              backgroundColor: theme === "dark" ? "#4b5563" : "#f5f5f5",
+                            },
+                            "&.Mui-selected": {
+                              backgroundColor: theme === "dark" ? "#4b5563" : "#e5e7eb",
+                              "&:hover": {
+                                backgroundColor: theme === "dark" ? "#6b7280" : "#d1d5db",
+                              },
                             },
                           },
                         },
                       },
-                    },
-                  }}
-                >
-                  {schedules.map((schedule) => (
-                    <MenuItem 
-                      key={schedule.id} 
-                      value={String(schedule.id)}
-                      sx={{
-                        '& .delete-icon': {
-                          opacity: 0,
-                        },
-                        '&:hover .delete-icon': {
-                          opacity: 1,
-                        }
-                      }}
-                    >
-                      <div className="flex items-center justify-between w-full gap-2">
-                        <div className="flex items-center gap-2">
-                          <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
-                          <span className="text-sm text-gray-800 dark:text-white">{schedule.name}</span>
+                    }}
+                  >
+                    {schedules.map((schedule) => (
+                      <MenuItem
+                        key={schedule.id}
+                        value={String(schedule.id)}
+                        sx={{
+                          "& .delete-icon": {
+                            opacity: 0,
+                          },
+                          "&:hover .delete-icon": {
+                            opacity: 1,
+                          },
+                        }}
+                      >
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <div className="flex items-center gap-2">
+                            <BsCalendar3 className="text-gray-600 dark:text-white" size={16} />
+                            <span className="text-sm text-gray-800 dark:text-white">
+                              {schedule.name}
+                            </span>
+                          </div>
+                          <button
+                            className="delete-icon transition-opacity"
+                            onClick={(e) => handleDeleteSchedule(schedule.id, schedule.name, e)}
+                          >
+                            <FiTrash2 className="text-gray-400 hover:text-red-500" size={16} />
+                          </button>
                         </div>
-                        <button
-                          className="delete-icon transition-opacity"
-                          onClick={(e) => handleDeleteSchedule(schedule.id, schedule.name, e)}
-                        >
-                          <FiTrash2 className="text-gray-400 hover:text-red-500" size={16} />
-                        </button>
+                      </MenuItem>
+                    ))}
+                    <MenuItem value="new">
+                      <div className="flex items-center gap-2 text-blue-500">
+                        <span className="text-sm">+ Create New Schedule</span>
                       </div>
                     </MenuItem>
-                  ))}
-                  <MenuItem value="new">
-                    <div className="flex items-center gap-2 text-blue-500">
-                      <span className="text-sm">+ Create New Schedule</span>
-                    </div>
-                  </MenuItem>
-                </Select>
-              </FormControl>
-            )}
-            
-            {showNewScheduleInput && (
-              <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-gray-800 border rounded-md shadow-lg z-50 min-w-[250px]">
-                <input
-                  type="text"
-                  value={newScheduleName}
-                  onChange={(e) => setNewScheduleName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !isCreatingSchedule) {
-                      void handleCreateSchedule();
-                    } else if (e.key === 'Escape') {
-                      setShowNewScheduleInput(false);
-                      setNewScheduleName('');
-                    }
-                  }}
-                  placeholder="Schedule name"
-                  className="w-full p-2 border rounded-md mb-2 dark:bg-gray-700 dark:text-white"
-                  autoFocus
-                  disabled={isCreatingSchedule}
-                />
-                <div className="flex justify-end gap-2">
-                  <button
-                    onClick={() => void handleCreateSchedule()}
-                    disabled={isCreatingSchedule}
-                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  </Select>
+                </FormControl>
+              )}
 
-                  >
-                    {isCreatingSchedule ? 'Creating...' : 'Create'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowNewScheduleInput(false);
-                      setNewScheduleName('');
+              {showNewScheduleInput && (
+                <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-gray-800 border rounded-md shadow-lg z-50 min-w-[250px]">
+                  <input
+                    type="text"
+                    value={newScheduleName}
+                    onChange={(e) => setNewScheduleName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !isCreatingSchedule) {
+                        void handleCreateSchedule();
+                      } else if (e.key === "Escape") {
+                        setShowNewScheduleInput(false);
+                        setNewScheduleName("");
+                      }
                     }}
+                    placeholder="Schedule name"
+                    className="w-full p-2 border rounded-md mb-2 dark:bg-gray-700 dark:text-white"
+                    autoFocus
                     disabled={isCreatingSchedule}
-                    className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300"
-                  >
-                    Cancel
-                  </button>
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => void handleCreateSchedule()}
+                      disabled={isCreatingSchedule}
+                      className="px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                    >
+                      {isCreatingSchedule ? "Creating..." : "Create"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowNewScheduleInput(false);
+                        setNewScheduleName("");
+                      }}
+                      disabled={isCreatingSchedule}
+                      className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             </div>
           )}
-          
+
           {/* Desktop: Connect Google, Upload, Dark Mode */}
           {!isMobile && (
             <>
-              <div className="mx-2">
-                {isSignedIn && <ConnectGoogleButton />}
-              </div>
+              <div className="mx-2">{isSignedIn && <ConnectGoogleButton />}</div>
               {/* Dark Mode Toggle */}
               {mounted && (
                 <button
@@ -641,7 +665,7 @@ export default function Navbar() {
               )}
             </>
           )}
-          
+
           {/* Upload Button - Both mobile and desktop */}
           <button
             onClick={() => openPreUpload()}
@@ -650,9 +674,9 @@ export default function Navbar() {
           >
             <FiUpload className="text-gray-600 dark:text-gray-300" size={20} />
           </button>
-          
+
           {/* User Button */}
-          <div className="mx-2 flex flex-col justify-end"> 
+          <div className="mx-2 flex flex-col justify-end">
             <UserMenu
               showAdminDashboard={userRole === "manager" || userRole === "admin"}
               onOpenAdminDashboard={handleAdminDashboardRedirect}

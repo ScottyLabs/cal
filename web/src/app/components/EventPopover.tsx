@@ -18,7 +18,12 @@ type EventPopoverProps = {
 
 type Tag = { id?: number; name: string };
 
-export default function EventPopover({ show, onClose, position, savedEventDetails }: EventPopoverProps) {
+export default function EventPopover({
+  show,
+  onClose,
+  position,
+  savedEventDetails,
+}: EventPopoverProps) {
   const { selectedEvent, toggleAdded, savedEventIds, openUpdate } = useEventState();
   const { isGoogleConnected } = useGcalEvents();
   const [eventDetails, setEventDetails] = useState<EventType | null>(savedEventDetails ?? null);
@@ -40,7 +45,7 @@ export default function EventPopover({ show, onClose, position, savedEventDetail
   useEffect(() => {
     if (position && buttonRef.current) {
       const { anchorRect } = position;
-      buttonRef.current.style.position = 'fixed';
+      buttonRef.current.style.position = "fixed";
       buttonRef.current.style.top = `${anchorRect.top}px`;
       buttonRef.current.style.left = `${anchorRect.right}px`;
     }
@@ -58,7 +63,7 @@ export default function EventPopover({ show, onClose, position, savedEventDetail
           tags.map((tag) => ({
             id: tag.id,
             name: tag.name.toLowerCase(),
-          }))
+          })),
         );
       } catch (err) {
         console.error("Failed to fetch event tags for event: ", eventId, err);
@@ -74,12 +79,7 @@ export default function EventPopover({ show, onClose, position, savedEventDetail
   return (
     <>
       {/* Backdrop */}
-      {show && (
-        <div
-          className="fixed inset-0 bg-black/20 z-40"
-          onClick={onClose}
-        />
-      )}
+      {show && <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />}
 
       <Popover>
         {/* Invisible button positioned at the anchor point */}
@@ -93,91 +93,97 @@ export default function EventPopover({ show, onClose, position, savedEventDetail
         {show && (
           <PopoverPanel
             static
-            anchor={{ to: 'right start', gap: '8px', padding: 8 }}
+            anchor={{ to: "right start", gap: "8px", padding: 8 }}
             className="z-50 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 w-80 max-h-96 overflow-auto transition ease-out duration-150 data-[closed]:opacity-0 data-[closed]:scale-95"
           >
-          <div className="p-4 relative">
-            {/* Close button */}
-            <button
-              aria-label="Close"
-              className="absolute top-2 right-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
-              onClick={onClose}
-            >
-              <FiX size={18} />
-            </button>
+            <div className="p-4 relative">
+              {/* Close button */}
+              <button
+                aria-label="Close"
+                className="absolute top-2 right-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
+                onClick={onClose}
+              >
+                <FiX size={18} />
+              </button>
 
-            {eventDetails ? (
-              <>
-                <h3 className="text-lg font-medium pr-6 dark:text-white">{eventDetails.title}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {formatTimeRange(eventDetails.start_datetime, eventDetails.end_datetime)}
-                </p>
-                {eventDetails.location && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{eventDetails.location}</p>
-                )}
-                {eventDetails.org && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Hosted by {eventDetails.org}</p>
-                )}
-                {eventDetails.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-3 line-clamp-3">
-                    {eventDetails.description}
+              {eventDetails ? (
+                <>
+                  <h3 className="text-lg font-medium pr-6 dark:text-white">{eventDetails.title}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    {formatTimeRange(eventDetails.start_datetime, eventDetails.end_datetime)}
                   </p>
-                )}
-
-                {/* Tags */}
-                {!loadingTags && selectedTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-3">
-                    {selectedTags.map((tag) => (
-                      <span
-                        key={tag.id}
-                        className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded"
-                      >
-                        {tag.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Google Calendar Warning */}
-                {!isGoogleConnected && (
-                  <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
-                    <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                      Connect Google Calendar to sync events to your calendar
+                  {eventDetails.location && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {eventDetails.location}
                     </p>
-                  </div>
-                )}
-
-                {/* Action buttons */}
-                <div className="flex gap-2 mt-4">
-                  <button
-                    className={`flex-1 px-3 py-2 rounded-md text-sm font-medium text-white ${
-                      savedEventIds.has(eventDetails.id) ? "bg-blue-400" : "bg-blue-500 hover:bg-blue-600"
-                    }`}
-                    onClick={() => {
-                      void toggleAdded(eventDetails);
-                      onClose();
-                    }}
-                  >
-                    {savedEventIds.has(eventDetails.id) ? "Remove" : "Add"}
-                  </button>
-                  {isAdmin && (
-                    <button
-                      className="flex-1 px-3 py-2 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-                      onClick={() => openUpdate(eventDetails, selectedTags)}
-                    >
-                      Edit
-                    </button>
                   )}
+                  {eventDetails.org && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Hosted by {eventDetails.org}
+                    </p>
+                  )}
+                  {eventDetails.description && (
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-3 line-clamp-3">
+                      {eventDetails.description}
+                    </p>
+                  )}
+
+                  {/* Tags */}
+                  {!loadingTags && selectedTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-3">
+                      {selectedTags.map((tag) => (
+                        <span
+                          key={tag.id}
+                          className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded"
+                        >
+                          {tag.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Google Calendar Warning */}
+                  {!isGoogleConnected && (
+                    <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                      <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                        Connect Google Calendar to sync events to your calendar
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      className={`flex-1 px-3 py-2 rounded-md text-sm font-medium text-white ${
+                        savedEventIds.has(eventDetails.id)
+                          ? "bg-blue-400"
+                          : "bg-blue-500 hover:bg-blue-600"
+                      }`}
+                      onClick={() => {
+                        void toggleAdded(eventDetails);
+                        onClose();
+                      }}
+                    >
+                      {savedEventIds.has(eventDetails.id) ? "Remove" : "Add"}
+                    </button>
+                    {isAdmin && (
+                      <button
+                        className="flex-1 px-3 py-2 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        onClick={() => openUpdate(eventDetails, selectedTags)}
+                      >
+                        Edit
+                      </button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="animate-pulse space-y-2">
+                  <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
                 </div>
-              </>
-            ) : (
-              <div className="animate-pulse space-y-2">
-                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
           </PopoverPanel>
         )}
       </Popover>

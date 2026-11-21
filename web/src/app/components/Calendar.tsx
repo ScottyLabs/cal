@@ -28,23 +28,25 @@ const Calendar: FC<Props> = ({ events }) => {
   const mergedEventsMap = new Map<string, EventInput>();
 
   // First add gcalEvents (lower priority)
-  gcalEvents.forEach(event => {
+  gcalEvents.forEach((event) => {
     // mergedEventsMap.set(event.id as string, event);
     const key = event.id?.toString() || `${event.title}-${String(event.start)}`;
     mergedEventsMap.set(key, event);
   });
 
   // Then add events (higher priority - will overwrite duplicates)
-  events.forEach(event => {
+  events.forEach((event) => {
     // if (event.title === "15210 A") {
     //   console.log(event.title, event.start);
     // }
-    const key = event.id == null || event.id === "" ? `${event.title}-${String(event.start)}` : event.id.toString();
+    const key =
+      event.id == null || event.id === ""
+        ? `${event.title}-${String(event.start)}`
+        : event.id.toString();
     mergedEventsMap.set(key, event);
   });
 
   const mergedEvents = Array.from(mergedEventsMap.values());
-
 
   const handleEventClick = (info: EventClickArg) => {
     const { event, el } = info;
@@ -56,11 +58,11 @@ const Calendar: FC<Props> = ({ events }) => {
     const eventData: Partial<EventType> = {
       id: eventId,
       title: event.title,
-      start_datetime: event.start?.toISOString() ?? '',
-      end_datetime: event.end?.toISOString() ?? '',
+      start_datetime: event.start?.toISOString() ?? "",
+      end_datetime: event.end?.toISOString() ?? "",
       is_all_day: event.allDay,
-      location: extendedProps.location ?? '',
-      description: extendedProps.description ?? '',
+      location: extendedProps.location ?? "",
+      description: extendedProps.description ?? "",
       source_url: extendedProps.source_url,
       org_id: extendedProps.org_id,
       category_id: extendedProps.category_id,
@@ -92,16 +94,14 @@ const Calendar: FC<Props> = ({ events }) => {
         editable={true}
         selectable={true}
         eventClick={handleEventClick}
-        eventContent={FullCalendarCard} 
+        eventContent={FullCalendarCard}
         eventTimeFormat={{ hour: "numeric", minute: "2-digit", meridiem: "short" }}
-        // height="auto"
-        // height={600}
+        // height="auto" height={600}
         height="100%"
         // eventClassNames="text-sm font-semibold p-1 rounded-md"
       />
-
     </div>
   );
-}
+};
 
 export default Calendar;

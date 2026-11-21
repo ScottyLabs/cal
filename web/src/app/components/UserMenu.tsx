@@ -15,7 +15,8 @@ type Props = {
 function initials(name?: string, email?: string): string {
   const source = [name?.trim(), email?.split("@")[0]].find(Boolean) ?? "?";
   const parts = source.split(/\s+/u).filter(Boolean);
-  const letters = parts.length > 1 ? `${parts[0]![0]}${parts[parts.length - 1]![0]}` : source.slice(0, 2);
+  const letters =
+    parts.length > 1 ? `${parts[0]![0]}${parts[parts.length - 1]![0]}` : source.slice(0, 2);
   return letters.toUpperCase();
 }
 
@@ -49,8 +50,12 @@ export default function UserMenu({ showAdminDashboard, onOpenAdminDashboard }: P
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white py-2 shadow-lg dark:border-[#262A32] dark:bg-[#1C1F26]">
           <div className="px-4 pb-2 text-sm">
-            {user.name && <p className="font-medium text-gray-900 dark:text-gray-100">{user.name}</p>}
-            {user.email && <p className="truncate text-gray-500 dark:text-gray-400">{user.email}</p>}
+            {user.name && (
+              <p className="font-medium text-gray-900 dark:text-gray-100">{user.name}</p>
+            )}
+            {user.email && (
+              <p className="truncate text-gray-500 dark:text-gray-400">{user.email}</p>
+            )}
           </div>
           <div className="border-t border-gray-100 dark:border-[#262A32]" />
           {showAdminDashboard && (

@@ -12,8 +12,7 @@ FIXTURES = pathlib.Path(__file__).parent / "fixtures"
 
 
 def load_rows():
-    # Real mobile_events_list rows from Oct 3 2026, including two date
-    # separators and a club posting the same meeting twice.
+    # Real mobile_events_list rows from Oct 3 2026, including two date separators and a club posting the same meeting twice.
     return json.loads((FIXTURES / "tartanconnect_events.json").read_text())
 
 

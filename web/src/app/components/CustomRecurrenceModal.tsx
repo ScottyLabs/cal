@@ -44,8 +44,22 @@ interface CustomRecurrenceModalProps {
   setOccurrences: (val: number) => void;
 }
 
-export default function CustomRecurrenceModal({ open, onClose, interval, setInterval, frequency, setFrequency, selectedDays, toggleDay, ends, setEnds,
-                                                endDate, setEndDate, occurrences, setOccurrences }: CustomRecurrenceModalProps) {
+export default function CustomRecurrenceModal({
+  open,
+  onClose,
+  interval,
+  setInterval,
+  frequency,
+  setFrequency,
+  selectedDays,
+  toggleDay,
+  ends,
+  setEnds,
+  endDate,
+  setEndDate,
+  occurrences,
+  setOccurrences,
+}: CustomRecurrenceModalProps) {
   if (!open) return null;
 
   return (
@@ -69,11 +83,7 @@ export default function CustomRecurrenceModal({ open, onClose, interval, setInte
             size="small"
             sx={{ width: "60px" }}
           />
-          <Select
-            value={frequency}
-            onChange={(e) => setFrequency(e.target.value)}
-            size="small"
-          >
+          <Select value={frequency} onChange={(e) => setFrequency(e.target.value)} size="small">
             <MenuItem value="DAILY">day</MenuItem>
             <MenuItem value="WEEKLY">week</MenuItem>
             <MenuItem value="MONTHLY">month</MenuItem>
@@ -85,16 +95,16 @@ export default function CustomRecurrenceModal({ open, onClose, interval, setInte
           <Box
             display="flex"
             justifyContent="center"
-              sx={{
-                  gap: {
-                    xs: 0.25, // very small gap on mobile
-                    sm: 0.5,  // small tablets
-                    md: 1,    // standard desktop
-                    lg: 1.5,  // large desktop
-                    xl: 2     // ultra wide screens
-                  },
-                  mb: 2,
-                }}
+            sx={{
+              gap: {
+                xs: 0.25, // very small gap on mobile
+                sm: 0.5, // small tablets
+                md: 1, // standard desktop
+                lg: 1.5, // large desktop
+                xl: 2, // ultra wide screens
+              },
+              mb: 2,
+            }}
           >
             {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
               <Button
@@ -118,19 +128,12 @@ export default function CustomRecurrenceModal({ open, onClose, interval, setInte
         )}
 
         <FormLabel component="legend">Ends</FormLabel>
-        <RadioGroup
-          value={ends}
-          onChange={(e) => setEnds(e.target.value)}
-        >
+        <RadioGroup value={ends} onChange={(e) => setEnds(e.target.value)}>
           <FormControlLabel value="never" control={<Radio />} label="Never" />
           <FormControlLabel value="on" control={<Radio />} label="On (inclusive end date)" />
           {ends === "on" && (
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DatePicker
-                label="End date"
-                value={endDate}
-                onChange={setEndDate}
-              />
+              <DatePicker label="End date" value={endDate} onChange={setEndDate} />
             </LocalizationProvider>
           )}
           <FormControlLabel value="after" control={<Radio />} label="After" />
@@ -147,7 +150,9 @@ export default function CustomRecurrenceModal({ open, onClose, interval, setInte
         </RadioGroup>
 
         <Box display="flex" justifyContent="flex-end" mt={3}>
-          <Button onClick={onClose} variant="contained">Done</Button>
+          <Button onClick={onClose} variant="contained">
+            Done
+          </Button>
         </Box>
       </div>
     </div>

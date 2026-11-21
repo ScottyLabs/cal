@@ -94,8 +94,7 @@ class ScheduleOfClassesScraper(BaseScraper):
 
             print("Fixed malformed HTML by inserting missing <TR> tags")
 
-            # Debug: save both versions
-            # with open("debug_response_original.html", "w", encoding="utf-8") as f:
+            # Debug: save both versions with open("debug_response_original.html", "w", encoding="utf-8") as f:
             #     f.write(response.text)
             # with open("debug_response_fixed.html", "w", encoding="utf-8") as f:
             #     f.write(fixed_html)

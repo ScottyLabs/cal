@@ -565,8 +565,7 @@ def _process_uid_group_with_helpers(
                 )
                 db_session.flush()
 
-        # Ensure newly added EXDATE/RDATE rows are visible to dedupe query
-        # even when the session has autoflush disabled.
+        # Ensure newly added EXDATE/RDATE rows are visible to dedupe query even when the session has autoflush disabled.
         db_session.flush()
 
         # Store overrides for this UID (RECURRENCE-ID)
@@ -613,8 +612,7 @@ def _process_uid_group_with_helpers(
             )
         db_session.flush()
 
-        # Regenerate occurrences
-        # (populate_event_occurrences reads rule + exdates/rdates/overrides)
+        # Regenerate occurrences (populate_event_occurrences reads rule + exdates/rdates/overrides)
         populate_event_occurrences(db_session, event=event, rule=rule)
 
     else:

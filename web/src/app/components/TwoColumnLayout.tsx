@@ -57,17 +57,12 @@ export default function TwoColumnLayout({ leftContent, rightContent }: TwoColumn
       </aside>
 
       {/* Draggable Divider */}
-      <div
-        className="relative w-2 flex-shrink-0 cursor-col-resize group"
-        onMouseDown={onMouseDown}
-      >
+      <div className="relative w-2 flex-shrink-0 cursor-col-resize group" onMouseDown={onMouseDown}>
         <div className="absolute inset-y-0 left-1/2 w-px bg-gray-300 dark:bg-gray-600 group-hover:bg-blue-400 dark:group-hover:bg-blue-500 transition-colors" />
       </div>
 
       {/* Right Section */}
-      <section className="flex-1 min-w-0">
-        {rightContent}
-      </section>
+      <section className="flex-1 min-w-0">{rightContent}</section>
     </div>
   );
 }

@@ -14,8 +14,7 @@ log = logging.getLogger(__name__)
 
 users_bp = Blueprint("users", __name__)
 
-# Every route here acts on the caller, who is always g.user: authenticate_request
-# has already verified the bearer token and rejected the request without one.
+# Every route here acts on the caller, who is always g.user: authenticate_request has already verified the bearer token and rejected the request without one.
 
 
 def _owned_schedule(db, schedule_id):

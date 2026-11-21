@@ -8,8 +8,8 @@ export function calculateMatchScore(str1: string | undefined, str2: string | und
   if (!str1 || !str2) return 0;
 
   // Normalize both strings
-  const s1 = str1.toLowerCase().replace(/s\b/g, '').trim();
-  const s2 = str2.toLowerCase().replace(/s\b/g, '').trim();
+  const s1 = str1.toLowerCase().replace(/s\b/g, "").trim();
+  const s2 = str2.toLowerCase().replace(/s\b/g, "").trim();
 
   // Direct match
   if (s1 === s2) return 1;
@@ -39,31 +39,34 @@ export function calculateMatchScore(str1: string | undefined, str2: string | und
   // Calculate a score based on matching words
   const maxWords = Math.max(words1.length, words2.length);
   return maxWords > 0 ? matchingWords / maxWords : 0;
-} 
+}
 
 /**
  * Parse event title to extract entity ID and event type
  */
-export function parseEventTitle(title: string, clubs: Club[]): { entityId?: string, eventType?: string } {
+export function parseEventTitle(
+  title: string,
+  clubs: Club[],
+): { entityId?: string; eventType?: string } {
   // Try to extract course ID and event type from title
   if (title.includes(":")) {
     // Format: "entityId: eventType"
-    const titleParts = title.split(':');
+    const titleParts = title.split(":");
     const eventType = titleParts[1]?.trim();
     return {
       entityId: titleParts[0]?.trim(),
-      eventType: eventType == null || eventType === "" ? title : eventType
+      eventType: eventType == null || eventType === "" ? title : eventType,
     };
-  } 
+  }
 
   // Format without colon separator (e.g. "15-122 OH" or "ScottyLabs Meeting")
-  const words = title.split(' ');
+  const words = title.split(" ");
 
   // Check if first word looks like a course ID (contains a dash)
-  if (words[0]?.includes('-')) {
+  if (words[0]?.includes("-")) {
     return {
       entityId: words[0],
-      eventType: words.slice(1).join(' ')
+      eventType: words.slice(1).join(" "),
     };
   }
 
@@ -85,7 +88,7 @@ export function parseEventTitle(title: string, clubs: Club[]): { entityId?: stri
     const afterClub = title.substring(clubNameIndex + matchedClub.name.length).trim();
 
     return {
-      eventType: beforeClub || afterClub
+      eventType: beforeClub || afterClub,
     };
   }
 
@@ -146,8 +149,8 @@ export function shouldShowClubEvent(club: Club, eventType?: string): boolean {
 
   // Special case for meeting events
   if (eventType.toLowerCase().includes("meeting")) {
-    const anyMeetingOptionSelected = club.options.some(option => 
-      option.type.toLowerCase().includes("meeting") && option.selected
+    const anyMeetingOptionSelected = club.options.some(
+      (option) => option.type.toLowerCase().includes("meeting") && option.selected,
     );
 
     if (anyMeetingOptionSelected) {
@@ -156,4 +159,4 @@ export function shouldShowClubEvent(club: Club, eventType?: string): boolean {
   }
 
   return true; // Default to visible
-} 
+}

@@ -44,12 +44,10 @@ export default function Welcome() {
         <h2 className="text-black font-serif text-[35px] font-normal leading-normal mb-6 dark:text-[#A1A6B0]">
           the all-in-one CMU resources platform
         </h2>
-        <h3 className="pb-6 pt-2 dark:text-[#C7CBD4]">
-          Log in with your CMU credentials
-        </h3>
+        <h3 className="pb-6 pt-2 dark:text-[#C7CBD4]">Log in with your CMU credentials</h3>
         <div className="flex justify-center gap-8 pb-14">
           {/* <SignInButton /> */}
-            <Login />
+          <Login />
         </div>
       </div>
     </div>

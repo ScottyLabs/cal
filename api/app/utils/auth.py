@@ -38,8 +38,7 @@ from app.models.models import Admin, User
 
 log = logging.getLogger(__name__)
 
-# Keycloak signs access tokens with the realm's RS256 key. Pinning the
-# algorithm list keeps `alg: none` and HMAC key-confusion tokens out.
+# Keycloak signs access tokens with the realm's RS256 key. Pinning the algorithm list keeps `alg: none` and HMAC key-confusion tokens out.
 ALGORITHMS = ["RS256"]
 LEEWAY_SECONDS = 30
 
@@ -109,8 +108,7 @@ class TokenVerifier:
                 leeway=LEEWAY_SECONDS,
                 options={
                     "require": ["exp", "iat", "iss", "sub"],
-                    # Keycloak access tokens name the resource server (usually
-                    # "account") in aud and the client in azp; checked below.
+                    # Keycloak access tokens name the resource server (usually "account") in aud and the client in azp; checked below.
                     "verify_aud": False,
                 },
             )
@@ -123,8 +121,7 @@ class TokenVerifier:
         audiences = [aud] if isinstance(aud, str) else list(aud or [])
         if claims.get("azp") != self.client_id and self.client_id not in audiences:
             raise AuthError("Token was not issued to this client")
-        # ID and refresh tokens are signed by the same realm; only accept
-        # access tokens as bearer credentials.
+        # ID and refresh tokens are signed by the same realm; only accept access tokens as bearer credentials.
         if claims.get("typ", "Bearer") != "Bearer":
             raise AuthError("Not an access token")
         if not isinstance(claims.get("sub"), str) or not claims["sub"]:
@@ -194,8 +191,7 @@ def resolve_user(db, claims: dict) -> User:
         .order_by(User.created_at.asc(), User.id.asc())
         .all()
     )
-    # Prefer the claimed email over the username fallback, then the oldest row
-    # (the same row get_user_by_email and bulk_create_admins would pick).
+    # Prefer the claimed email over the username fallback, then the oldest row (the same row get_user_by_email and bulk_create_admins would pick).
     candidates.sort(key=lambda u: emails.index((u.email or "").strip().lower()))
     unlinked = [u for u in candidates if u.oidc_sub is None]
 
@@ -206,8 +202,7 @@ def resolve_user(db, claims: dict) -> User:
         user.lname = user.lname or _claim_str(claims, "family_name")
         log.info("Linked users.id=%s to a Keycloak account on first login", user.id)
     elif candidates:
-        # Every row with this email already belongs to another Keycloak
-        # account. Refuse rather than guess; this needs a human to look at it.
+        # Every row with this email already belongs to another Keycloak account. Refuse rather than guess; this needs a human to look at it.
         log.warning(
             "Keycloak login for an email already linked to another account "
             "(users.id=%s)",

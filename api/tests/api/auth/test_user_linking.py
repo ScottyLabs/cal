@@ -73,11 +73,7 @@ def test_never_steals_a_row_linked_to_another_account(client, db, bearer, user_f
 def test_links_a_real_realm_token_with_an_unverified_cmu_email(
     client, db, bearer, user_factory, username
 ):
-    # The shape of an actual scottylabs-realm access token: CMU logins carry
-    # the LDAP address (often a first.last@cmu.edu alias), email_verified is
-    # false, and preferred_username is the bare Andrew ID. Every account is
-    # created by the CMU login (other providers are link-only) and users cannot
-    # edit username or email, so this must link the Clerk-era row.
+    # The shape of an actual scottylabs-realm access token: CMU logins carry the LDAP address (often a first.last@cmu.edu alias), email_verified is false, and preferred_username is the bare Andrew ID. Every account is created by the CMU login (other providers are link-only) and users cannot edit username or email, so this must link the Clerk-era row.
     row = user_factory(email="jdoe@andrew.cmu.edu", clerk_id="user_2clerk")
     db.commit()
     resp = _me(

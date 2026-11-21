@@ -7,8 +7,7 @@ import { safeReturnTo, writeLogin } from "~/server/auth/session";
 export const dynamic = "force-dynamic";
 
 // GET /api/auth/login?returnTo=/some/path
-// Sends the browser to Keycloak (which hands off to CMU's login). Keycloak
-// redirects to Ricochet, and Ricochet to /api/auth/callback on APP_URL.
+// Sends the browser to Keycloak (which hands off to CMU's login). Keycloak redirects to Ricochet, and Ricochet to /api/auth/callback on APP_URL.
 export async function GET(req: NextRequest) {
   let config;
   try {
@@ -22,8 +21,7 @@ export async function GET(req: NextRequest) {
   }
   const returnTo = safeReturnTo(req.nextUrl.searchParams.get("returnTo"));
 
-  // The login cookie must be set on the origin the callback will land on, so
-  // start from APP_URL if we were reached some other way (www., 127.0.0.1).
+  // The login cookie must be set on the origin the callback will land on, so start from APP_URL if we were reached some other way (www., 127.0.0.1).
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
   if (host && host !== config.appUrl.host) {
     const canonical = new URL("/api/auth/login", config.appUrl);

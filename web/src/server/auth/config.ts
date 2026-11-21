@@ -1,7 +1,5 @@
-// Server-only settings for the Keycloak login. Read at request time rather
-// than build time: kennel injects secrets when the service starts, after the
-// Nix build has run, so none of these may be NEXT_PUBLIC_ or read in
-// next.config.js.
+// Server-only settings for the Keycloak login. Read at request time rather than build time: kennel injects secrets when the service starts, after the
+// Nix build has run, so none of these may be NEXT_PUBLIC_ or read in next.config.js.
 
 export interface AuthConfig {
   /** https://idp.scottylabs.org/realms/scottylabs */

@@ -1,16 +1,18 @@
 "use client";
 
-
 import { Event } from "../utils/types";
 import { formatDateRange } from "../utils/formatters";
 import { FiEdit } from "react-icons/fi";
-import { MdOutlinePlace, MdOutlineAccessTime, MdOutlineSchool, MdOutlinePeople } from "react-icons/md";
-
+import {
+  MdOutlinePlace,
+  MdOutlineAccessTime,
+  MdOutlineSchool,
+  MdOutlinePeople,
+} from "react-icons/md";
 
 interface EventCardProps {
   event: Event;
 }
-
 
 /**
  * EventCard - Displays details about an event
@@ -26,9 +28,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
           </span>
         </div>
 
-
         <h4 className="font-medium text-base mb-3">{event.course_name}</h4>
-
 
         <div className="space-y-2 mb-3">
           <div className="flex items-center text-gray-600 dark:text-gray-300">
@@ -38,12 +38,10 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
             </span>
           </div>
 
-
           <div className="flex items-center text-gray-600 dark:text-gray-300">
             <MdOutlinePlace className="mr-2" size={16} />
             <span className="text-sm">{event.location}</span>
           </div>
-
 
           {event.instructor && (
             <div className="flex items-center text-gray-600 dark:text-gray-300">
@@ -52,7 +50,6 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
             </div>
           )}
 
-
           {event.professor && (
             <div className="flex items-center text-gray-600 dark:text-gray-300">
               <MdOutlineSchool className="mr-2" size={16} />
@@ -60,7 +57,6 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
             </div>
           )}
         </div>
-
 
         <div className="text-xs text-gray-500 mt-3 flex justify-between items-center">
           <span>Source: {event.resource_source}</span>
@@ -73,5 +69,4 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
   );
 };
 
-
-export default EventCard; 
+export default EventCard;

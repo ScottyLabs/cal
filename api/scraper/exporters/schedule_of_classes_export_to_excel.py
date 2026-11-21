@@ -44,8 +44,7 @@ def run_scrape_and_export():
         # Define the output file name
         output_filename = "schedule_of_classes.xlsx"
 
-        # This will save the file to the directory where you *run* the script
-        # (your project's base folder)
+        # This will save the file to the directory where you *run* the script (your project's base folder)
         df.to_excel(output_filename, index=False)
 
         # Get the full path for the success message

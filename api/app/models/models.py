@@ -236,8 +236,7 @@ class User(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(True), server_default=text("now()")
     )
-    # Legacy Clerk user id. Still mapped so autogenerate does not drop the
-    # column, but nothing reads it any more: identity comes from oidc_sub.
+    # Legacy Clerk user id. Still mapped so autogenerate does not drop the column, but nothing reads it any more: identity comes from oidc_sub.
     clerk_id: Mapped[Optional[str]] = mapped_column(Text)
     # Keycloak `sub` claim, set on the user's first Keycloak login.
     oidc_sub: Mapped[Optional[str]] = mapped_column(Text)

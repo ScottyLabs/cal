@@ -3,8 +3,7 @@
 import posthog from "posthog-js";
 import { useEffect } from "react";
 
-// The root layout passes the key and host in at request time. Kennel injects
-// secrets when the service starts, after the Nix build, so they cannot be
+// The root layout passes the key and host in at request time. Kennel injects secrets when the service starts, after the Nix build, so they cannot be
 // NEXT_PUBLIC_ values inlined by the build.
 export default function PostHogPageViews({
   apiKey,

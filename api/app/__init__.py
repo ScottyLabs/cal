@@ -20,8 +20,7 @@ from app.services.db import init_db
 
 
 def create_app():
-    # Governance writes SENTRY_DSN for the prod profile only, so dev, CI and
-    # tests run without it and never report.
+    # Governance writes SENTRY_DSN for the prod profile only, so dev, CI and tests run without it and never report.
     sentry_dsn = os.getenv("SENTRY_DSN")
     if sentry_dsn:
         import sentry_sdk
@@ -53,8 +52,7 @@ def create_app():
     def open_db():
         g.db = get_session()
 
-    # Registered after open_db: before_request hooks run in order, and
-    # authentication needs the session to look up the caller.
+    # Registered after open_db: before_request hooks run in order, and authentication needs the session to look up the caller.
     if not os.getenv("ALEMBIC_RUNNING"):
         from app.utils.auth import init_auth
 
@@ -95,8 +93,7 @@ def create_app():
                     "origins": origins,
                     "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
                     "allow_headers": ["Content-Type", "Authorization"],
-                    # Lets the web client tell an expired token (retry after
-                    # a refresh) from other 401s.
+                    # Lets the web client tell an expired token (retry after a refresh) from other 401s.
                     "expose_headers": ["WWW-Authenticate"],
                 }
             },

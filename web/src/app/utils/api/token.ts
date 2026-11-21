@@ -1,6 +1,5 @@
 // Browser-side access token handling. The token comes from our own
-// GET /api/auth/token (which refreshes it from the httpOnly session cookie)
-// and lives only in memory here, never in localStorage.
+// GET /api/auth/token (which refreshes it from the httpOnly session cookie) and lives only in memory here, never in localStorage.
 
 interface CachedToken {
   accessToken: string;
@@ -13,8 +12,7 @@ const EARLY_REFRESH_MS = 30_000;
 let cached: CachedToken | null = null;
 let inflight: Promise<string | null> | null = null;
 let signedOutHandler: (() => void) | null = null;
-// Set by AuthProvider from the server-rendered session, so anonymous pages
-// never call /api/auth/token.
+// Set by AuthProvider from the server-rendered session, so anonymous pages never call /api/auth/token.
 let hasSession = false;
 
 export function setHasSession(value: boolean): void {

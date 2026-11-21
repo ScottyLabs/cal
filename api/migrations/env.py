@@ -14,8 +14,7 @@ load_dotenv(Path(f".env.{env}"), override=True)
 
 os.environ["ALEMBIC_RUNNING"] = "1"
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+# this is the Alembic Config object, which provides access to the values within the .ini file in use.
 config = context.config
 
 # set sqlalchemy.url from env at runtime
@@ -31,12 +30,9 @@ print(f"[alembic] APP_ENV={env}  url_driver={db_url.split('://', 1)[0]}")
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from app.models import Base
+# add your model's MetaData object here for 'autogenerate' support from app.models import Base
 
-# from app.services.db import Base
-# from app.models.models import *
+# from app.services.db import Base from app.models.models import *
 from app.models import Base
 
 target_metadata = Base.metadata

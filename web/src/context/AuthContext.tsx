@@ -1,8 +1,6 @@
 "use client";
 
-// Signed-in state for client components. The server layout reads the encrypted
-// session cookie and passes the profile in, so signed-in state is known on the
-// first render. `dbUser` is the API's own users row (GET /users/me), which the
+// Signed-in state for client components. The server layout reads the encrypted session cookie and passes the profile in, so signed-in state is known on the first render. `dbUser` is the API's own users row (GET /users/me), which the
 // API creates or links on the first authenticated call.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useEffect } from "react";
 import TwoColumnLayout from "@components/TwoColumnLayout";
@@ -11,17 +11,20 @@ import { useUser } from "~/context/UserContext";
 import { useIsMobile } from "./hooks/useIsMobile";
 
 // Color map matching sidebar accordion colors
-const accordionColorHexValues = ['#f26d6d', '#58c05c', '#c36df2', '#6da4f2', '#f2b06d'] as const;
+const accordionColorHexValues = ["#f26d6d", "#58c05c", "#c36df2", "#6da4f2", "#f2b06d"] as const;
 
 function getColorForIndex(index: number): string {
-  return accordionColorHexValues[index % accordionColorHexValues.length] ?? '#f26d6d';
+  return accordionColorHexValues[index % accordionColorHexValues.length] ?? "#f26d6d";
 }
 
 function PageSkeleton() {
   return (
     <div className="flex w-screen h-full animate-pulse">
       {/* Sidebar */}
-      <div style={{ width: 320, minWidth: 320 }} className="flex-shrink-0 py-6 px-8 border-r border-gray-200 dark:border-gray-700">
+      <div
+        style={{ width: 320, minWidth: 320 }}
+        className="flex-shrink-0 py-6 px-8 border-r border-gray-200 dark:border-gray-700"
+      >
         <div className="flex justify-between items-center mb-4">
           <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
           <div className="flex gap-1">
@@ -69,7 +72,10 @@ function PageSkeleton() {
         <div className="grid grid-cols-8 mb-1">
           <div className="h-10" />
           {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="h-10 bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-px">
+            <div
+              key={i}
+              className="h-10 bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-px"
+            >
               <div className="h-3 w-10 bg-gray-200 dark:bg-gray-700 rounded" />
             </div>
           ))}
@@ -103,7 +109,10 @@ function MobilePageSkeleton() {
       <div className="grid grid-cols-8 mb-1">
         <div className="h-8" />
         {Array.from({ length: 7 }).map((_, i) => (
-          <div key={i} className="h-8 bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-px">
+          <div
+            key={i}
+            className="h-8 bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-px"
+          >
             <div className="h-2.5 w-6 bg-gray-200 dark:bg-gray-700 rounded" />
           </div>
         ))}
@@ -134,7 +143,7 @@ export default function Home() {
     loading,
     currentScheduleId,
     visibleCategories,
-    toggleCategoryVisibility
+    toggleCategoryVisibility,
   } = useUser();
   const isMobile = useIsMobile();
 
@@ -148,7 +157,7 @@ export default function Home() {
     courses.forEach((course, courseIndex) => {
       const eventColor = getColorForIndex(courseIndex);
 
-      course.categories.forEach(category => {
+      course.categories.forEach((category) => {
         const categoryEvents = course.events[category.name] ?? [];
         const isCategoryVisible = visibleCategories.has(category.id);
 
@@ -176,7 +185,7 @@ export default function Home() {
                 categoryHidden: !isCategoryVisible,
                 org_id: event.org_id,
                 category_id: event.category_id,
-              }
+              },
             });
           }
         });
@@ -186,7 +195,7 @@ export default function Home() {
     clubs.forEach((club, clubIndex) => {
       const eventColor = getColorForIndex(clubIndex);
 
-      club.categories.forEach(category => {
+      club.categories.forEach((category) => {
         const categoryEvents = club.events[category.name] ?? [];
         const isCategoryVisible = visibleCategories.has(category.id);
 
@@ -214,7 +223,7 @@ export default function Home() {
                 categoryHidden: !isCategoryVisible,
                 org_id: event.org_id,
                 category_id: event.category_id,
-              }
+              },
             });
           }
         });
@@ -229,9 +238,9 @@ export default function Home() {
   }
 
   const sidebarContent = (
-    <ProfileSidebar 
-      courses={courses} 
-      clubs={clubs} 
+    <ProfileSidebar
+      courses={courses}
+      clubs={clubs}
       onCategoryToggle={handleEventToggle}
       currentScheduleId={currentScheduleId ? Number(currentScheduleId) : undefined}
       visibleCategories={visibleCategories}
@@ -240,12 +249,8 @@ export default function Home() {
 
   return (
     <>
-      {isMobile && (
-        <MobileSidebarDrawer>
-          {sidebarContent}
-        </MobileSidebarDrawer>
-      )}
-      
+      {isMobile && <MobileSidebarDrawer>{sidebarContent}</MobileSidebarDrawer>}
+
       <div className="flex h-full">
         {isMobile ? (
           // Mobile: Only show calendar, sidebar is in drawer
@@ -254,9 +259,9 @@ export default function Home() {
           </div>
         ) : (
           // Desktop: Show two-column layout
-          <TwoColumnLayout 
+          <TwoColumnLayout
             leftContent={sidebarContent}
-            rightContent={<Calendar events={calendarEvents} />} 
+            rightContent={<Calendar events={calendarEvents} />}
           />
         )}
       </div>

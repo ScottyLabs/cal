@@ -6,8 +6,7 @@ from supabase import Client, create_client
 
 _supabase: Client | None = None
 
-# The Supabase client logs every HTTP request (full URL, including long id
-# lists) at INFO, which buries the scraper's own progress output.
+# The Supabase client logs every HTTP request (full URL, including long id lists) at INFO, which buries the scraper's own progress output.
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
