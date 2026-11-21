@@ -13,7 +13,8 @@ import {
 export const dynamic = "force-dynamic";
 
 // GET /api/auth/callback?code=...&state=...&iss=...
-// Reached from Ricochet, never from Keycloak directly.
+// Reached from Ricochet in deployed environments; in local dev Keycloak lands on
+// /oauth2/callback, which delegates here.
 export async function GET(req: NextRequest) {
   const config = getAuthConfig();
   const fail = (reason: string) => {

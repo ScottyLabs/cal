@@ -61,20 +61,6 @@ checks it.
 
 ## 5. Frontend
 
-Sign-in goes through ScottyLabs Keycloak and the
-[Ricochet](https://codeberg.org/anish/ricochet) relay, which you run locally.
-Install it once (needs [Rust](https://rustup.rs)):
-
-```bash
-cargo install --git https://codeberg.org/anish/ricochet --rev ddc58bcad0bb2b898f900a3c13c94c263e797ad2 --locked
-```
-
-Then, in its own terminal:
-
-```bash
-RICOCHET_DEV=1 RICOCHET_BIND=127.0.0.1:8090 ricochet
-```
-
 In another terminal, from the repository root:
 
 ```bash
@@ -83,7 +69,13 @@ npm install
 secretspec run -P dev -- npm run dev
 ```
 
-Open http://localhost:3000 and sign in with your CMU account.
+Open http://localhost:8090 and sign in with your CMU account.
+
+The dev server runs on port 8090 because that is the only address the dev
+Keycloak client returns to. In deployed environments the
+[Ricochet](https://codeberg.org/anish/ricochet) relay serves it; locally the
+web app serves it itself (`web/src/app/oauth2/callback`), so there is no relay
+to install or run.
 
 ## 6. Migrations
 
@@ -123,8 +115,9 @@ commit these files.
   without `secretspec run -P dev --`, or (manual setup) a value in
   `web/.env.local` is empty. Next.js reads env files only at startup, so
   restart `npm run dev` after editing it.
-- **Sign-in ends on a connection error at `localhost:8090`**: Ricochet is not
-  running.
+- **Sign-in ends on a connection error at `localhost:8090`**: the web app is
+  not running, or something else holds port 8090 (an old Ricochet, for
+  example). `lsof -i :8090` on macOS or Linux shows what.
 - **API crashes with `Expected string or URL object, got None`**:
   `SUPABASE_DB_URL` is missing: the API was started without
   `secretspec run -P dev --`, or (manual setup) `api/.env.development` does not

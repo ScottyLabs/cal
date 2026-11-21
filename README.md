@@ -20,9 +20,8 @@ Full walkthrough in [`docs/getting-started.md`](docs/getting-started.md).
 cp api/.env.example api/.env.development   # fill in the secrets
 cd api && uv sync && uv run python run.py  # http://localhost:8080
 
-cp web/.env.example web/.env.local         # in a second terminal; sign-in
-                                           # also needs Ricochet (see docs)
-cd web && npm install && npm run dev       # http://localhost:3000
+cp web/.env.example web/.env.local         # in a second terminal
+cd web && npm install && npm run dev       # http://localhost:8090
 ```
 
 Nix and devenv are only needed to change the build and deploy config

@@ -83,7 +83,7 @@ def create_app():
             o.strip()
             for o in os.getenv(
                 "CORS_ALLOWED_ORIGINS",
-                "http://localhost:3000,https://cmucal.vercel.app,http://cmucal.com,https://cal.scottylabs.org",
+                "http://localhost:8090,http://localhost:3000,https://cmucal.vercel.app,http://cmucal.com,https://cal.scottylabs.org",
             ).split(",")
         ]
         app.config["CORS_ORIGINS"] = origins
