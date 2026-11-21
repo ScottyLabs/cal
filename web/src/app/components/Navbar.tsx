@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation"; // Detects the current path
 import { useTheme } from "next-themes";
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { FiSearch, FiMoon, FiSun, FiLogOut, FiTrash2, FiMenu } from "react-icons/fi"; // Search, dark mode, logout
+import { FiSearch, FiMoon, FiSun, FiLogOut, FiTrash2, FiMenu, FiDownload } from "react-icons/fi"; // Search, dark mode, logout
 import { FaRegUser } from "react-icons/fa"; // User icon
 import { BsCalendar3 } from "react-icons/bs"; // Calendar icon
 import { FiUpload } from "react-icons/fi";
@@ -23,7 +23,7 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import axios, { AxiosError } from 'axios';
 import { getUserID } from "../utils/api/users";
-import { API_BASE_URL } from "../utils/api/api";
+import { api, API_BASE_URL } from "../utils/api/api";
 import { fetchRole } from "../utils/authService";
 
 
@@ -50,6 +50,7 @@ export default function Navbar() {
   const [newScheduleName, setNewScheduleName] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isCreatingSchedule, setIsCreatingSchedule] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const isMobile = useIsMobile();
 
   const { isSignedIn } = useAuth();
@@ -103,6 +104,38 @@ export default function Navbar() {
       alert("Failed to create schedule. Please try again.");
     } finally {
       setIsCreatingSchedule(false);
+    }
+  };
+
+  const handleExportSchedule = async (scheduleId: number | string | null) => {
+    if (!scheduleId || isExporting) {
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const res = await api.get('/schedule/export', {
+        params: { schedule_id: scheduleId },
+        responseType: 'blob',
+      });
+
+      const url = URL.createObjectURL(res.data);
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = `cmucal.ics`;
+
+      document.body.appendChild(link);
+
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to export schedule from API", error);
+      alert("Failed to export schedule. Please try again.");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -284,7 +317,7 @@ export default function Navbar() {
 
           {/* Schedule Selector - Button or Dropdown - Desktop only */}
           {!isMobile && (
-            <div className="relative">
+            <div className="relative flex items-center gap-2">
             {isLoading ? (
               // Show skeleton while loading
               <div className="h-10 px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 animate-pulse flex items-center gap-2">
@@ -398,7 +431,19 @@ export default function Navbar() {
                 </Select>
               </FormControl>
             )}
-            
+
+            <button
+              type="button"
+              onClick={() => handleExportSchedule(currentScheduleId)}
+              disabled={!currentScheduleId || isExporting}
+              aria-label="Export schedule"
+              title="Download this schedule as an .ics file"
+              className="h-10 px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiDownload className="text-gray-600 dark:text-gray-300" size={16} />
+              <span>{isExporting ? "Exporting…" : "Export"}</span>
+            </button>
+
             {showNewScheduleInput  && (
                 <div
                   ref={newScheduleRef}
